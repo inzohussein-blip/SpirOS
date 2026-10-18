@@ -6,7 +6,8 @@ QEMU and its libraries come from the Termux package repository (GPL / LGPL,
 built with the Android NDK against bionic). This script:
   1. resolves qemu-system-aarch64-headless and its dependencies,
   2. downloads the .deb files and checks their SHA-256 from the signed index,
-  3. extracts the executable and shared libraries,
+  3. extracts the executable and keeps only the shared libraries it really
+     loads (transitive DT_NEEDED closure; fails if any is missing),
   4. renames everything to lib*.so (only such files are installed from an APK)
      and rewrites SONAME / DT_NEEDED with patchelf so they find each other,
   5. writes them to app/src/main/jniLibs/arm64-v8a/.
@@ -171,16 +172,32 @@ def main():
         usr = os.path.join(root, PREFIX)
         libdir = os.path.join(usr, "lib")
 
-        # Collect real ELF shared libraries keyed by SONAME.
+        # Collect real ELF shared libraries (lib/ and its subdirectories) keyed by SONAME.
         libs = {}
-        for entry in sorted(os.listdir(libdir)):
-            path = os.path.join(libdir, entry)
-            if os.path.islink(path) or not os.path.isfile(path) or ".so" not in entry or not is_elf(path):
-                continue
-            soname = patchelf("--print-soname", path) or entry
-            libs.setdefault(soname, path)
+        for dirpath, _, files in os.walk(libdir):
+            for entry in sorted(files):
+                path = os.path.join(dirpath, entry)
+                if os.path.islink(path) or ".so" not in entry or not is_elf(path):
+                    continue
+                soname = patchelf("--print-soname", path) or entry
+                libs.setdefault(soname, path)
 
-        rename = {soname: apk_name(soname) for soname in libs}
+        # Bundle only what QEMU actually loads: the DT_NEEDED closure of the executable.
+        executable = os.path.join(usr, EXECUTABLE)
+        closure, missing, queue = set(), set(), [executable]
+        while queue:
+            for needed in patchelf("--print-needed", queue.pop()).split():
+                if needed in SYSTEM_LIBS or needed in closure:
+                    continue
+                if needed not in libs:
+                    missing.add(needed)
+                    continue
+                closure.add(needed)
+                queue.append(libs[needed])
+        if missing:
+            sys.exit(f"Unresolved libraries needed by QEMU: {sorted(missing)}")
+
+        rename = {soname: apk_name(soname) for soname in closure}
 
         if os.path.isdir(args.out):
             shutil.rmtree(args.out)
@@ -196,14 +213,11 @@ def main():
             for needed in patchelf("--print-needed", dest).split():
                 if needed in rename and rename[needed] != needed:
                     patchelf("--replace-needed", needed, rename[needed], dest)
-                elif needed not in rename and needed not in SYSTEM_LIBS:
-                    print(f"  ! {dest_name} needs {needed}, which is not bundled")
 
-        for soname, path in libs.items():
-            if soname in SYSTEM_LIBS:
-                continue
-            install(path, rename[soname], soname)
-        install(os.path.join(usr, EXECUTABLE), OUTPUT_EXECUTABLE, None)
+        for soname in sorted(closure):
+            install(libs[soname], rename[soname], soname)
+            print(f"  = {rename[soname]}")
+        install(executable, OUTPUT_EXECUTABLE, None)
 
     total = sum(os.path.getsize(os.path.join(args.out, f)) for f in os.listdir(args.out))
     print(f"Wrote {len(os.listdir(args.out))} files, {total / 1e6:.1f} MB to {args.out}")
