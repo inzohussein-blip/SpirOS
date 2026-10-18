@@ -46,6 +46,10 @@ class Vault(private val root: File) {
     @Volatile
     var holdLock: Boolean = false
 
+    /** Called (on any thread) after the vault was destroyed by erase or the emergency PIN. */
+    @Volatile
+    var onDestroyed: (() -> Unit)? = null
+
     val files = VaultFiles(File(root, "data")) { dataKey ?: throw IllegalStateException("Vault is locked") }
 
     // ---- setup / unlock -------------------------------------------------------------------
@@ -78,6 +82,7 @@ class Vault(private val root: File) {
         lock()
         root.deleteRecursively()
         KeystoreKeys.deleteAll()
+        onDestroyed?.invoke()
     }
 
     @Synchronized

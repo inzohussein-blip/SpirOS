@@ -53,7 +53,7 @@
     <string name="panic_same_as_pin">يجب أن يختلف عن رمز SpirOS</string>
     <string name="settings_lock_now">اقفل الآن</string>
     <string name="settings_wipe">مسح الخزنة</string>
-    <string name="settings_wipe_desc">إتلاف كل الملفات والمفاتيح</string>
+    <string name="settings_wipe_desc">إتلاف كل الملفات والمفاتيح والمساحة المعزولة</string>
     <string name="settings_wipe_confirm">سيتم إتلاف كل ما في الخزنة نهائيًا ولا يمكن التراجع.</string>
     <string name="compat_title">توافق الجهاز</string>
     <string name="compat_subtitle">ما يدعمه هذا الهاتف والبدائل المتاحة</string>
@@ -73,4 +73,25 @@
     <string name="compat_virtualization">المحاكاة بتسريع العتاد</string>
     <string name="compat_virtualization_fallback">المختبر سيستخدم المحاكاة البرمجية (أبطأ)</string>
     <string name="compat_hardware">المعالج والذاكرة</string>
+    <string name="space_intro">أنشئ ملف أندرويد منفصلًا بتطبيقاته وحساباته وتخزينه المشفّر. التطبيقات بداخله لا ترى تطبيقاتك الأساسية ولا جهات اتصالك ولا ملفاتك.</string>
+    <string name="space_create">إنشاء المساحة المعزولة</string>
+    <string name="space_create_failed">لم يتم إنشاء المساحة.</string>
+    <string name="space_unavailable">لا يستطيع هذا الهاتف إنشاء المساحة المعزولة:</string>
+    <string name="space_unreachable">تعذّر الوصول إلى المساحة. تأكد أنها ليست متوقفة مؤقتًا.</string>
+    <string name="space_paused">المساحة متوقفة مؤقتًا</string>
+    <string name="space_resume">استئناف</string>
+    <string name="space_resume_manual">فعّل تطبيقات العمل من الإعدادات السريعة لاستئناف المساحة.</string>
+    <string name="space_empty">لا توجد تطبيقات بعد.\nاضغط إضافة تطبيقات لنسخ تطبيقات من هاتفك إلى المساحة.</string>
+    <string name="space_add_apps">إضافة تطبيقات</string>
+    <string name="space_clone_selected">إضافة %1$d</string>
+    <string name="space_clone_hint">يُثبَّت التطبيق داخل المساحة كنسخة منفصلة ببيانات وحسابات جديدة فارغة.</string>
+    <string name="space_freeze">تجميد</string>
+    <string name="space_unfreeze">إلغاء التجميد</string>
+    <string name="space_freeze_all">تجميد الكل</string>
+    <string name="space_unfreeze_all">إلغاء تجميد الكل</string>
+    <string name="space_frozen">مجمّد</string>
+    <string name="space_remove_app">إزالة من المساحة</string>
+    <string name="space_delete">حذف المساحة</string>
+    <string name="space_delete_confirm">سيتم إتلاف كل التطبيقات والحسابات والبيانات داخل المساحة نهائيًا.</string>
+    <string name="compat_work_profile_active">مساحة SpirOS تعمل</string>
 </resources>

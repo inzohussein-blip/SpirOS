@@ -11,6 +11,7 @@ import android.system.Os
 import android.system.OsConstants
 import androidx.annotation.StringRes
 import com.spiros.app.R
+import com.spiros.app.space.SpaceManager
 import com.spiros.app.vault.BiometricGate
 import com.spiros.app.vault.crypto.KeystoreKeys
 import java.io.File
@@ -48,23 +49,8 @@ object DeviceCompat {
             "${Build.MANUFACTURER} ${Build.MODEL} · ${Build.DISPLAY}",
         )
 
-        val dpm = context.getSystemService(DevicePolicyManager::class.java)
-        val managedUsers = pm.hasSystemFeature(PackageManager.FEATURE_MANAGED_USERS)
-        val provisioningAllowed = managedUsers &&
-            runCatching { dpm.isProvisioningAllowed(DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE) }
-                .getOrDefault(false)
-        val profiles = context.getSystemService(UserManager::class.java).userProfiles.size
-        checks += Check(
-            R.string.compat_work_profile,
-            if (provisioningAllowed) Level.OK else Level.WARN,
-            when {
-                provisioningAllowed -> context.getString(R.string.compat_work_profile_ok)
-                !managedUsers -> context.getString(R.string.compat_work_profile_missing)
-                profiles > 1 -> context.getString(R.string.compat_work_profile_exists, profiles - 1)
-                else -> context.getString(R.string.compat_work_profile_blocked)
-            },
-            if (provisioningAllowed) null else R.string.compat_work_profile_fallback,
-        )
+        val workProfile = workProfileCheck(context)
+        checks += workProfile
 
         val bio = BiometricGate.isAvailable(context)
         checks += Check(
@@ -113,7 +99,32 @@ object DeviceCompat {
             ),
         )
 
-        return Report(checks, provisioningAllowed)
+        return Report(checks, workProfile.level == Level.OK)
+    }
+
+    /** Can SpirOS create its isolated space here? Shared by the compatibility screen and the Space screen. */
+    fun workProfileCheck(context: Context): Check {
+        if (SpaceManager(context).spaceUser() != null) {
+            return Check(R.string.compat_work_profile, Level.OK, context.getString(R.string.compat_work_profile_active))
+        }
+        val pm = context.packageManager
+        val dpm = context.getSystemService(DevicePolicyManager::class.java)
+        val managedUsers = pm.hasSystemFeature(PackageManager.FEATURE_MANAGED_USERS)
+        val provisioningAllowed = managedUsers &&
+            runCatching { dpm.isProvisioningAllowed(DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE) }
+                .getOrDefault(false)
+        val profiles = context.getSystemService(UserManager::class.java).userProfiles.size
+        return Check(
+            R.string.compat_work_profile,
+            if (provisioningAllowed) Level.OK else Level.WARN,
+            when {
+                provisioningAllowed -> context.getString(R.string.compat_work_profile_ok)
+                !managedUsers -> context.getString(R.string.compat_work_profile_missing)
+                profiles > 1 -> context.getString(R.string.compat_work_profile_exists, profiles - 1)
+                else -> context.getString(R.string.compat_work_profile_blocked)
+            },
+            if (provisioningAllowed) null else R.string.compat_work_profile_fallback,
+        )
     }
 
     private fun yesNo(context: Context, value: Boolean) =

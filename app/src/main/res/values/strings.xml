@@ -53,7 +53,7 @@
     <string name="panic_same_as_pin">Must be different from your SpirOS PIN</string>
     <string name="settings_lock_now">Lock now</string>
     <string name="settings_wipe">Erase vault</string>
-    <string name="settings_wipe_desc">Destroy all files and keys</string>
+    <string name="settings_wipe_desc">Destroy all files, keys and the isolated space</string>
     <string name="settings_wipe_confirm">Everything in the vault will be destroyed permanently. This cannot be undone.</string>
     <string name="compat_title">Device compatibility</string>
     <string name="compat_subtitle">What this phone supports, with fallbacks</string>
@@ -73,4 +73,25 @@
     <string name="compat_virtualization">Hardware virtualization</string>
     <string name="compat_virtualization_fallback">Lab will use software emulation (slower)</string>
     <string name="compat_hardware">Processor and memory</string>
+    <string name="space_intro">Create a separate Android profile with its own apps, accounts and encrypted storage. Apps inside cannot see your main apps, contacts or files.</string>
+    <string name="space_create">Create isolated space</string>
+    <string name="space_create_failed">The space was not created.</string>
+    <string name="space_unavailable">This phone cannot create the isolated space:</string>
+    <string name="space_unreachable">Could not reach the space. Make sure it is not paused.</string>
+    <string name="space_paused">The space is paused</string>
+    <string name="space_resume">Resume</string>
+    <string name="space_resume_manual">Turn on work apps from Quick Settings to resume the space.</string>
+    <string name="space_empty">No apps yet.\nTap Add apps to clone apps from your phone into the space.</string>
+    <string name="space_add_apps">Add apps</string>
+    <string name="space_clone_selected">Add %1$d</string>
+    <string name="space_clone_hint">The app is installed into the space as a separate copy with its own empty data and accounts.</string>
+    <string name="space_freeze">Freeze</string>
+    <string name="space_unfreeze">Unfreeze</string>
+    <string name="space_freeze_all">Freeze all</string>
+    <string name="space_unfreeze_all">Unfreeze all</string>
+    <string name="space_frozen">Frozen</string>
+    <string name="space_remove_app">Remove from space</string>
+    <string name="space_delete">Delete space</string>
+    <string name="space_delete_confirm">All apps, accounts and data inside the space will be destroyed permanently.</string>
+    <string name="compat_work_profile_active">The SpirOS space is active</string>
 </resources>
