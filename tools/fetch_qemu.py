@@ -28,7 +28,14 @@ import tarfile
 import tempfile
 import urllib.request
 
-REPO = "https://packages-cf.termux.dev/apt/termux-main"
+# Official repository first, then public mirrors (same signed index and SHA-256 sums).
+MIRRORS = [
+    "https://packages.termux.dev/apt/termux-main",
+    "https://packages-cf.termux.dev/apt/termux-main",
+    "https://grimler.se/termux/termux-main",
+    "https://mirror.mwt.me/termux/main",
+]
+USER_AGENT = "SpirOS-build/1.0 (+https://github.com/inzohussein-blip/SpirOS)"
 ROOT_PACKAGE = "qemu-system-aarch64-headless"
 PREFIX = "data/data/com.termux/files/usr/"
 EXECUTABLE = "bin/qemu-system-aarch64"
@@ -38,8 +45,19 @@ SYSTEM_LIBS = {"libc.so", "libm.so", "libdl.so", "liblog.so", "libandroid.so", "
 
 
 def fetch(url: str) -> bytes:
-    with urllib.request.urlopen(url, timeout=120) as response:
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
+
+
+def pick_mirror(arch: str):
+    for mirror in MIRRORS:
+        try:
+            text = fetch(f"{mirror}/dists/stable/main/binary-{arch}/Packages").decode()
+            return mirror, text
+        except Exception as e:  # try the next mirror
+            print(f"  ! {mirror}: {e}")
+    sys.exit("No Termux mirror reachable")
 
 
 def parse_index(text: str) -> dict:
@@ -133,8 +151,9 @@ def main():
     parser.add_argument("--out", default="app/src/main/jniLibs/arm64-v8a")
     args = parser.parse_args()
 
-    print(f"Index: {REPO} ({args.arch})")
-    index = parse_index(fetch(f"{REPO}/dists/stable/main/binary-{args.arch}/Packages").decode())
+    repo, text = pick_mirror(args.arch)
+    print(f"Index: {repo} ({args.arch})")
+    index = parse_index(text)
     packages = resolve(index, ROOT_PACKAGE)
     print(f"Packages ({len(packages)}): {' '.join(packages)}")
 
@@ -142,7 +161,7 @@ def main():
         root = os.path.join(work, "root")
         for name in packages:
             fields = index[name]
-            deb = fetch(f"{REPO}/{fields['Filename']}")
+            deb = fetch(f"{repo}/{fields['Filename']}")
             digest = hashlib.sha256(deb).hexdigest()
             if digest != fields["SHA256"]:
                 sys.exit(f"SHA-256 mismatch for {name}")
