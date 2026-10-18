@@ -39,7 +39,7 @@ class Vault(private val root: File) {
     private val stateFile = AtomicFile(File(root, "state.json"))
     private var dataKey: ByteArray? = null
 
-    private val _status = MutableStateFlow(if (stateFile.exists()) Status.LOCKED else Status.NEW)
+    private val _status = MutableStateFlow(if (stateFile.baseFile.exists()) Status.LOCKED else Status.NEW)
     val status: StateFlow<Status> = _status.asStateFlow()
 
     /** Set while a system picker is in front, so leaving the activity does not lock mid-import. */
@@ -148,7 +148,7 @@ class Vault(private val root: File) {
 
     // ---- emergency (duress) PIN ----------------------------------------------------------
 
-    val hasPanicPin: Boolean get() = stateFile.exists() && readState().panicHash != null
+    val hasPanicPin: Boolean get() = stateFile.baseFile.exists() && readState().panicHash != null
 
     /** Returns false if [pin] equals the vault PIN. */
     suspend fun setPanicPin(pin: CharArray): Boolean = withContext(Dispatchers.Default) {
@@ -180,7 +180,7 @@ class Vault(private val root: File) {
 
     // ---- biometrics ----------------------------------------------------------------------
 
-    val isBiometricEnabled: Boolean get() = stateFile.exists() && readState().bioWrapped != null
+    val isBiometricEnabled: Boolean get() = stateFile.baseFile.exists() && readState().bioWrapped != null
 
     /** Cipher to pass to BiometricPrompt when turning fingerprint unlock on. */
     fun biometricEnrollCipher(): Cipher =
@@ -227,7 +227,7 @@ class Vault(private val root: File) {
     @Synchronized
     fun disableBiometric() {
         KeystoreKeys.deleteBiometricKey()
-        if (stateFile.exists()) writeState(readState().copy(bioWrapped = null))
+        if (stateFile.baseFile.exists()) writeState(readState().copy(bioWrapped = null))
     }
 
     // ---- persistence ---------------------------------------------------------------------
