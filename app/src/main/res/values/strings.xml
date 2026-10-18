@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpirOS</string>
+    <string name="tagline">Your second, isolated space</string>
+    <string name="engine_status">Native engine: %1$s</string>
+    <string name="section_space">Isolated Space</string>
+    <string name="section_space_desc">Run Android apps in a separate, encrypted profile</string>
+    <string name="section_vault">Vault</string>
+    <string name="section_vault_desc">Encrypted photos and files behind PIN / fingerprint</string>
+    <string name="section_shield">Shield</string>
+    <string name="section_shield_desc">Block trackers and Google services inside the space</string>
+    <string name="section_browser">Private Browser</string>
+    <string name="section_browser_desc">Browse without history, cookies or trackers</string>
+    <string name="section_lab">Lab · Virtual Machine</string>
+    <string name="section_lab_desc">Experimental QEMU engine for a full guest OS</string>
+    <string name="coming_soon">Coming in phase %1$s</string>
+</resources>

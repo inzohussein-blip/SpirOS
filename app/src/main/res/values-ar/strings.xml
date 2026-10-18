@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpirOS</string>
+    <string name="tagline">مساحتك الثانية المعزولة</string>
+    <string name="engine_status">المحرك الأصلي: %1$s</string>
+    <string name="section_space">المساحة المعزولة</string>
+    <string name="section_space_desc">شغّل تطبيقات أندرويد في ملف منفصل ومشفّر</string>
+    <string name="section_vault">الخزنة</string>
+    <string name="section_vault_desc">صور وملفات مشفّرة خلف رمز PIN أو البصمة</string>
+    <string name="section_shield">الدرع</string>
+    <string name="section_shield_desc">حجب المتتبعات وخدمات جوجل داخل المساحة</string>
+    <string name="section_browser">المتصفح الخاص</string>
+    <string name="section_browser_desc">تصفّح بلا سجل ولا كوكيز ولا متتبعات</string>
+    <string name="section_lab">المختبر · نظام وهمي</string>
+    <string name="section_lab_desc">محرك QEMU تجريبي لتشغيل نظام كامل</string>
+    <string name="coming_soon">قادم في المرحلة %1$s</string>
+</resources>

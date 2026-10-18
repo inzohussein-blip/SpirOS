@@ -1,0 +1,14 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+# Release keys must never be committed (the debug keystore is intentionally tracked)
+*.jks
+release.keystore
