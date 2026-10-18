@@ -64,6 +64,13 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        jniLibs {
+            // Extract native libs to nativeLibraryDir: the bundled QEMU executable must
+            // exist as a real file there to be executed.
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {

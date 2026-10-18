@@ -94,4 +94,14 @@
     <string name="space_delete">حذف المساحة</string>
     <string name="space_delete_confirm">سيتم إتلاف كل التطبيقات والحسابات والبيانات داخل المساحة نهائيًا.</string>
     <string name="compat_work_profile_active">مساحة SpirOS تعمل</string>
+    <string name="lab_not_bundled">محرك QEMU غير مضمّن في هذه النسخة</string>
+    <string name="lab_explainer">يُقلع نظام Alpine Linux خفيفًا داخل QEMU. بدون تسريع العتاد تكون المحاكاة برمجية بالكامل، لذلك يقيس هذا الاختبار سرعة تشغيل نظام كامل على هذا الهاتف. تُنزَّل ملفات النظام (حوالي 30 ميغابايت) عند أول استخدام.</string>
+    <string name="lab_boot_time">وصل إلى سطر الأوامر خلال %1$s ثانية</string>
+    <string name="lab_cores">أنوية المعالج الوهمي: %1$d</string>
+    <string name="lab_ram">ذاكرة النظام الضيف: %1$d ميغابايت</string>
+    <string name="lab_boot_alpine">إقلاع Alpine Linux</string>
+    <string name="lab_stop">إيقاف النظام الوهمي</string>
+    <string name="lab_downloading">جارٍ تنزيل ملفات النظام…</string>
+    <string name="lab_input_hint">أمر (سجّل الدخول باسم root)</string>
+    <string name="lab_send">إرسال</string>
 </resources>

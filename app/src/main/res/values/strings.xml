@@ -94,4 +94,14 @@
     <string name="space_delete">Delete space</string>
     <string name="space_delete_confirm">All apps, accounts and data inside the space will be destroyed permanently.</string>
     <string name="compat_work_profile_active">The SpirOS space is active</string>
+    <string name="lab_not_bundled">QEMU engine is not included in this build</string>
+    <string name="lab_explainer">Boots a lightweight Alpine Linux guest in QEMU. Without hardware virtualization this is pure software emulation, so it measures how fast a full guest system can run on this phone. The guest images (about 30 MB) are downloaded on first use.</string>
+    <string name="lab_boot_time">Reached a shell in %1$s s</string>
+    <string name="lab_cores">Virtual CPU cores: %1$d</string>
+    <string name="lab_ram">Guest memory: %1$d MB</string>
+    <string name="lab_boot_alpine">Boot Alpine Linux</string>
+    <string name="lab_stop">Stop virtual machine</string>
+    <string name="lab_downloading">Downloading guest images…</string>
+    <string name="lab_input_hint">Command (log in as root)</string>
+    <string name="lab_send">Send</string>
 </resources>

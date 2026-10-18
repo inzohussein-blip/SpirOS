@@ -53,14 +53,14 @@ private data class Section(
 )
 
 @Composable
-fun HomeScreen(onOpenVault: () -> Unit, onOpenSpace: () -> Unit, onOpenSettings: () -> Unit, onLock: () -> Unit) {
+fun HomeScreen(onOpenVault: () -> Unit, onOpenSpace: () -> Unit, onOpenLab: () -> Unit, onOpenSettings: () -> Unit, onLock: () -> Unit) {
     val engineVersion = remember { SpirEngine.version() }
     val sections = listOf(
         Section(Icons.Outlined.Lock, R.string.section_vault, R.string.section_vault_desc, null, onOpenVault),
         Section(Icons.Outlined.Apps, R.string.section_space, R.string.section_space_desc, null, onOpenSpace),
         Section(Icons.Outlined.Shield, R.string.section_shield, R.string.section_shield_desc, "A4"),
         Section(Icons.Outlined.Public, R.string.section_browser, R.string.section_browser_desc, "A5"),
-        Section(Icons.Outlined.Memory, R.string.section_lab, R.string.section_lab_desc, "B1"),
+        Section(Icons.Outlined.Memory, R.string.section_lab, R.string.section_lab_desc, null, onOpenLab),
     )
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

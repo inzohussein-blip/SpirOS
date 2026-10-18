@@ -5,6 +5,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.spiros.app.engine.LabSession
 import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
 import com.spiros.app.ui.AppRoot
@@ -36,7 +37,10 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Leaving SpirOS locks it, except while a system screen we opened is in front.
-        if (!isChangingConfigurations && !vault.holdLock) vault.lock()
+        if (!isChangingConfigurations && !vault.holdLock) {
+            vault.lock()
+            LabSession.stop()
+        }
     }
 
     override fun onDestroy() {

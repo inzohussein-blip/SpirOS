@@ -11,6 +11,7 @@ import com.spiros.app.ui.compat.CompatScreen
 import com.spiros.app.ui.home.HomeScreen
 import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
+import com.spiros.app.ui.lab.LabScreen
 import com.spiros.app.ui.settings.SettingsScreen
 import com.spiros.app.ui.space.SpaceScreen
 import com.spiros.app.ui.vault.VaultScreen
@@ -23,6 +24,7 @@ private sealed interface Screen {
     data object VaultList : Screen
     data class Viewer(val item: VaultItem) : Screen
     data object Space : Screen
+    data object Lab : Screen
     data object Settings : Screen
     data object Compat : Screen
 }
@@ -54,12 +56,14 @@ private fun Unlocked(vault: Vault) {
         Screen.Home -> HomeScreen(
             onOpenVault = { screen = Screen.VaultList },
             onOpenSpace = { screen = Screen.Space },
+            onOpenLab = { screen = Screen.Lab },
             onOpenSettings = { screen = Screen.Settings },
             onLock = vault::lock,
         )
         Screen.VaultList -> VaultScreen(vault, onBack = { screen = Screen.Home }, onOpen = { screen = Screen.Viewer(it) })
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
         Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
+        Screen.Lab -> LabScreen(onBack = { screen = Screen.Home })
         Screen.Settings -> SettingsScreen(vault, onBack = { screen = Screen.Home }, onOpenCompat = { screen = Screen.Compat })
         Screen.Compat -> CompatScreen(onBack = { screen = Screen.Settings })
     }
