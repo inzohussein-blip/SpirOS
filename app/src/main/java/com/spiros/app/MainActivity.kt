@@ -5,10 +5,12 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.spiros.app.ui.home.HomeScreen
+import com.spiros.app.ui.AppRoot
 import com.spiros.app.ui.theme.SpirTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val vault get() = (application as SpirApp).vault
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -17,8 +19,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SpirTheme {
-                HomeScreen()
+                AppRoot(vault)
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Leaving SpirOS locks it, except while a system file picker we opened is in front.
+        if (!isChangingConfigurations && !vault.holdLock) vault.lock()
     }
 }
