@@ -56,32 +56,55 @@ class VaultFiles internal constructor(
 
     /** Encrypts [uri] into the vault. Returns true if the original was also deleted. */
     fun import(resolver: ContentResolver, uri: Uri, deleteOriginal: Boolean): Boolean {
-        val id = UUID.randomUUID().toString()
         val (name, size) = queryNameAndSize(resolver, uri)
         val mime = resolver.getType(uri) ?: "application/octet-stream"
+        val input = resolver.openInputStream(uri) ?: error("Cannot open $uri")
+        input.use { store(it, name, mime, size) { makeThumbnail(resolver, uri, mime) } }
+        return deleteOriginal && runCatching { DocumentsContract.deleteDocument(resolver, uri) }.getOrDefault(false)
+    }
+
+    /** Encrypts a stream (e.g. a browser download) straight into the vault; plaintext never touches disk. */
+    fun importStream(input: InputStream, name: String, mime: String): VaultItem =
+        store(input, name, mime, -1) { id -> thumbnailFromBlob(id, mime) }
+
+    private fun store(
+        input: InputStream,
+        name: String,
+        mime: String,
+        size: Long,
+        thumbnail: (id: String) -> ByteArray?,
+    ): VaultItem {
+        val id = UUID.randomUUID().toString()
         val blob = File(blobDir, id)
         val tmp = File(blobDir, "$id.tmp")
         try {
-            val input = resolver.openInputStream(uri) ?: error("Cannot open $uri")
-            input.use { src ->
-                streaming().newEncryptingStream(FileOutputStream(tmp), id.toByteArray()).use { dst ->
-                    src.copyTo(dst, BUFFER)
-                }
+            val written = streaming().newEncryptingStream(FileOutputStream(tmp), id.toByteArray()).use { dst ->
+                input.copyTo(dst, BUFFER)
             }
             check(tmp.renameTo(blob)) { "rename failed" }
-            makeThumbnail(resolver, uri, mime)?.let { jpeg ->
+            runCatching { thumbnail(id) }.getOrNull()?.let { jpeg ->
                 File(thumbDir, id).writeBytes(Gcm.encrypt(subKey(THUMB_LABEL), jpeg, id.toByteArray()))
             }
-            synchronized(lock) {
-                writeIndex(readIndex() + VaultItem(id, name, mime, size, System.currentTimeMillis()))
-            }
+            val item = VaultItem(id, name, mime, if (size >= 0) size else written, System.currentTimeMillis())
+            synchronized(lock) { writeIndex(readIndex() + item) }
+            return item
         } catch (e: Exception) {
             tmp.delete()
             blob.delete()
             File(thumbDir, id).delete()
             throw e
         }
-        return deleteOriginal && runCatching { DocumentsContract.deleteDocument(resolver, uri) }.getOrDefault(false)
+    }
+
+    private fun thumbnailFromBlob(id: String, mime: String): ByteArray? {
+        if (!mime.startsWith("image/")) return null
+        val bytes = openDecrypted(id).use { it.readBytes() }
+        val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(ByteBuffer.wrap(bytes))) { decoder, info, _ ->
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+            val shortest = minOf(info.size.width, info.size.height)
+            decoder.setTargetSampleSize((shortest / THUMB_SIZE).coerceAtLeast(1))
+        }
+        return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 80, it) }.toByteArray()
     }
 
     fun thumbnail(id: String): Bitmap? {

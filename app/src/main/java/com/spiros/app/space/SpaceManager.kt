@@ -9,6 +9,7 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Bundle
 import android.os.PersistableBundle
 import android.os.Process
 import android.os.UserHandle
@@ -90,9 +91,10 @@ class SpaceManager(private val context: Context) {
      * Intent for a command inside the space, or null if it would not go straight to
      * the space (e.g. another app registered the same action and could read the token).
      */
-    fun command(cmd: String, packages: List<String> = emptyList()): Intent? {
+    fun command(cmd: String, packages: List<String> = emptyList(), extras: Bundle? = null): Intent? {
         val t = token ?: return null
         val intent = Intent(SpaceOwner.ACTION_COMMAND)
+            .apply { if (extras != null) putExtras(extras) }
             .putExtra(SpaceOwner.EXTRA_TOKEN, t)
             .putExtra(SpaceOwner.EXTRA_COMMAND, cmd)
             .putStringArrayListExtra(SpaceOwner.EXTRA_PACKAGES, ArrayList(packages))

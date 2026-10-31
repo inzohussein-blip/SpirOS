@@ -1,0 +1,91 @@
+# SpirOS built-in tracker / ad blocklist (works offline).
+# One domain per line; subdomains are blocked too.
+# The optional full list (StevenBlack unified hosts) is downloaded on demand.
+
+# Google ads & analytics
+doubleclick.net
+googleadservices.com
+googlesyndication.com
+google-analytics.com
+googletagmanager.com
+googletagservices.com
+app-measurement.com
+adservice.google.com
+pagead2.googlesyndication.com
+crashlytics.com
+
+# Facebook / Meta ads & pixels
+an.facebook.com
+pixel.facebook.com
+
+# Ad networks & exchanges
+adnxs.com
+adsrvr.org
+criteo.com
+criteo.net
+taboola.com
+outbrain.com
+moatads.com
+rubiconproject.com
+pubmatic.com
+openx.net
+casalemedia.com
+smartadserver.com
+adcolony.com
+applovin.com
+applvn.com
+unityads.unity3d.com
+mopub.com
+chartboost.com
+vungle.com
+inmobi.com
+startappservice.com
+ironsrc.com
+supersonicads.com
+fyber.com
+pangle.io
+mintegral.com
+adform.net
+yieldmo.com
+media.net
+amazon-adsystem.com
+ads.linkedin.com
+ads-api.twitter.com
+ads.tiktok.com
+analytics.tiktok.com
+samsungads.com
+api.ad.xiaomi.com
+tracking.miui.com
+metrics.data.hicloud.com
+
+# Attribution & product analytics SDKs
+appsflyer.com
+adjust.com
+kochava.com
+singular.net
+amplitude.com
+mixpanel.com
+api.segment.io
+segment.com
+flurry.com
+data.flurry.com
+branch-attribution.com
+hotjar.com
+fullstory.com
+clarity.ms
+
+# Measurement & data brokers
+scorecardresearch.com
+quantserve.com
+quantcount.com
+bluekai.com
+demdex.net
+omtrdc.net
+everesttech.net
+krxd.net
+tapad.com
+exelator.com
+mathtag.com
+bat.bing.com
+mc.yandex.ru
+analytics.twitter.com

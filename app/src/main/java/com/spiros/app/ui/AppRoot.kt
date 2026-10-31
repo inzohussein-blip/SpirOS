@@ -7,12 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import com.spiros.app.ui.browser.BrowserScreen
 import com.spiros.app.ui.compat.CompatScreen
 import com.spiros.app.ui.home.HomeScreen
 import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
 import com.spiros.app.ui.settings.SettingsScreen
+import com.spiros.app.ui.shield.ShieldScreen
 import com.spiros.app.ui.space.SpaceScreen
 import com.spiros.app.ui.vault.VaultScreen
 import com.spiros.app.ui.vault.ViewerScreen
@@ -25,6 +27,8 @@ private sealed interface Screen {
     data class Viewer(val item: VaultItem) : Screen
     data object Space : Screen
     data object Lab : Screen
+    data object Shield : Screen
+    data object Browser : Screen
     data object Settings : Screen
     data object Compat : Screen
 }
@@ -57,6 +61,8 @@ private fun Unlocked(vault: Vault) {
             onOpenVault = { screen = Screen.VaultList },
             onOpenSpace = { screen = Screen.Space },
             onOpenLab = { screen = Screen.Lab },
+            onOpenShield = { screen = Screen.Shield },
+            onOpenBrowser = { screen = Screen.Browser },
             onOpenSettings = { screen = Screen.Settings },
             onLock = vault::lock,
         )
@@ -64,6 +70,8 @@ private fun Unlocked(vault: Vault) {
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
         Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
         Screen.Lab -> LabScreen(onBack = { screen = Screen.Home })
+        Screen.Shield -> ShieldScreen(vault, onBack = { screen = Screen.Home })
+        Screen.Browser -> BrowserScreen(vault, onBack = { screen = Screen.Home })
         Screen.Settings -> SettingsScreen(vault, onBack = { screen = Screen.Home }, onOpenCompat = { screen = Screen.Compat })
         Screen.Compat -> CompatScreen(onBack = { screen = Screen.Settings })
     }

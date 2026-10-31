@@ -9,6 +9,8 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.PersistableBundle
 import android.os.UserManager
+import com.spiros.app.shield.ShieldSettings
+import com.spiros.app.shield.ShieldVpnService
 import java.security.MessageDigest
 
 /**
@@ -30,6 +32,20 @@ object SpaceOwner {
     const val CMD_UNFREEZE_ALL = "unfreeze_all"
     const val CMD_LAUNCH = "launch"
     const val CMD_DESTROY = "destroy"
+    const val CMD_SHIELD_ON = "shield_on"
+    const val CMD_SHIELD_OFF = "shield_off"
+    const val CMD_GOOGLE_OFF = "google_off"
+    const val CMD_GOOGLE_ON = "google_on"
+
+    const val EXTRA_UPSTREAM = "com.spiros.app.extra.UPSTREAM"
+    const val EXTRA_FULL_LIST = "com.spiros.app.extra.FULL_LIST"
+
+    /** Google services hidden inside the space when the user opts out of them. */
+    private val GOOGLE_PACKAGES = listOf(
+        "com.google.android.gms",
+        "com.google.android.gsf",
+        "com.android.vending",
+    )
 
     private const val PREFS = "space_owner"
     private const val LAUNCHER_ALIAS = "com.spiros.app.Launcher"
@@ -91,6 +107,29 @@ object SpaceOwner {
                 val launch = packages.firstOrNull()?.let(context.packageManager::getLaunchIntentForPackage)
                 launch?.let { context.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } != null
             }
+            CMD_SHIELD_ON -> {
+                intent.getStringExtra(EXTRA_UPSTREAM)?.let { name ->
+                    runCatching { ShieldSettings.setUpstream(context, ShieldSettings.Upstream.valueOf(name)) }
+                }
+                ShieldSettings.setUseFullList(context, intent.getBooleanExtra(EXTRA_FULL_LIST, false))
+                // As Profile Owner we can make the Shield the space's always-on VPN:
+                // no consent prompt, and it restarts with the profile.
+                dpm.setAlwaysOnVpnPackage(admin, context.packageName, false)
+                ShieldVpnService.stop(context)
+                ShieldVpnService.start(context)
+                true
+            }
+            CMD_SHIELD_OFF -> {
+                dpm.setAlwaysOnVpnPackage(admin, null, false)
+                ShieldVpnService.stop(context)
+                true
+            }
+            CMD_GOOGLE_OFF -> GOOGLE_PACKAGES.map { pkg ->
+                runCatching { dpm.setApplicationHidden(admin, pkg, true) }.isSuccess
+            }.all { it }
+            CMD_GOOGLE_ON -> GOOGLE_PACKAGES.map { pkg ->
+                runCatching { dpm.setApplicationHidden(admin, pkg, false) }.isSuccess
+            }.all { it }
             CMD_DESTROY -> {
                 @Suppress("DEPRECATION")
                 dpm.wipeData(0)
