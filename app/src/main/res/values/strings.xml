@@ -140,4 +140,7 @@
     <string name="dock_browser">Browser</string>
     <string name="dock_space">Space</string>
     <string name="dock_lab">Lab</string>
+    <string name="lab_graphics">Graphical display</string>
+    <string name="lab_tab_screen">Screen</string>
+    <string name="lab_tab_terminal">Terminal</string>
 </resources>

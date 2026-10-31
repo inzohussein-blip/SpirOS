@@ -24,7 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +39,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +62,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LabScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -69,12 +74,21 @@ fun LabScreen(onBack: () -> Unit) {
     var download by remember { mutableStateOf<Float?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var input by remember { mutableStateOf("") }
+    var graphics by remember { mutableStateOf(true) }
+    var showScreen by remember { mutableStateOf(true) }
+    val screen by LabSession.screen.collectAsState()
 
     val running by LabSession.running.collectAsState()
     val console by LabSession.console.collectAsState()
     val bootSeconds by LabSession.bootSeconds.collectAsState()
     val version by produceState<String?>(null) {
         value = if (runner.isBundled) withContext(Dispatchers.IO) { runner.version() } else null
+    }
+
+    fun submit() {
+        val client = screen
+        if (client != null && showScreen) client.type(input + "\n") else LabSession.send(input)
+        input = ""
     }
 
     fun boot() {
@@ -84,9 +98,20 @@ fun LabScreen(onBack: () -> Unit) {
                 download = 0f
                 val files = AlpineGuest.ensure(context) { p -> download = p }
                 download = null
+                val vnc = java.io.File(context.cacheDir, "lab.vnc").apply { delete() }.path
+                val display = if (graphics) {
+                    listOf(
+                        "-device", "virtio-gpu-device",
+                        "-device", "virtio-keyboard-device",
+                        "-device", "virtio-tablet-device",
+                        "-vnc", "unix:$vnc",
+                    )
+                } else {
+                    emptyList()
+                }
                 LabSession.start(
                     runner,
-                    listOf(
+                    display + listOf(
                         "-M", "virt,gic-version=3",
                         "-cpu", "max",
                         "-smp", "${cores.roundToInt()}",
@@ -98,11 +123,12 @@ fun LabScreen(onBack: () -> Unit) {
                         "-monitor", "none",
                         "-kernel", files.kernel.path,
                         "-initrd", files.initrd.path,
-                        "-append", AlpineGuest.kernelArgs(),
+                        "-append", (if (graphics) "console=tty0 " else "") + AlpineGuest.kernelArgs(),
                         "-netdev", "user,id=net0",
                         "-device", "virtio-net-device,netdev=net0",
                         "-device", "virtio-rng-device",
                     ),
+                    vncSocket = if (graphics) vnc else null,
                 )
             } catch (e: Exception) {
                 download = null
@@ -149,6 +175,10 @@ fun LabScreen(onBack: () -> Unit) {
                 Slider(value = cores, onValueChange = { cores = it }, valueRange = 1f..maxCores.toFloat(), steps = (maxCores - 2).coerceAtLeast(0))
                 Text(stringResource(R.string.lab_ram, ramMb.roundToInt()))
                 Slider(value = ramMb, onValueChange = { ramMb = it }, valueRange = 256f..2048f, steps = 6)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.lab_graphics), modifier = Modifier.weight(1f))
+                    Switch(checked = graphics, onCheckedChange = { graphics = it })
+                }
                 Button(
                     onClick = { boot() },
                     enabled = runner.isBundled && download == null,
@@ -165,7 +195,18 @@ fun LabScreen(onBack: () -> Unit) {
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Console(console, Modifier.weight(1f))
+            val client = screen
+            if (running && client != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = showScreen, onClick = { showScreen = true }, label = { Text(stringResource(R.string.lab_tab_screen)) })
+                    FilterChip(selected = !showScreen, onClick = { showScreen = false }, label = { Text(stringResource(R.string.lab_tab_terminal)) })
+                }
+            }
+            if (running && client != null && showScreen) {
+                VmScreen(client, Modifier.weight(1f))
+            } else {
+                Console(console, Modifier.weight(1f))
+            }
 
             if (running) {
                 Row {
@@ -179,11 +220,11 @@ fun LabScreen(onBack: () -> Unit) {
                             capitalization = KeyboardCapitalization.None,
                             imeAction = ImeAction.Send,
                         ),
-                        keyboardActions = KeyboardActions(onSend = { LabSession.send(input); input = "" }),
+                        keyboardActions = KeyboardActions(onSend = { submit() }),
                         textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = { LabSession.send(input); input = "" }) {
+                    IconButton(onClick = { submit() }) {
                         Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = stringResource(R.string.lab_send))
                     }
                 }

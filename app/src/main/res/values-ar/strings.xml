@@ -140,4 +140,7 @@
     <string name="dock_browser">المتصفح</string>
     <string name="dock_space">المساحة</string>
     <string name="dock_lab">المختبر</string>
+    <string name="lab_graphics">العرض الرسومي</string>
+    <string name="lab_tab_screen">الشاشة</string>
+    <string name="lab_tab_terminal">الطرفية</string>
 </resources>

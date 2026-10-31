@@ -22,12 +22,16 @@ object LabSession {
     private val _running = MutableStateFlow(false)
     val running: StateFlow<Boolean> = _running.asStateFlow()
 
+    private val _screen = MutableStateFlow<VncClient?>(null)
+    /** The guest's graphical display, when the VM was started with one. */
+    val screen: StateFlow<VncClient?> = _screen.asStateFlow()
+
     /** Seconds from start until the guest showed a shell or login prompt. */
     private val _bootSeconds = MutableStateFlow<Double?>(null)
     val bootSeconds: StateFlow<Double?> = _bootSeconds.asStateFlow()
 
     @Synchronized
-    fun start(runner: QemuRunner, args: List<String>) {
+    fun start(runner: QemuRunner, args: List<String>, vncSocket: String? = null) {
         stop()
         _console.value = emptyList()
         _bootSeconds.value = null
@@ -36,6 +40,7 @@ object LabSession {
         process = p
         _running.value = true
         thread(name = "qemu-console", isDaemon = true) { pump(p) }
+        if (vncSocket != null) _screen.value = VncClient(vncSocket).also { it.start() }
     }
 
     fun send(line: String) {
@@ -50,6 +55,8 @@ object LabSession {
 
     @Synchronized
     fun stop() {
+        _screen.value?.close()
+        _screen.value = null
         process?.let { p ->
             p.destroy()
             thread(isDaemon = true) {
