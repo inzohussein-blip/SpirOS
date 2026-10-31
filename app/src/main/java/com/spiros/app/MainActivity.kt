@@ -1,5 +1,6 @@
 package com.spiros.app
 
+import android.app.ActivityManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -9,6 +10,7 @@ import com.spiros.app.engine.LabSession
 import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
 import com.spiros.app.ui.AppRoot
+import com.spiros.app.ui.Disguise
 import com.spiros.app.ui.theme.SpirTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,6 +22,10 @@ class MainActivity : ComponentActivity() {
         // No screenshots, screen recording, or previews in the recents screen.
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
+        if (Disguise.isEnabled(this)) {
+            // The recents screen shows the task label; keep the disguise there too.
+            setTaskDescription(ActivityManager.TaskDescription.Builder().setLabel(getString(R.string.disguise_label)).build())
+        }
         vault.onDestroyed = { runOnUiThread(::destroySpace) }
         setContent {
             SpirTheme {

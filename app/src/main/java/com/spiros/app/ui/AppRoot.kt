@@ -7,9 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import com.spiros.app.ui.browser.BrowserScreen
 import com.spiros.app.ui.compat.CompatScreen
 import com.spiros.app.ui.home.HomeScreen
+import com.spiros.app.ui.lock.CalculatorScreen
 import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
@@ -39,7 +41,7 @@ fun AppRoot(vault: Vault) {
     val status by vault.status.collectAsState()
     when (status) {
         Vault.Status.NEW -> SetupScreen(vault)
-        Vault.Status.LOCKED -> LockScreen(vault)
+        Vault.Status.LOCKED -> if (Disguise.isEnabled(LocalContext.current)) CalculatorScreen(vault) else LockScreen(vault)
         Vault.Status.UNLOCKED -> Unlocked(vault)
     }
 }

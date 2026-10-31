@@ -2,4 +2,5 @@
 <resources>
     <color name="spir_night">#FF0B0F1A</color>
     <color name="spir_accent">#FF7C5CFF</color>
+    <color name="calc_background">#FF2C2D31</color>
 </resources>

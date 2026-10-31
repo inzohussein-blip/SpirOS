@@ -131,4 +131,13 @@
     <string name="browser_downloading">Downloading %1$s into the vault…</string>
     <string name="browser_saved_to_vault">%1$s was encrypted into the vault</string>
     <string name="browser_download_failed">Download failed: %1$s</string>
+    <string name="disguise_label">Calculator</string>
+    <string name="settings_disguise">Disguise as calculator</string>
+    <string name="settings_disguise_desc">The SpirOS icon becomes a working calculator. Type your PIN and press = to open it. The icon may take a moment to change.</string>
+    <string name="home_search">Search apps in the space</string>
+    <string name="home_no_space">Your isolated space is not set up yet. Create it to see its apps here.</string>
+    <string name="home_space_empty">The space has no apps yet. Tap here to add some.</string>
+    <string name="dock_browser">Browser</string>
+    <string name="dock_space">Space</string>
+    <string name="dock_lab">Lab</string>
 </resources>

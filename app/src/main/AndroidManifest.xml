@@ -42,6 +42,21 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Disguise mode: a working calculator icon replaces the SpirOS icon. -->
+        <activity-alias
+            android:name=".Calculator"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_calculator"
+            android:label="@string/disguise_label"
+            android:roundIcon="@mipmap/ic_calculator"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- ===== Isolated space (Work Profile, SpirOS as Profile Owner) ===== -->
 
         <receiver

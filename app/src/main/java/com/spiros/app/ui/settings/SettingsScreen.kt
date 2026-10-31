@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import com.spiros.app.R
+import com.spiros.app.ui.Disguise
 import com.spiros.app.ui.SpirTopBar
 import com.spiros.app.ui.lock.PinEntry
 import com.spiros.app.vault.BiometricGate
@@ -44,6 +45,7 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
     var panicError by remember { mutableStateOf<String?>(null) }
     var panicBusy by remember { mutableStateOf(false) }
     var confirmWipe by remember { mutableStateOf(false) }
+    var disguised by remember { mutableStateOf(Disguise.isEnabled(context)) }
     val bioTitle = stringResource(R.string.biometric_enable_title)
     val cancel = stringResource(R.string.cancel)
 
@@ -122,6 +124,18 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                     } else {
                         TextButton(onClick = { settingPanic = true }) { Text(stringResource(R.string.set)) }
                     }
+                },
+                colors = itemColors,
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_disguise)) },
+                supportingContent = { Text(stringResource(R.string.settings_disguise_desc)) },
+                trailingContent = {
+                    Switch(checked = disguised, onCheckedChange = { on ->
+                        Disguise.setEnabled(context, on)
+                        disguised = on
+                    })
                 },
                 colors = itemColors,
             )

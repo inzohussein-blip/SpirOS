@@ -131,4 +131,13 @@
     <string name="browser_downloading">جارٍ تنزيل %1$s إلى الخزنة…</string>
     <string name="browser_saved_to_vault">تم تشفير %1$s في الخزنة</string>
     <string name="browser_download_failed">فشل التنزيل: %1$s</string>
+    <string name="disguise_label">الآلة الحاسبة</string>
+    <string name="settings_disguise">التمويه كآلة حاسبة</string>
+    <string name="settings_disguise_desc">تتحول أيقونة SpirOS إلى آلة حاسبة تعمل فعلًا. اكتب رمزك السري ثم اضغط = لفتحه. قد يتأخر تغيّر الأيقونة قليلًا.</string>
+    <string name="home_search">ابحث في تطبيقات المساحة</string>
+    <string name="home_no_space">لم تُنشأ مساحتك المعزولة بعد. أنشئها لتظهر تطبيقاتها هنا.</string>
+    <string name="home_space_empty">لا توجد تطبيقات في المساحة بعد. اضغط هنا لإضافتها.</string>
+    <string name="dock_browser">المتصفح</string>
+    <string name="dock_space">المساحة</string>
+    <string name="dock_lab">المختبر</string>
 </resources>
