@@ -1,0 +1,54 @@
+name: Linux rootfs
+
+# Builds the Debian + Xfce root filesystem used by the SpirOS Linux desktop and
+# publishes it to the "linux-rootfs" release, where the app downloads it from.
+on:
+  push:
+    paths:
+      - "linux/**"
+      - ".github/workflows/linux-rootfs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure the linux-rootfs release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view linux-rootfs >/dev/null 2>&1 || gh release create linux-rootfs \
+            --prerelease --target "${{ github.sha }}" \
+            --title "SpirOS Linux – Debian + Xfce" \
+            --notes "نظام Debian مع واجهة Xfce يُنزَّل تلقائيًا من داخل SpirOS (الوضع السريع)."
+
+  build:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+          - arch: amd64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build rootfs (${{ matrix.arch }})
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends debootstrap xz-utils
+          sudo sh linux/build-rootfs.sh ${{ matrix.arch }} "$PWD/debian-xfce-${{ matrix.arch }}.tar.xz"
+          sha256sum debian-xfce-${{ matrix.arch }}.tar.xz | tee debian-xfce-${{ matrix.arch }}.tar.xz.sha256
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload linux-rootfs --clobber \
+            debian-xfce-${{ matrix.arch }}.tar.xz debian-xfce-${{ matrix.arch }}.tar.xz.sha256

@@ -1,0 +1,26 @@
+#!/bin/sh
+# Starts the SpirOS Linux desktop: an Xvnc server on a private Unix socket (no TCP
+# port) and an Xfce session. SpirOS's built-in viewer connects to the socket.
+#   SPIROS_GEOMETRY  screen size, e.g. 1280x720
+#   SPIROS_DPI       font DPI (larger = bigger UI for touch)
+export DISPLAY=:1
+export HOME=/root
+export USER=root
+export LANG=C.UTF-8
+export XDG_RUNTIME_DIR=/tmp/runtime-root
+export NO_AT_BRIDGE=1
+mkdir -p "$XDG_RUNTIME_DIR" /tmp/.X11-unix
+chmod 700 "$XDG_RUNTIME_DIR"
+chmod 1777 /tmp/.X11-unix
+rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 /tmp/spiros-vnc
+
+Xvnc :1 \
+    -geometry "${SPIROS_GEOMETRY:-1280x720}" -depth 24 -dpi "${SPIROS_DPI:-120}" \
+    -rfbport -1 -rfbunixpath /tmp/spiros-vnc -rfbunixmode 0600 \
+    -SecurityTypes None -AlwaysShared -nolisten tcp &
+
+# Wait for the X server before starting the session.
+i=0
+while [ ! -S /tmp/.X11-unix/X1 ] && [ $i -lt 50 ]; do sleep 0.2; i=$((i + 1)); done
+
+exec dbus-launch --exit-with-session xfce4-session
