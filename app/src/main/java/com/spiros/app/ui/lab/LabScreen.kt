@@ -29,6 +29,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -52,9 +53,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.CompositionLocalProvider
+import android.content.Intent
 import com.spiros.app.R
+import com.spiros.app.vault.Vault
 import com.spiros.app.engine.AlpineGuest
 import com.spiros.app.engine.LabSession
+import com.spiros.app.engine.LabVm
 import com.spiros.app.engine.QemuRunner
 import com.spiros.app.ui.SpirTopBar
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +68,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LabScreen(onBack: () -> Unit) {
+fun LabScreen(vault: Vault, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val runner = remember { QemuRunner(context) }
@@ -98,37 +102,13 @@ fun LabScreen(onBack: () -> Unit) {
                 download = 0f
                 val files = AlpineGuest.ensure(context) { p -> download = p }
                 download = null
-                val vnc = java.io.File(context.cacheDir, "lab.vnc").apply { delete() }.path
-                val display = if (graphics) {
-                    listOf(
-                        "-device", "virtio-gpu-device",
-                        "-device", "virtio-keyboard-device",
-                        "-device", "virtio-tablet-device",
-                        "-vnc", "unix:$vnc",
-                    )
-                } else {
-                    emptyList()
+                val args = withContext(Dispatchers.IO) {
+                    LabVm.args(context, files, cores.roundToInt(), ramMb.roundToInt(), graphics)
                 }
                 LabSession.start(
                     runner,
-                    display + listOf(
-                        "-M", "virt,gic-version=3",
-                        "-cpu", "max",
-                        "-smp", "${cores.roundToInt()}",
-                        "-m", "${ramMb.roundToInt()}",
-                        "-accel", "tcg,thread=multi",
-                        "-display", "none",
-                        "-nodefaults",
-                        "-serial", "stdio",
-                        "-monitor", "none",
-                        "-kernel", files.kernel.path,
-                        "-initrd", files.initrd.path,
-                        "-append", (if (graphics) "console=tty0 " else "") + AlpineGuest.kernelArgs(),
-                        "-netdev", "user,id=net0",
-                        "-device", "virtio-net-device,netdev=net0",
-                        "-device", "virtio-rng-device",
-                    ),
-                    vncSocket = if (graphics) vnc else null,
+                    args,
+                    vncSocket = if (graphics) LabVm.vncSocket(context).path else null,
                 )
             } catch (e: Exception) {
                 download = null
@@ -194,6 +174,15 @@ fun LabScreen(onBack: () -> Unit) {
                 LinearProgressIndicator(progress = { it }, modifier = Modifier.fillMaxWidth())
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            if (console.isNotEmpty()) {
+                TextButton(onClick = {
+                    // Screenshots are blocked in SpirOS, so offer the log as text.
+                    val text = (listOfNotNull(version, error) + console.takeLast(300)).joinToString("\n")
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                    vault.holdLock = true
+                    context.startActivity(Intent.createChooser(send, null))
+                }) { Text(stringResource(R.string.lab_share_log)) }
+            }
 
             val client = screen
             if (running && client != null) {

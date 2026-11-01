@@ -158,4 +158,5 @@
     <string name="other_open_settings">Open system Settings</string>
     <string name="other_open_owner">Open %1$s (remove it from there)</string>
     <string name="other_pause">Pause this profile</string>
+    <string name="lab_share_log">Share log</string>
 </resources>

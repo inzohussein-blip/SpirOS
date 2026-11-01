@@ -22,24 +22,36 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Track B1: bundle QEMU (prebuilt for Android by Termux, GPL). If this step fails
-      # the APK still builds; the Lab screen then reports that the engine is missing.
+      # Track B1: bundle QEMU (prebuilt for Android by Termux, GPL), plus its keymaps.
+      # If this step fails the APK still builds; the Lab screen then reports it.
       - name: Bundle QEMU engine
         continue-on-error: true
         run: |
           sudo apt-get install -y --no-install-recommends patchelf
-          python3 tools/fetch_qemu.py
+          python3 tools/fetch_qemu.py --arch aarch64 --out app/src/main/jniLibs/arm64-v8a --data-out app/src/main/assets/qemu
+          python3 tools/fetch_qemu.py --arch x86_64 --out app/src/main/jniLibs/x86_64
 
       - name: Check API levels (lint NewApi)
         run: ./gradlew --no-daemon lintDebug
 
-      - name: Build debug APK
+      - name: Build debug APKs
         run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name APKs
+        run: |
+          cp app/build/outputs/apk/debug/app-arm64-v8a-debug.apk SpirOS.apk
+          cp app/build/outputs/apk/debug/app-x86_64-debug.apk SpirOS-x86_64.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: SpirOS-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: SpirOS.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpirOS-x86_64-apk
+          path: SpirOS-x86_64.apk
           if-no-files-found: error
 
       # A direct .apk link that opens on a phone (Actions artifacts are always zipped):
@@ -49,10 +61,54 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk SpirOS.apk
           gh release delete dev-latest --yes --cleanup-tag || true
           gh release create dev-latest SpirOS.apk \
             --prerelease \
             --target "${{ github.sha }}" \
             --title "SpirOS – آخر نسخة تجريبية" \
             --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. للتثبيت: نزّل SpirOS.apk وافتحه."
+
+  # Fast check of the guest itself (Alpine URLs, kernel arguments, devices) with the
+  # distribution's QEMU, using the same script as the in-app definition.
+  lab-guest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boot the Lab guest with desktop QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends qemu-system-arm
+          mkdir -p work/qemu-data
+          BASE=https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/aarch64/netboot
+          curl -fSL -o work/vmlinuz-virt "$BASE/vmlinuz-virt"
+          curl -fSL -o work/initramfs-virt "$BASE/initramfs-virt"
+          sh tools/lab_boot.sh qemu-system-aarch64 "" "$PWD/work" 600
+
+  # End-to-end: the real APK on an Android 14 emulator runs the in-app self-test
+  # (bundled QEMU from nativeLibraryDir, guest download, VNC display, boot).
+  lab-device:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: SpirOS-x86_64-apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Lab self-test on Android 14 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash tools/lab_device_test.sh SpirOS-x86_64.apk

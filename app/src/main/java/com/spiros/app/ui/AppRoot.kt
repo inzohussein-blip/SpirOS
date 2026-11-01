@@ -71,7 +71,7 @@ private fun Unlocked(vault: Vault) {
         Screen.VaultList -> VaultScreen(vault, onBack = { screen = Screen.Home }, onOpen = { screen = Screen.Viewer(it) })
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
         Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
-        Screen.Lab -> LabScreen(onBack = { screen = Screen.Home })
+        Screen.Lab -> LabScreen(vault, onBack = { screen = Screen.Home })
         Screen.Shield -> ShieldScreen(vault, onBack = { screen = Screen.Home })
         Screen.Browser -> BrowserScreen(vault, onBack = { screen = Screen.Home })
         Screen.Settings -> SettingsScreen(vault, onBack = { screen = Screen.Home }, onOpenCompat = { screen = Screen.Compat })

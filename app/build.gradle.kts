@@ -64,6 +64,16 @@ android {
     buildFeatures {
         compose = true
     }
+    // One APK per ABI: phones get only arm64 (QEMU is ~40 MB per ABI); the x86_64 APK
+    // exists for the Lab self-test on the CI emulator.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "x86_64")
+            isUniversalApk = false
+        }
+    }
     lint {
         // CI runs lintDebug only to catch calls to APIs newer than minSdk.
         checkOnly += "NewApi"

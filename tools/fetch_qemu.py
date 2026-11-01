@@ -40,6 +40,9 @@ USER_AGENT = "SpirOS-build/1.0 (+https://github.com/inzohussein-blip/SpirOS)"
 ROOT_PACKAGE = "qemu-system-aarch64-headless"
 PREFIX = "data/data/com.termux/files/usr/"
 EXECUTABLE = "bin/qemu-system-aarch64"
+# Data QEMU reads at runtime (passed with -L). The VNC display refuses to start
+# without a keyboard layout, so the keymaps are required.
+DATA_DIRS = ("share/qemu/keymaps/",)
 OUTPUT_EXECUTABLE = "libqemu-system-aarch64.so"
 # Provided by Android itself; never bundled.
 SYSTEM_LIBS = {"libc.so", "libm.so", "libdl.so", "liblog.so", "libandroid.so", "libz.so"}
@@ -112,7 +115,7 @@ def deb_members(data: bytes):
 
 def extract(deb: bytes, dest: str):
     """Extract only regular files we need (libraries and the QEMU binary); never links."""
-    wanted = (PREFIX + "lib/", PREFIX + EXECUTABLE)
+    wanted = (PREFIX + "lib/", PREFIX + EXECUTABLE) + tuple(PREFIX + d for d in DATA_DIRS)
     for name, payload in deb_members(deb):
         if not name.startswith("data.tar"):
             continue
@@ -150,6 +153,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--arch", default="aarch64")
     parser.add_argument("--out", default="app/src/main/jniLibs/arm64-v8a")
+    parser.add_argument("--data-out", help="also copy QEMU data files (keymaps) here, e.g. app/src/main/assets/qemu")
     args = parser.parse_args()
 
     repo, text = pick_mirror(args.arch)
@@ -218,6 +222,17 @@ def main():
             install(libs[soname], rename[soname], soname)
             print(f"  = {rename[soname]}")
         install(executable, OUTPUT_EXECUTABLE, None)
+
+        if args.data_out:
+            if os.path.isdir(args.data_out):
+                shutil.rmtree(args.data_out)
+            for d in DATA_DIRS:
+                src = os.path.join(usr, d)
+                if not os.path.isdir(src):
+                    sys.exit(f"QEMU data directory missing from packages: {d}")
+                shutil.copytree(src, os.path.join(args.data_out, os.path.basename(d.rstrip("/"))))
+            count = sum(len(files) for _, _, files in os.walk(args.data_out))
+            print(f"Copied {count} data files to {args.data_out}")
 
     total = sum(os.path.getsize(os.path.join(args.out, f)) for f in os.listdir(args.out))
     print(f"Wrote {len(os.listdir(args.out))} files, {total / 1e6:.1f} MB to {args.out}")

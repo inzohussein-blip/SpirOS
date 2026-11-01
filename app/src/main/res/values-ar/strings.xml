@@ -158,4 +158,5 @@
     <string name="other_open_settings">فتح إعدادات النظام</string>
     <string name="other_open_owner">فتح %1$s (واحذفه من داخله)</string>
     <string name="other_pause">إيقاف هذا الملف مؤقتًا</string>
+    <string name="lab_share_log">مشاركة السجل</string>
 </resources>
