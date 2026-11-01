@@ -15,10 +15,6 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        ndk {
-            // arm64 for real phones, x86_64 for emulators.
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
