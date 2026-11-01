@@ -5,6 +5,7 @@ tint2
 rofi
 feh
 wmctrl
+python3-xdg
 xdotool
 # Essential apps
 pcmanfm
