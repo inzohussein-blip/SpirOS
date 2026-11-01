@@ -12,9 +12,8 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import com.spiros.app.R
-import com.spiros.app.ai.AiServer
 import com.spiros.app.engine.LabSession
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
 import com.spiros.app.perf.BackgroundFreezer
 import kotlin.concurrent.thread
 
@@ -29,11 +28,16 @@ class SessionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_FREEZE -> thread { if (BackgroundFreezer.frozen) BackgroundFreezer.resume() else BackgroundFreezer.freeze(); post() }
+            ACTION_FREEZE -> thread {
+                val freeze = !(BackgroundFreezer.frozen || Engine.status.value.frozen)
+                if (freeze) BackgroundFreezer.freeze() else BackgroundFreezer.resume()
+                Engine.send(this) { if (freeze) it.freeze() else it.resume() }
+                Thread.sleep(300)
+                post()
+            }
             ACTION_STOP_ALL -> {
                 BackgroundFreezer.resume()
-                LinuxSession.stop()
-                AiServer.stop()
+                Engine.stopAll(this)
                 LabSession.stop()
                 stopSelf()
                 return START_NOT_STICKY
@@ -56,11 +60,11 @@ class SessionService : Service() {
             },
         )
         val running = buildList {
-            if (LinuxSession.running.value) add(getString(R.string.dock_linux))
-            if (AiServer.state.value == AiServer.State.READY || AiServer.state.value == AiServer.State.LOADING) add(getString(R.string.dock_ai))
+            if (Engine.status.value.desktopRunning) add(getString(R.string.dock_linux))
+            if (Engine.status.value.aiActive) add(getString(R.string.dock_ai))
             if (LabSession.running.value) add(getString(R.string.dock_lab))
         }.joinToString(" · ")
-        val frozen = BackgroundFreezer.frozen
+        val frozen = BackgroundFreezer.frozen || Engine.status.value.frozen
         val notification = Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_tile_shield)
             .setContentTitle(getString(if (frozen) R.string.notif_frozen else R.string.notif_running))
@@ -103,8 +107,8 @@ class SessionService : Service() {
 
         /** Called whenever a session starts or stops; shows or removes the notification. */
         fun sync(context: Context) {
-            val anyRunning = LinuxSession.running.value || LabSession.running.value ||
-                AiServer.state.value == AiServer.State.READY || AiServer.state.value == AiServer.State.LOADING
+            val engine = Engine.status.value
+            val anyRunning = engine.desktopRunning || engine.aiActive || LabSession.running.value
             val intent = Intent(context, SessionService::class.java)
             if (anyRunning) {
                 runCatching { context.startForegroundService(intent) }

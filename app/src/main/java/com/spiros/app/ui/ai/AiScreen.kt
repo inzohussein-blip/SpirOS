@@ -48,12 +48,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.spiros.app.BuildConfig
 import com.spiros.app.R
 import com.spiros.app.ai.AiChat
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
-import com.spiros.app.linux.LinuxDistro
+import com.spiros.app.remote.Engine
+import androidx.compose.runtime.produceState
 import com.spiros.app.ui.SpirTopBar
 import kotlinx.coroutines.launch
 
@@ -69,9 +69,10 @@ private val PRESETS = listOf(
 fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val state by AiServer.state.collectAsState()
+    val status by Engine.status.collectAsState()
+    val state = status.aiState
     val ram = remember { AiModels.phoneRamGb(context) }
-    var selected by remember { mutableStateOf(AiServer.model ?: AiModels.recommended(context)) }
+    var selected by remember { mutableStateOf(AiModels.byFileName(status.aiModel) ?: AiModels.recommended(context)) }
     var downloadProgress by remember { mutableStateOf<Float?>(null) }
     var refresh by remember { mutableIntStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -79,6 +80,13 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     val messages = remember { mutableStateListOf<AiChat.Message>() }
     var input by remember { mutableStateOf("") }
     var answering by remember { mutableStateOf(false) }
+    val downloaded by produceState(emptyList<String>(), refresh, status.connected) {
+        value = Engine.parseStrings(Engine.call(context) { it.downloadedModels() })
+    }
+    var aiLog by remember { mutableStateOf(emptyList<String>()) }
+    LaunchedEffect(state) {
+        if (state == AiServer.State.FAILED) aiLog = Engine.call(context) { it.aiLog() }.orEmpty()
+    }
 
     Scaffold(
         topBar = {
@@ -87,7 +95,7 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                     IconButton(onClick = { messages.clear() }) {
                         Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.ai_clear))
                     }
-                    IconButton(onClick = AiServer::stop) {
+                    IconButton(onClick = { Engine.send(context) { it.stopAi() } }) {
                         Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.ai_stop))
                     }
                 }
@@ -97,7 +105,7 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().imePadding()) {
             when {
-                BuildConfig.FLAVOR != "speed" || !LinuxDistro.isInstalled(context) -> Column(
+                !status.connected || !status.linuxInstalled -> Column(
                     Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -123,7 +131,7 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                         scope.launch {
                             val reply = StringBuilder()
                             runCatching {
-                                AiChat.complete(PRESETS[preset].second, history) { piece ->
+                                AiChat.complete(context, PRESETS[preset].second, history) { piece ->
                                     reply.append(piece)
                                     val text = reply.toString()
                                     scope.launch { messages[messages.lastIndex] = AiChat.Message("assistant", text) }
@@ -149,7 +157,7 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                     )
                     refresh // re-read download state
                     AiModels.catalog.forEach { model ->
-                        val downloaded = AiModels.isDownloaded(context, model)
+                        val isDownloaded = model.fileName in downloaded
                         Card(Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
@@ -164,7 +172,7 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                                 FilterChip(
                                     selected = selected.id == model.id,
                                     onClick = { selected = model },
-                                    label = { Text(stringResource(if (downloaded) R.string.ai_ready else R.string.ai_not_downloaded)) },
+                                    label = { Text(stringResource(if (isDownloaded) R.string.ai_ready else R.string.ai_not_downloaded)) },
                                 )
                             }
                         }
@@ -180,26 +188,36 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                             CircularProgressIndicator(Modifier.padding(end = 12.dp))
                             Text(stringResource(R.string.ai_loading))
                         }
-                        !AiModels.isDownloaded(context, selected) -> Button(onClick = {
+                        selected.fileName !in downloaded -> Button(onClick = {
                             error = null
                             downloadProgress = 0f
+                            val model = selected
                             scope.launch {
-                                runCatching { AiModels.download(context, selected) { downloadProgress = it } }
-                                    .onFailure { error = it.message }
-                                downloadProgress = null
-                                refresh++
+                                Engine.call(context) {
+                                    it.downloadModel(model.url, model.fileName, Engine.callback(
+                                        onProgress = { _, f -> downloadProgress = f },
+                                        onDone = { e ->
+                                            error = e
+                                            downloadProgress = null
+                                            refresh++
+                                        },
+                                    ))
+                                } ?: run { downloadProgress = null }
                             }
                         }) { Text(stringResource(R.string.ai_download, selected.name)) }
                         else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { AiServer.start(context, selected) }) { Text(stringResource(R.string.ai_start)) }
-                            OutlinedButton(onClick = { AiModels.delete(context, selected); refresh++ }) {
+                            Button(onClick = { Engine.startAi(context, selected) }) { Text(stringResource(R.string.ai_start)) }
+                            OutlinedButton(onClick = {
+                                val name = selected.fileName
+                                scope.launch { Engine.call(context) { it.deleteModel(name) }; refresh++ }
+                            }) {
                                 Text(stringResource(R.string.delete))
                             }
                         }
                     }
                     if (state == AiServer.State.FAILED) {
                         Text(stringResource(R.string.ai_failed), color = MaterialTheme.colorScheme.error)
-                        Text(AiServer.log.value.takeLast(15).joinToString("\n"), style = MaterialTheme.typography.labelSmall)
+                        Text(aiLog.takeLast(15).joinToString("\n"), style = MaterialTheme.typography.labelSmall)
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }

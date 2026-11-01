@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.spiros.app.R
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -133,7 +133,7 @@ private fun Unlocked(vault: Vault) {
         }
     }
 
-    val linuxFullScreen by LinuxSession.running.collectAsState()
+    val linuxFullScreen by Engine.desktopRunning.collectAsState()
     val tabs = listOf(
         Triple(Screen.Home, Icons.Rounded.Home, R.string.tab_home),
         Triple(Screen.VaultList, Icons.Rounded.Lock, R.string.section_vault),

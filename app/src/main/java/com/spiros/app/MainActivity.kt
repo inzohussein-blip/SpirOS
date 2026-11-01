@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.spiros.app.engine.LabSession
 import com.spiros.app.perf.BackgroundFreezer
+import com.spiros.app.remote.Engine
 import com.spiros.app.security.FlipToPanic
 import com.spiros.app.perf.Performance
 import com.spiros.app.space.SpaceManager
@@ -69,6 +70,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         // Linux programs were frozen while SpirOS was in the background: wake them.
         Thread { BackgroundFreezer.resume() }.start()
+        Engine.send(this) { it.resume() }
     }
 
     override fun onResume() {
@@ -98,6 +100,7 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         if (!isChangingConfigurations && !vault.holdLock && Performance.freezeInBackground(this)) {
             Thread { BackgroundFreezer.freeze() }.start()
+            Engine.send(this) { it.freeze() }
         }
         // Leaving SpirOS locks it, except while a system screen we opened is in front.
         // With the PIN lock turned off in Settings the session simply stays open.

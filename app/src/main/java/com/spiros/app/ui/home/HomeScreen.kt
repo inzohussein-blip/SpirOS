@@ -81,7 +81,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.spiros.app.R
 import com.spiros.app.ai.AiServer
 import com.spiros.app.security.Panic
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
 import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.shield.ShieldVpnService
 import com.spiros.app.space.SpaceManager
@@ -137,8 +137,8 @@ fun HomeScreen(
         }
     }
     val shieldPhone by ShieldVpnService.running.collectAsState()
-    val linuxRunning by LinuxSession.running.collectAsState()
-    val aiState by AiServer.state.collectAsState()
+    val linuxRunning by Engine.desktopRunning.collectAsState()
+    val aiState by Engine.aiState.collectAsState()
     val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
 
     val tools = listOf(

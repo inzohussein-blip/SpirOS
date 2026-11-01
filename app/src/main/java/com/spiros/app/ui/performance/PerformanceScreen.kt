@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.spiros.app.BuildConfig
 import com.spiros.app.R
 import com.spiros.app.perf.Performance
 import com.spiros.app.shield.ShieldSettings
@@ -57,7 +56,6 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
     val space = remember { SpaceManager(context) }
     var refresh by remember { mutableIntStateOf(0) }
     val spaceUser by produceState<UserHandle?>(null, refresh) { value = withContext(Dispatchers.IO) { space.spaceUser() } }
-    val linux = BuildConfig.FLAVOR == "speed"
 
     var googleOff by remember { mutableStateOf(ShieldSettings.spaceGoogleOff(context)) }
     var light by remember { mutableStateOf(Performance.linuxLight(context)) }
@@ -128,9 +126,7 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
 
             // ---- Linux ----
             Section(stringResource(R.string.dock_linux)) {
-                if (!linux) {
-                    Text(stringResource(R.string.perf_linux_edition_only), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
+                run {
                     Toggle(stringResource(R.string.perf_light), stringResource(R.string.perf_light_desc), light) {
                         light = it
                         Performance.setLinuxLight(context, it)
@@ -178,9 +174,7 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
 
             // ---- AI ----
             Section(stringResource(R.string.dock_ai)) {
-                if (!linux) {
-                    Text(stringResource(R.string.perf_linux_edition_only), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
+                run {
                     Toggle(
                         stringResource(R.string.perf_fast_cores),
                         stringResource(R.string.perf_fast_cores_desc, fastCoreCount, Runtime.getRuntime().availableProcessors()),

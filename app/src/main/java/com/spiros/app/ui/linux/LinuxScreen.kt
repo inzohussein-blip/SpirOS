@@ -57,8 +57,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.spiros.app.BuildConfig
 import com.spiros.app.R
-import com.spiros.app.linux.LinuxDistro
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
+import com.spiros.app.remote.EngineInstaller
+import androidx.compose.material3.CircularProgressIndicator
+import kotlinx.coroutines.delay
 import com.spiros.app.security.Panic
 import com.spiros.app.perf.Performance
 import com.spiros.app.ui.SpirTopBar
@@ -71,20 +73,40 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
 
-private const val LINUX_EDITION_URL = "https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/SpirOS-Linux.apk"
-
-
-/** The SpirOS Linux desktop: Debian + Xfce with touch controls (speed edition). */
+/**
+ * The SpirOS Linux desktop: Debian + Xfce with touch controls. Linux itself runs in the
+ * SpirOS Engine (installed from here on first use); this screen only shows and drives it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinuxScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val running by LinuxSession.running.collectAsState()
-    val screen by LinuxSession.screen.collectAsState()
-    val log by LinuxSession.log.collectAsState()
-    var installed by remember { mutableStateOf(LinuxDistro.isInstalled(context)) }
-    var progress by remember { mutableStateOf<Pair<LinuxDistro.Stage, Float>?>(null) }
+    val status by Engine.status.collectAsState()
+    val running = status.desktopRunning
+    val installed = status.linuxInstalled
+    val screen by Engine.screen.collectAsState()
+    var log by remember { mutableStateOf(emptyList<String>()) }
+    var engineInstalled by remember { mutableStateOf(Engine.isInstalled(context)) }
+    val installState by EngineInstaller.state.collectAsState()
+    var progress by remember { mutableStateOf<Pair<String, Float>?>(null) }
+    // Connect to the engine (and notice when it has just been installed).
+    LaunchedEffect(installState) {
+        engineInstalled = Engine.isInstalled(context)
+        if (engineInstalled) Engine.connect(context)
+    }
+    // Back in SpirOS with the desktop still running: show it again.
+    LaunchedEffect(running) {
+        if (running) Engine.attachScreen(Performance.linuxFps(context))
+    }
+    // The desktop's log (boot screen, and the reason if it stops).
+    LaunchedEffect(status.connected, running) {
+        while (status.connected) {
+            Engine.call(context) { it.desktopLog() }?.let { log = it }
+            if (!running) break
+            delay(1500)
+        }
+    }
     var error by remember { mutableStateOf<String?>(null) }
     var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
     var confirmRemove by remember { mutableStateOf(false) }
@@ -127,7 +149,7 @@ fun LinuxScreen(onBack: () -> Unit) {
                     IconButton(onClick = { Panic.trigger(context) }) {
                         Icon(Icons.Rounded.Warning, contentDescription = stringResource(R.string.panic), tint = Color(0xFFFF6B6B))
                     }
-                    IconButton(onClick = LinuxSession::stop) {
+                    IconButton(onClick = { Engine.stopDesktop(context) }) {
                         Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.linux_stop), tint = Color(0xFFFF6B6B))
                     }
                 }
@@ -162,15 +184,18 @@ fun LinuxScreen(onBack: () -> Unit) {
             Text(stringResource(R.string.linux_intro), style = MaterialTheme.typography.bodyMedium)
 
             when {
-                BuildConfig.FLAVOR != "speed" -> Card(Modifier.fillMaxWidth()) {
+                !engineInstalled -> Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.linux_needs_edition))
-                        Button(onClick = {
-                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LINUX_EDITION_URL))) }
-                        }) { Text(stringResource(R.string.linux_get_edition)) }
+                        Text(stringResource(R.string.engine_needed), style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.engine_needed_desc), style = MaterialTheme.typography.bodySmall)
+                        EngineInstallButton(installState)
                     }
                 }
-                LinuxDistro.arch() == null || !LinuxSession.prootAvailable(context) ->
+                !status.connected -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.padding(end = 12.dp))
+                    Text(stringResource(R.string.engine_connecting))
+                }
+                status.arch.isEmpty() || !status.proot ->
                     Text(stringResource(R.string.linux_unsupported), color = MaterialTheme.colorScheme.error)
                 !installed -> Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -179,24 +204,27 @@ fun LinuxScreen(onBack: () -> Unit) {
                         if (p == null) {
                             Button(onClick = {
                                 error = null
+                                progress = "DOWNLOADING" to 0f
                                 scope.launch {
-                                    try {
-                                        LinuxDistro.install(context) { stage, f -> progress = stage to f }
-                                        installed = true
-                                    } catch (e: Exception) {
-                                        error = e.message ?: e.toString()
-                                    } finally {
-                                        progress = null
-                                    }
+                                    Engine.call(context) {
+                                        it.installLinux(Engine.callback(
+                                            onProgress = { stage, f -> progress = stage to f },
+                                            onDone = { e ->
+                                                error = e
+                                                progress = null
+                                                Engine.refresh()
+                                            },
+                                        ))
+                                    } ?: run { progress = null }
                                 }
                             }) { Text(stringResource(R.string.linux_install)) }
                         } else {
                             Text(
                                 stringResource(
                                     when (p.first) {
-                                        LinuxDistro.Stage.DOWNLOADING -> R.string.linux_stage_download
-                                        LinuxDistro.Stage.VERIFYING -> R.string.linux_stage_verify
-                                        LinuxDistro.Stage.EXTRACTING -> R.string.linux_stage_extract
+                                        "VERIFYING" -> R.string.linux_stage_verify
+                                        "EXTRACTING" -> R.string.linux_stage_extract
+                                        else -> R.string.linux_stage_download
                                     },
                                 ) + " ${(p.second * 100).toInt()}%",
                             )
@@ -223,7 +251,7 @@ fun LinuxScreen(onBack: () -> Unit) {
                             }
                         }
                         Button(
-                            onClick = { LinuxSession.start(context, resolution, dpi = 120) },
+                            onClick = { Engine.startDesktop(context, resolution) },
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text(stringResource(R.string.linux_start)) }
                         Text(
@@ -238,6 +266,14 @@ fun LinuxScreen(onBack: () -> Unit) {
                 }
             }
 
+            if (engineInstalled && status.connected && status.version < BuildConfig.VERSION_CODE) {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.engine_update_desc), style = MaterialTheme.typography.bodySmall)
+                        EngineInstallButton(installState, update = true)
+                    }
+                }
+            }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Text(
                 stringResource(R.string.linux_android_limits),
@@ -264,12 +300,47 @@ fun LinuxScreen(onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     confirmRemove = false
-                    LinuxSession.stop()
-                    LinuxDistro.remove(context)
-                    installed = false
+                    Engine.stopDesktop(context)
+                    Engine.send(context) { it.removeLinux() }
                 }) { Text(stringResource(R.string.linux_remove), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { OutlinedButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+/** Download, verify (checksum + SpirOS signature) and install the SpirOS Engine. */
+@Composable
+private fun EngineInstallButton(state: EngineInstaller.State, update: Boolean = false) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    when (state) {
+        is EngineInstaller.State.Downloading -> {
+            Text(stringResource(R.string.engine_downloading, (state.fraction * 100).toInt()))
+            LinearProgressIndicator(progress = { state.fraction }, modifier = Modifier.fillMaxWidth())
+        }
+        EngineInstaller.State.Verifying, EngineInstaller.State.Installing -> Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.padding(end = 12.dp))
+            Text(stringResource(R.string.engine_installing))
+        }
+        else -> {
+            if (state is EngineInstaller.State.Failed) {
+                Text(stringResource(R.string.engine_failed, state.message), color = MaterialTheme.colorScheme.error)
+            }
+            Button(onClick = {
+                if (!EngineInstaller.canInstall(context)) {
+                    runCatching { context.startActivity(EngineInstaller.allowInstallsIntent(context)) }
+                } else {
+                    scope.launch { EngineInstaller.install(context) }
+                }
+            }) { Text(stringResource(if (update) R.string.engine_update else R.string.engine_install)) }
+            if (!EngineInstaller.canInstall(context)) {
+                Text(
+                    stringResource(R.string.engine_allow_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }

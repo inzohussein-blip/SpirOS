@@ -23,22 +23,24 @@ android {
         }
     }
 
-    // Two editions from one codebase:
-    //  - secure: the main app, modern targetSdk with every Android hardening.
-    //  - speed:  "SpirOS Linux", adds the fast Linux desktop (proot). Running Linux
-    //    programs from app storage is only allowed for apps targeting Android 9
-    //    (API 28) or lower, like Termux, so this edition targets 28. It installs
-    //    side by side with the secure edition and keeps its own data.
+    // Two apps from one codebase:
+    //  - secure: SpirOS itself, modern targetSdk with every Android hardening. It holds
+    //    all secrets (vault, space, keys) and the whole UI.
+    //  - engine: "SpirOS Engine", a headless helper (no icon, no secrets) that runs the
+    //    Linux system (proot) and the private AI. Running programs from app storage is
+    //    only allowed for apps targeting API 28 or lower (like Termux), so only this
+    //    small helper targets 28. SpirOS installs it on demand and drives it over
+    //    Binder; both sides only talk to apps signed with the SpirOS key.
     flavorDimensions += "edition"
     productFlavors {
         create("secure") {
             dimension = "edition"
             isDefault = true
         }
-        create("speed") {
+        create("engine") {
             dimension = "edition"
-            applicationIdSuffix = ".speed"
-            versionNameSuffix = "-linux"
+            applicationIdSuffix = ".engine"
+            versionNameSuffix = "-engine"
             targetSdk = 28
         }
     }
@@ -84,6 +86,7 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
+        aidl = true
         buildConfig = true
         compose = true
     }

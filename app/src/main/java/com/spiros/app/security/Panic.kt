@@ -5,9 +5,8 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import com.spiros.app.SpirApp
-import com.spiros.app.ai.AiServer
 import com.spiros.app.engine.LabSession
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
 import com.spiros.app.ui.browser.burn
 
 /**
@@ -29,8 +28,7 @@ object Panic {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         }
-        LinuxSession.stop()
-        AiServer.stop()
+        Engine.stopAll(context)
         LabSession.stop()
         runCatching { burn(context.applicationContext, null) }
         SessionService.stop(context)

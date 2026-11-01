@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Only apps signed with the SpirOS key: SpirOS and the SpirOS Engine. -->
+    <permission
+        android:name="com.spiros.app.permission.ENGINE"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.spiros.app.permission.ENGINE" />
+
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Install the SpirOS Engine (Linux + AI helper) from SpirOS's own release. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Lab downloads and guest network, Shield list updates and DNS forwarding, private browser. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Fallback path when the space cannot uninstall an app silently. -->
@@ -13,6 +21,8 @@
 
     <!-- Package visibility: list launchable apps in the main profile and in the space. -->
     <queries>
+        <!-- The SpirOS Engine (Linux + private AI helper). -->
+        <package android:name="com.spiros.app.engine" />
         <!-- Recognise the admin app of an existing work profile. -->
         <package android:name="net.typeblog.shelter" />
         <package android:name="com.oasisfeng.island" />
@@ -148,6 +158,10 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".remote.EngineInstallReceiver"
+            android:exported="false" />
 
         <!-- ===== Shield: local DNS-only VPN ===== -->
         <service

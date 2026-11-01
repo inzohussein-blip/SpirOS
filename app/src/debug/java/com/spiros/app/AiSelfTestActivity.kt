@@ -7,15 +7,19 @@ import android.widget.TextView
 import com.spiros.app.ai.AiChat
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
-import com.spiros.app.linux.LinuxDistro
+import com.spiros.app.remote.Engine
+import com.spiros.app.remote.IEngine
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 /**
- * End-to-end test of the private AI (speed edition): Linux system, smallest model
- * download, llama.cpp server inside proot, and one streamed chat answer.
- * Result in no_backup/ai-selftest.log, ending with "RESULT PASS" or "RESULT FAIL".
+ * End-to-end test of the private AI through the SpirOS Engine: smallest model
+ * download into the engine's Linux system, llama.cpp server inside proot, and one
+ * streamed chat answer received by SpirOS (a different app) on 127.0.0.1 with the
+ * per-start key. Result in no_backup/ai-selftest.log, ending with "RESULT PASS" or "RESULT FAIL".
  */
 class AiSelfTestActivity : Activity() {
 
@@ -33,40 +37,59 @@ class AiSelfTestActivity : Activity() {
                 write("ERROR ${e.javaClass.simpleName}: ${e.message}")
                 false
             }
-            AiServer.log.value.takeLast(30).forEach { write("| $it") }
-            AiServer.stop()
+            engine { it.aiLog() }.orEmpty().takeLast(30).forEach { write("| $it") }
+            engine { it.stopAi() }
             write(if (ok) "RESULT PASS" else "RESULT FAIL")
         }
     }
 
-    private fun runTest(): Boolean = runBlocking {
-        val context = this@AiSelfTestActivity
+    private fun <T> engine(block: (IEngine) -> T): T? = runBlocking { Engine.call(this@AiSelfTestActivity, block) }
+
+    private fun await(start: (com.spiros.app.remote.IEngineCallback) -> Unit): String? {
+        val done = CountDownLatch(1)
+        var error: String? = "engine not connected"
+        engine { start(Engine.callback(onProgress = { _, _ -> }, onDone = { e -> error = e; done.countDown() })) }
+        done.await(20, TimeUnit.MINUTES)
+        return error
+    }
+
+    private fun runTest(): Boolean {
+        val context = this
         write("ram=${AiModels.phoneRamGb(context)}GB recommended=${AiModels.recommended(context).id}")
-        if (!LinuxDistro.isInstalled(context)) {
-            LinuxDistro.install(context) { _, _ -> }
-            write("linux installed")
+        if (!Engine.connect(context)) return false
+        engine { it.version() }
+        Engine.refresh()
+        if (!Engine.status.value.linuxInstalled) {
+            write("linux install: ${await { cb -> engine { it.installLinux(cb) } } ?: "ok"}")
         }
         val model = AiModels.catalog.first()
         var t = SystemClock.elapsedRealtime()
-        AiModels.download(context, model) { }
-        write("MODEL ${model.id} downloaded in ${(SystemClock.elapsedRealtime() - t) / 1000}s")
+        val dl = await { cb -> engine { it.downloadModel(model.url, model.fileName, cb) } }
+        write("MODEL ${model.id} download=${dl ?: "ok"} in ${(SystemClock.elapsedRealtime() - t) / 1000}s")
+        if (dl != null) return false
 
         t = SystemClock.elapsedRealtime()
-        AiServer.start(context, model)
-        while (AiServer.state.value == AiServer.State.LOADING && SystemClock.elapsedRealtime() - t < 300_000) {
+        Engine.startAi(context, model)
+        Thread.sleep(1000)
+        Engine.refresh()
+        while (Engine.status.value.aiState == AiServer.State.LOADING && SystemClock.elapsedRealtime() - t < 300_000) {
             Thread.sleep(1000)
+            Engine.refresh()
         }
-        write("SERVER ${AiServer.state.value} after ${(SystemClock.elapsedRealtime() - t) / 1000}s")
-        if (AiServer.state.value != AiServer.State.READY) return@runBlocking false
+        val state = Engine.status.value.aiState
+        write("SERVER $state after ${(SystemClock.elapsedRealtime() - t) / 1000}s")
+        if (state != AiServer.State.READY) return false
 
         t = SystemClock.elapsedRealtime()
         val reply = StringBuilder()
-        AiChat.complete(AiChat.PRESET_GENERAL, listOf(AiChat.Message("user", "What is 2+2? Reply with the number only."))) {
-            reply.append(it)
+        runBlocking {
+            AiChat.complete(context, AiChat.PRESET_GENERAL, listOf(AiChat.Message("user", "What is 2+2? Reply with the number only."))) {
+                reply.append(it)
+            }
         }
         val seconds = (SystemClock.elapsedRealtime() - t) / 1000.0
-        write("REPLY \"${reply.toString().trim().take(200)}\" in ${seconds}s")
-        reply.isNotBlank()
+        write("REPLY \"${reply.toString().trim().take(200)}\" in ${seconds}s (SpirOS -> engine over 127.0.0.1)")
+        return reply.isNotBlank()
     }
 
     @Synchronized

@@ -3,12 +3,19 @@ package com.spiros.app.engine
 import android.graphics.Bitmap
 import android.net.LocalSocket
 import android.net.LocalSocketAddress
+import android.os.ParcelFileDescriptor
+import android.system.Os
+import android.system.OsConstants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 
@@ -19,11 +26,22 @@ import kotlin.concurrent.thread
  * DesktopSize pseudo-encoding so the guest can change resolution.
  */
 class VncClient(
-    private val socketPath: String,
+    /** Opens a connection to the RFB server, or returns null if it is not up yet. */
+    private val connector: () -> Transport?,
     private val connectTimeoutMs: Long = 20_000,
     /** Upper bound on screen updates per second (Settings > Performance & battery). */
     private val maxFps: Int = 30,
 ) {
+    /** A connected byte stream to the server. */
+    interface Transport {
+        val input: InputStream
+        val output: OutputStream
+        fun close()
+    }
+
+    /** Unix socket in SpirOS's own storage (the Lab's QEMU). */
+    constructor(socketPath: String, connectTimeoutMs: Long = 20_000, maxFps: Int = 30) :
+        this({ localSocket(socketPath) }, connectTimeoutMs, maxFps)
 
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
     val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
@@ -37,7 +55,7 @@ class VncClient(
 
     @Volatile
     private var running = true
-    private var socket: LocalSocket? = null
+    private var socket: Transport? = null
     private var output: DataOutputStream? = null
     private val writer = Executors.newSingleThreadExecutor()
 
@@ -131,8 +149,8 @@ class VncClient(
     private fun session() {
         val s = connectWithRetry() ?: return
         socket = s
-        val input = DataInputStream(BufferedInputStream(s.inputStream, 1 shl 16))
-        val out = DataOutputStream(s.outputStream)
+        val input = DataInputStream(BufferedInputStream(s.input, 1 shl 16))
+        val out = DataOutputStream(s.output)
 
         // Version
         val version = ByteArray(12).also(input::readFully)
@@ -267,22 +285,42 @@ class VncClient(
         }
     }
 
-    private fun connectWithRetry(): LocalSocket? {
+    private fun connectWithRetry(): Transport? {
         repeat((connectTimeoutMs / 250).toInt()) {
             if (!running) return null
-            val s = LocalSocket()
-            try {
-                s.connect(LocalSocketAddress(socketPath, LocalSocketAddress.Namespace.FILESYSTEM))
-                return s
-            } catch (e: Exception) {
-                runCatching { s.close() }
-                Thread.sleep(250)
-            }
+            runCatching { connector() }.getOrNull()?.let { return it }
+            Thread.sleep(250)
         }
         return null
     }
 
     companion object {
+        private fun localSocket(path: String): Transport? {
+            val s = LocalSocket()
+            return try {
+                s.connect(LocalSocketAddress(path, LocalSocketAddress.Namespace.FILESYSTEM))
+                object : Transport {
+                    override val input: InputStream = s.inputStream
+                    override val output: OutputStream = s.outputStream
+                    override fun close() = s.close()
+                }
+            } catch (e: Exception) {
+                runCatching { s.close() }
+                null
+            }
+        }
+
+        /** A socket handed over by another process (the SpirOS Engine's desktop). */
+        fun fromDescriptor(pfd: ParcelFileDescriptor): Transport = object : Transport {
+            override val input: InputStream = FileInputStream(pfd.fileDescriptor)
+            override val output: OutputStream = FileOutputStream(pfd.fileDescriptor)
+            override fun close() {
+                // Wake the blocked reader before releasing the descriptor.
+                runCatching { Os.shutdown(pfd.fileDescriptor, OsConstants.SHUT_RDWR) }
+                runCatching { pfd.close() }
+            }
+        }
+
         const val KEY_ENTER = 0xFF0D
         const val KEY_BACKSPACE = 0xFF08
         const val KEY_TAB = 0xFF09

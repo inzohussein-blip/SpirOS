@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.spiros.app.R
 import com.spiros.app.SpirApp
 import com.spiros.app.perf.AppProcesses
+import com.spiros.app.remote.Engine
 import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.shield.ShieldVpnService
 import com.spiros.app.ui.Disguise
@@ -123,7 +124,7 @@ private fun collect(context: Context): Stats {
     val mem = ActivityManager.MemoryInfo().also(am::getMemoryInfo)
     val total = mem.totalMem.coerceAtLeast(1)
     val used = total - mem.availMem
-    val spirosKb = AppProcesses.list().sumOf { it.rssKb }
+    val spirosKb = AppProcesses.list().sumOf { it.rssKb } + Engine.status.value.memoryKb
     val vaultBytes = File(context.noBackupFilesDir, "vault").walkTopDown().filter { it.isFile }.sumOf { it.length() }
     val free = context.noBackupFilesDir.usableSpace.coerceAtLeast(1)
     return Stats(

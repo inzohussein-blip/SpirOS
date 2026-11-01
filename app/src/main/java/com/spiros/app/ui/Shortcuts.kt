@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
-import com.spiros.app.BuildConfig
 import com.spiros.app.R
 
 /**
@@ -23,7 +22,7 @@ object Shortcuts {
         val items = buildList {
             add(shortcut(context, Navigation.VAULT, R.string.section_vault, R.drawable.ic_sc_vault))
             add(shortcut(context, Navigation.BROWSER, R.string.dock_browser, R.drawable.ic_sc_browser))
-            if (BuildConfig.FLAVOR == "speed") add(shortcut(context, Navigation.LINUX, R.string.dock_linux, R.drawable.ic_sc_linux))
+            add(shortcut(context, Navigation.LINUX, R.string.dock_linux, R.drawable.ic_sc_linux))
             add(shortcut(context, Navigation.SHIELD, R.string.section_shield, R.drawable.ic_sc_shield))
         }.take(manager.maxShortcutCountPerActivity.coerceAtLeast(1))
         runCatching { manager.dynamicShortcuts = items }

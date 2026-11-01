@@ -162,8 +162,6 @@
     <string name="dock_linux">Linux</string>
     <string name="linux_title">Linux desktop</string>
     <string name="linux_intro">A full Debian Linux with the Xfce desktop, running directly on your phone\'s processor (no emulation), inside SpirOS\'s private storage. Use it like a computer: files, terminal, Python, and later AI models and MT5 for desktop.</string>
-    <string name="linux_needs_edition">The fast Linux desktop needs the \"SpirOS Linux\" edition. Android only lets apps built for Android 9 run Linux programs from their storage (like Termux), so it is a separate app that installs next to SpirOS. The main SpirOS keeps all of Android\'s protections.</string>
-    <string name="linux_get_edition">Download SpirOS Linux</string>
     <string name="linux_unsupported">This phone\'s processor or this build does not support the Linux desktop.</string>
     <string name="linux_install_desc">Downloads Debian + Xfce (about 300 MB, around 1.2 GB once installed) from the SpirOS project, checks its fingerprint (SHA-256) and installs it privately inside the app.</string>
     <string name="linux_install">Download and install Linux</string>
@@ -194,7 +192,7 @@
     <string name="ai_clear">Clear chat</string>
     <string name="ai_loading">Loading the model into memory…</string>
     <string name="ai_failed">The AI server stopped. Its last messages:</string>
-    <string name="ai_needs_linux">The private AI runs inside the Linux system of SpirOS Linux. Install SpirOS Linux and its Linux system first.</string>
+    <string name="ai_needs_linux">The private AI runs inside the Linux system (SpirOS Engine). Open Linux to install the engine and the Linux system first.</string>
     <string name="ai_input_hint">Ask anything…</string>
     <string name="ai_preset_general">General</string>
     <string name="ai_preset_trading">Trading</string>
@@ -248,7 +246,6 @@
     <string name="perf_google_desc">Google Play services take 300–500 MB of memory in the space and run all the time. Biggest saving.</string>
     <string name="perf_pause_space">Pause the space</string>
     <string name="perf_pause_desc">Stops every app in the space until you resume it.</string>
-    <string name="perf_linux_edition_only">Available in the SpirOS Linux edition.</string>
     <string name="perf_light">Light mode</string>
     <string name="perf_light_desc">No transparency or shadows, outline-only window moves, no power manager or screensaver.</string>
     <string name="perf_freeze">Freeze Linux in the background</string>
@@ -304,4 +301,14 @@
     <string name="settings_secret_code">Calculator secret code</string>
     <string name="settings_secret_code_desc">Type it on the calculator and press = to reveal SpirOS.</string>
     <string name="settings_secret_code_help">Use digits and the calculator signs + − × ÷ . (at least 4). Only a fingerprint of the code is stored.</string>
+    <string name="engine_needed">Install the SpirOS Engine (one time)</string>
+    <string name="engine_needed_desc">Linux and the private AI run in a small helper app with no icon and no access to your vault, space or keys. Android only lets apps built for Android 9 run Linux programs (like Termux), so only this helper is built that way; SpirOS itself keeps every modern Android protection. SpirOS downloads it from its own release, checks its checksum and that it is signed with the same key as SpirOS, then Android asks you to confirm.</string>
+    <string name="engine_install">Install the engine</string>
+    <string name="engine_update">Update the engine</string>
+    <string name="engine_update_desc">A newer SpirOS Engine is available for this version of SpirOS.</string>
+    <string name="engine_downloading">Downloading the engine… %1$d%%</string>
+    <string name="engine_installing">Verifying and installing…</string>
+    <string name="engine_failed">Engine install failed: %1$s</string>
+    <string name="engine_connecting">Connecting to the SpirOS Engine…</string>
+    <string name="engine_allow_hint">The first time, Android asks you to allow SpirOS to install apps; turn it on, come back and press the button again.</string>
 </resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="engine_name">SpirOS Engine</string>
+    <string name="engine_channel">محرك SpirOS</string>
+    <string name="engine_running">محرك لينكس يعمل</string>
+</resources>

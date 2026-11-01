@@ -27,22 +27,22 @@ jobs:
       - name: Bundle QEMU engine
         continue-on-error: true
         run: |
-          python3 tools/fetch_qemu.py --arch aarch64 --out app/src/main/jniLibs/arm64-v8a --data-out app/src/main/assets/qemu
-          python3 tools/fetch_qemu.py --arch x86_64 --out app/src/main/jniLibs/x86_64
+          python3 tools/fetch_qemu.py --arch aarch64 --out app/src/secure/jniLibs/arm64-v8a --data-out app/src/secure/assets/qemu
+          python3 tools/fetch_qemu.py --arch x86_64 --out app/src/secure/jniLibs/x86_64
 
-      # Linux desktop (speed edition): proot from Termux, with its loader.
+      # SpirOS Engine (Linux + AI helper): proot from Termux, with its loader.
       - name: Bundle proot
         continue-on-error: true
         run: |
           for a in "aarch64 arm64-v8a" "x86_64 x86_64"; do
             set -- $a
-            python3 tools/fetch_qemu.py --arch $1 --out app/src/main/jniLibs/$2 \
+            python3 tools/fetch_qemu.py --arch $1 --out app/src/engine/jniLibs/$2 \
               --package proot --executable bin/proot --name libproot.so \
               --extra libexec/proot/loader=libproot-loader.so
           done
 
       - name: Check API levels (lint NewApi)
-        run: ./gradlew --no-daemon lintSecureDebug lintSpeedDebug
+        run: ./gradlew --no-daemon lintSecureDebug lintEngineDebug
 
       # Debug APKs carry the CI self-tests; release APKs (R8-optimised, faster) are
       # what people install.
@@ -53,9 +53,12 @@ jobs:
         run: |
           OUT=app/build/outputs/apk
           cp $OUT/secure/release/app-secure-arm64-v8a-release.apk SpirOS.apk
-          cp $OUT/speed/release/app-speed-arm64-v8a-release.apk SpirOS-Linux.apk
+          cp $OUT/engine/release/app-engine-arm64-v8a-release.apk SpirOS-Engine.apk
           cp $OUT/secure/debug/app-secure-x86_64-debug.apk SpirOS-x86_64.apk
-          cp $OUT/speed/debug/app-speed-x86_64-debug.apk SpirOS-Linux-x86_64.apk
+          cp $OUT/engine/debug/app-engine-x86_64-debug.apk SpirOS-Engine-x86_64.apk
+          # SpirOS checks these before installing the engine (and its signature too).
+          sha256sum SpirOS-Engine.apk > SpirOS-Engine.apk.sha256
+          sha256sum SpirOS-Engine-x86_64.apk > SpirOS-Engine-x86_64.apk.sha256
 
       - uses: actions/upload-artifact@v4
         with:
@@ -71,14 +74,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SpirOS-Linux-apk
-          path: SpirOS-Linux.apk
+          name: SpirOS-Engine-apk
+          path: SpirOS-Engine.apk
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SpirOS-Linux-x86_64-apk
-          path: SpirOS-Linux-x86_64.apk
+          name: SpirOS-Engine-x86_64-apk
+          path: SpirOS-Engine-x86_64.apk
           if-no-files-found: error
 
       # A direct .apk link that opens on a phone (Actions artifacts are always zipped):
@@ -89,11 +92,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete dev-latest --yes --cleanup-tag || true
-          gh release create dev-latest SpirOS.apk SpirOS-Linux.apk \
+          gh release create dev-latest SpirOS.apk \
+            SpirOS-Engine.apk SpirOS-Engine.apk.sha256 \
+            SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256 \
             --prerelease \
             --target "${{ github.sha }}" \
             --title "SpirOS – آخر نسخة تجريبية" \
-            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. SpirOS.apk هو التطبيق الأساسي. SpirOS-Linux.apk يضيف سطح مكتب لينكس السريع ويُثبَّت بجانبه."
+            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. ثبّت SpirOS.apk فقط. محرك لينكس والذكاء الاصطناعي (SpirOS-Engine) يثبّته SpirOS بنفسه من داخل التطبيق عند أول استخدام بعد التحقق من بصمته وتوقيعه."
 
   # Fast check of the guest itself (Alpine URLs, kernel arguments, devices) with the
   # distribution's QEMU, using the same script as the in-app definition.
@@ -140,9 +145,10 @@ jobs:
           disable-animations: true
           script: bash tools/lab_device_test.sh SpirOS-x86_64.apk
 
-  # End-to-end: the speed edition on an Android 14 emulator downloads the Debian
-  # rootfs (amd64) from the linux-rootfs release, runs proot + Xvnc + Xfce and checks
-  # that the desktop is drawn.
+  # End-to-end: SpirOS + the SpirOS Engine on an Android 14 emulator. SpirOS binds to
+  # the engine, which downloads the Debian rootfs (amd64), runs proot + Xvnc + Xfce;
+  # SpirOS draws the desktop from the socket the engine hands over, then chats with
+  # the private AI the engine runs.
   linux-device:
     needs: build
     runs-on: ubuntu-latest
@@ -151,7 +157,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: SpirOS-Linux-x86_64-apk
+          name: SpirOS-Engine-x86_64-apk
+      - uses: actions/download-artifact@v4
+        with:
+          name: SpirOS-x86_64-apk
       - name: Free disk space for the emulator
         run: |
           # The Linux self-test needs ~10 GB for the emulator's data partition plus the
@@ -175,5 +184,6 @@ jobs:
           disable-animations: true
           # Linux desktop first (installs the rootfs), then the private AI inside it.
           script: |
-            bash tools/lab_device_test.sh SpirOS-Linux-x86_64.apk com.spiros.app.speed .LinuxSelfTestActivity linux-selftest.log 25
-            bash tools/lab_device_test.sh SpirOS-Linux-x86_64.apk com.spiros.app.speed .AiSelfTestActivity ai-selftest.log 20
+            adb install -r SpirOS-Engine-x86_64.apk
+            bash tools/lab_device_test.sh SpirOS-x86_64.apk com.spiros.app .LinuxSelfTestActivity linux-selftest.log 25
+            bash tools/lab_device_test.sh SpirOS-x86_64.apk com.spiros.app .AiSelfTestActivity ai-selftest.log 20

@@ -1,5 +1,7 @@
 package com.spiros.app.ai
 
+import android.content.Context
+import com.spiros.app.remote.Engine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -7,7 +9,11 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Streaming chat against the local llama.cpp server (OpenAI-compatible API). */
+/**
+ * Streaming chat against the local llama.cpp server (OpenAI-compatible API) that the
+ * SpirOS Engine runs on 127.0.0.1. Each server start has a fresh random key, which
+ * only SpirOS can ask the engine for.
+ */
 object AiChat {
 
     data class Message(val role: String, val text: String)
@@ -17,7 +23,9 @@ object AiChat {
     const val PRESET_CODE = "You are a programming assistant for Python and MQL5 (MetaTrader 5). Give complete, working code with short explanations. Answer in the language the user writes in."
 
     /** Sends the conversation and calls [onToken] for each streamed piece of the reply. */
-    suspend fun complete(system: String, history: List<Message>, onToken: (String) -> Unit) = withContext(Dispatchers.IO) {
+    suspend fun complete(context: Context, system: String, history: List<Message>, onToken: (String) -> Unit) = withContext(Dispatchers.IO) {
+        val key = Engine.call(context) { it.aiKey() } ?: error("AI engine not connected")
+        val port = Engine.call(context) { it.aiPort() } ?: AiServer.PORT
         val messages = JSONArray().put(JSONObject().put("role", "system").put("content", system))
         history.forEach { messages.put(JSONObject().put("role", it.role).put("content", it.text)) }
         val body = JSONObject()
@@ -27,14 +35,14 @@ object AiChat {
             .put("max_tokens", 1024)
             .toString()
 
-        val c = URL("http://127.0.0.1:${AiServer.PORT}/v1/chat/completions").openConnection() as HttpURLConnection
+        val c = URL("http://127.0.0.1:$port/v1/chat/completions").openConnection() as HttpURLConnection
         try {
             c.requestMethod = "POST"
             c.doOutput = true
             c.connectTimeout = 5000
             c.readTimeout = 600_000
             c.setRequestProperty("Content-Type", "application/json")
-            c.setRequestProperty("Authorization", "Bearer ${AiServer.apiKey}")
+            c.setRequestProperty("Authorization", "Bearer $key")
             c.outputStream.use { it.write(body.toByteArray()) }
             check(c.responseCode == 200) { "AI server: HTTP ${c.responseCode}" }
             c.inputStream.bufferedReader().useLines { lines ->

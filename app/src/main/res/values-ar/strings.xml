@@ -162,8 +162,6 @@
     <string name="dock_linux">لينكس</string>
     <string name="linux_title">سطح مكتب لينكس</string>
     <string name="linux_intro">نظام Debian Linux كامل بواجهة Xfce، يعمل مباشرة على معالج هاتفك (بدون محاكاة) داخل مساحة SpirOS الخاصة. استخدمه كحاسوب: ملفات، وطرفية، وبايثون، ولاحقًا نماذج الذكاء الاصطناعي وMT5 للحاسوب.</string>
-    <string name="linux_needs_edition">سطح مكتب لينكس السريع يحتاج نسخة \"SpirOS Linux\". أندرويد لا يسمح بتشغيل برامج لينكس من مساحة التطبيق إلا للتطبيقات المبنية لأندرويد 9 (مثل Termux)، لذلك هي تطبيق منفصل يُثبَّت بجانب SpirOS، ويبقى SpirOS الأساسي بكامل حمايات أندرويد.</string>
-    <string name="linux_get_edition">تنزيل SpirOS Linux</string>
     <string name="linux_unsupported">معالج هذا الهاتف أو هذه النسخة لا يدعمان سطح مكتب لينكس.</string>
     <string name="linux_install_desc">ينزّل Debian مع Xfce (حوالي 300 ميغابايت، وحوالي 1.2 غيغابايت بعد التثبيت) من مشروع SpirOS، ويتحقق من بصمته (SHA-256)، ويثبّته بشكل خاص داخل التطبيق.</string>
     <string name="linux_install">تنزيل وتثبيت لينكس</string>
@@ -194,7 +192,7 @@
     <string name="ai_clear">مسح المحادثة</string>
     <string name="ai_loading">جارٍ تحميل النموذج في الذاكرة…</string>
     <string name="ai_failed">توقف خادم الذكاء الاصطناعي. آخر رسائله:</string>
-    <string name="ai_needs_linux">الذكاء الاصطناعي الخاص يعمل داخل نظام لينكس في تطبيق SpirOS Linux. ثبّت SpirOS Linux ونظام لينكس أولًا.</string>
+    <string name="ai_needs_linux">الذكاء الاصطناعي الخاص يعمل داخل نظام لينكس (محرك SpirOS). افتح لينكس لتثبيت المحرك ونظام لينكس أولًا.</string>
     <string name="ai_input_hint">اسأل أي شيء…</string>
     <string name="ai_preset_general">عام</string>
     <string name="ai_preset_trading">تداول</string>
@@ -248,7 +246,6 @@
     <string name="perf_google_desc">خدمات Google Play تأخذ 300 إلى 500 ميغابايت من الذاكرة في المساحة وتعمل دائمًا. هذا أكبر توفير.</string>
     <string name="perf_pause_space">إيقاف المساحة مؤقتًا</string>
     <string name="perf_pause_desc">يوقف كل تطبيقات المساحة حتى تستأنفها.</string>
-    <string name="perf_linux_edition_only">متاح في نسخة SpirOS Linux.</string>
     <string name="perf_light">الوضع الخفيف</string>
     <string name="perf_light_desc">بلا شفافية ولا ظلال، وتحريك النوافذ بإطار فقط، وبلا مدير طاقة ولا شاشة توقف.</string>
     <string name="perf_freeze">تجميد لينكس في الخلفية</string>
@@ -304,4 +301,14 @@
     <string name="settings_secret_code">الرمز السري للآلة الحاسبة</string>
     <string name="settings_secret_code_desc">اكتبه في الآلة الحاسبة ثم اضغط = ليظهر SpirOS.</string>
     <string name="settings_secret_code_help">استخدم الأرقام وعلامات الآلة الحاسبة + − × ÷ . (4 على الأقل). تُحفظ بصمة الرمز فقط وليس الرمز نفسه.</string>
+    <string name="engine_needed">ثبّت محرك SpirOS (مرة واحدة)</string>
+    <string name="engine_needed_desc">لينكس والذكاء الاصطناعي الخاص يعملان داخل تطبيق مساعد صغير بلا أيقونة ولا يستطيع الوصول إلى خزنتك أو المساحة المعزولة أو مفاتيحك. أندرويد يسمح بتشغيل برامج لينكس فقط للتطبيقات المبنية لأندرويد 9 (مثل Termux)، لذلك هذا المساعد وحده مبني بهذه الطريقة، ويبقى SpirOS نفسه بكامل حمايات أندرويد الحديثة. يُنزّله SpirOS من إصداره الرسمي ويتحقق من بصمته ومن أنه موقّع بنفس مفتاح SpirOS، ثم يطلب أندرويد تأكيدك.</string>
+    <string name="engine_install">تثبيت المحرك</string>
+    <string name="engine_update">تحديث المحرك</string>
+    <string name="engine_update_desc">يتوفر إصدار أحدث من محرك SpirOS يناسب هذه النسخة من SpirOS.</string>
+    <string name="engine_downloading">جارٍ تنزيل المحرك… %1$d%%</string>
+    <string name="engine_installing">جارٍ التحقق والتثبيت…</string>
+    <string name="engine_failed">فشل تثبيت المحرك: %1$s</string>
+    <string name="engine_connecting">جارٍ الاتصال بمحرك SpirOS…</string>
+    <string name="engine_allow_hint">في المرة الأولى يطلب أندرويد السماح لـ SpirOS بتثبيت التطبيقات؛ فعّل الخيار ثم ارجع واضغط الزر مرة أخرى.</string>
 </resources>

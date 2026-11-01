@@ -3,7 +3,6 @@ package com.spiros.app.ai
 import android.content.Context
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
-import com.spiros.app.perf.Performance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,28 +33,28 @@ object AiServer {
     var apiKey: String = ""
         private set
 
+    /** File name of the running model (in /root/models). */
     @Volatile
-    var model: AiModels.Model? = null
+    var modelFile: String? = null
         private set
 
     @Synchronized
-    fun start(context: Context, model: AiModels.Model) {
+    fun start(context: Context, fileName: String, threads: Int, contextSize: Int) {
         stop()
-        this.model = model
+        modelFile = fileName
         apiKey = ByteArray(24).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
         _log.value = emptyList()
         _state.value = State.LOADING
-        val threads = Performance.aiThreads(context)
         val p = LinuxSession.command(
             context,
             LinuxDistro.root(context),
             listOf(
                 "/usr/local/bin/llama-server",
-                "-m", "/root/models/${model.fileName}",
+                "-m", "/root/models/${java.io.File(fileName).name}",
                 "--host", "127.0.0.1",
                 "--port", "$PORT",
                 "--api-key", apiKey,
-                "-c", "${Performance.aiContext(context)}",
+                "-c", "$contextSize",
                 "-t", "$threads",
             ),
         ).start()

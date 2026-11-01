@@ -43,7 +43,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
 import com.spiros.app.linux.LinuxAccounts
-import com.spiros.app.linux.LinuxDistro
+import com.spiros.app.remote.Engine
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import com.spiros.app.ui.SpirTopBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -63,15 +65,21 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
     var newPassword by remember { mutableStateOf("") }
     var newAdmin by remember { mutableStateOf(true) }
 
-    val users by produceState(emptyList<LinuxAccounts.User>(), refresh) {
-        value = withContext(Dispatchers.IO) { LinuxAccounts.users(context) }
+    val status by Engine.status.collectAsState()
+    val users by produceState(emptyList<Engine.User>(), refresh, status.connected) {
+        value = Engine.parseUsers(Engine.call(context) { it.users() })
     }
-    var desktopUser by remember(refresh) { mutableStateOf(LinuxAccounts.desktopUser(context).name) }
+    var desktopUser by remember { mutableStateOf("") }
+    LaunchedEffect(refresh, status.connected) { desktopUser = Engine.call(context) { it.desktopUser() }.orEmpty() }
 
-    fun act(done: Int, action: suspend () -> Result<Unit>) {
+    /** Runs an account action in the engine (as root inside Linux). */
+    fun act(done: Int, action: String, name: String, password: String = "", admin: Boolean = false) {
         busy = true
         scope.launch {
-            val result = action()
+            val error = withContext(Dispatchers.IO) {
+                Engine.call(context) { it.account(action, name, password, admin) ?: "" } ?: "engine not connected"
+            }
+            val result = if (error.isEmpty()) Result.success(Unit) else Result.failure(Exception(error))
             busy = false
             refresh++
             snackbar.showSnackbar(
@@ -93,7 +101,7 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (!LinuxDistro.isInstalled(context)) {
+            if (!status.connected || !status.linuxInstalled) {
                 Text(stringResource(R.string.accounts_need_linux))
                 return@Column
             }
@@ -119,8 +127,9 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
                             RadioButton(
                                 selected = desktopUser == user.name,
                                 onClick = {
-                                    LinuxAccounts.setDesktopUser(context, user.name)
-                                    desktopUser = user.name
+                                    val name = user.name
+                                    Engine.send(context) { it.setDesktopUser(name) }
+                                    desktopUser = name
                                 },
                             )
                         }
@@ -131,7 +140,7 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
                             if (user.uid != 0) {
                                 TextButton(
                                     onClick = {
-                                        act(R.string.accounts_saved) { LinuxAccounts.setAdmin(context, user.name, !user.admin) }
+                                        act(R.string.accounts_saved, "admin", user.name, admin = !user.admin)
                                     },
                                     enabled = !busy,
                                 ) {
@@ -175,7 +184,7 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
                             val admin = newAdmin
                             newName = ""
                             newPassword = ""
-                            act(R.string.accounts_added) { LinuxAccounts.addUser(context, name, password, admin) }
+                            act(R.string.accounts_added, "add", name, password, admin)
                         },
                     ) { Text(stringResource(R.string.accounts_add)) }
                 }
@@ -194,7 +203,7 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
                     enabled = LinuxAccounts.isValidPassword(password),
                     onClick = {
                         passwordFor = null
-                        act(R.string.accounts_saved) { LinuxAccounts.setPassword(context, name, password) }
+                        act(R.string.accounts_saved, "password", name, password)
                     },
                 ) { Text(stringResource(R.string.set)) }
             },
@@ -210,7 +219,7 @@ fun LinuxAccountsScreen(onBack: () -> Unit) {
             confirmButton = {
                 TextButton(onClick = {
                     deleteUser = null
-                    act(R.string.accounts_deleted) { LinuxAccounts.deleteUser(context, name) }
+                    act(R.string.accounts_deleted, "delete", name)
                 }) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = { OutlinedButton(onClick = { deleteUser = null }) { Text(stringResource(R.string.cancel)) } },

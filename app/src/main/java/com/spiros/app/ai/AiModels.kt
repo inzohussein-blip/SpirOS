@@ -57,20 +57,26 @@ object AiModels {
         return catalog.lastOrNull { it.minRamGb <= ram } ?: catalog.first()
     }
 
+    // ---- Engine side: model files live in the engine's Linux system ----
+
+    fun byFileName(fileName: String) = catalog.firstOrNull { it.fileName == fileName }
+
     fun dir(context: Context) = File(LinuxDistro.root(context), "root/models")
 
-    fun file(context: Context, model: Model) = File(dir(context), model.fileName)
+    private fun file(context: Context, fileName: String) = File(dir(context), File(fileName).name)
 
-    fun isDownloaded(context: Context, model: Model) = file(context, model).isFile
+    fun downloaded(context: Context): List<String> =
+        dir(context).listFiles().orEmpty().filter { it.isFile && it.name.endsWith(".gguf") }.map { it.name }
 
-    fun delete(context: Context, model: Model) = file(context, model).delete()
+    fun delete(context: Context, fileName: String) = file(context, fileName).delete()
 
     /** Downloads with resume support (large files on mobile networks). */
-    suspend fun download(context: Context, model: Model, onProgress: (Float) -> Unit) = withContext(Dispatchers.IO) {
-        val target = file(context, model)
+    suspend fun download(context: Context, url: String, fileName: String, onProgress: (Float) -> Unit) = withContext(Dispatchers.IO) {
+        require(url.startsWith("https://huggingface.co/")) { "Untrusted model source" }
+        val target = file(context, fileName)
         target.parentFile?.mkdirs()
         val part = File(target.path + ".part")
-        val connection = URL(model.url).openConnection() as HttpURLConnection
+        val connection = URL(url).openConnection() as HttpURLConnection
         try {
             connection.connectTimeout = 20_000
             connection.readTimeout = 60_000

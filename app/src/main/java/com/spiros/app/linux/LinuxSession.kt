@@ -1,8 +1,6 @@
 package com.spiros.app.linux
 
 import android.content.Context
-import com.spiros.app.engine.VncClient
-import com.spiros.app.perf.Performance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,8 +9,9 @@ import kotlin.concurrent.thread
 
 /**
  * Runs the Debian desktop with proot (no emulation: Linux programs run directly on
- * the phone's CPU, inside SpirOS's app sandbox). Speed edition only: Android allows
- * running programs from app storage only for apps targeting API 28 or lower.
+ * the phone's CPU). Lives in the headless SpirOS Engine app: Android allows running
+ * programs from app storage only for apps targeting API 28 or lower, so this code
+ * never runs inside the main SpirOS app. SpirOS drives it over Binder (EngineService).
  */
 object LinuxSession {
     private const val MAX_LINES = 500
@@ -22,41 +21,39 @@ object LinuxSession {
     private val _running = MutableStateFlow(false)
     val running: StateFlow<Boolean> = _running.asStateFlow()
 
-    private val _screen = MutableStateFlow<VncClient?>(null)
-    val screen: StateFlow<VncClient?> = _screen.asStateFlow()
-
     private val _log = MutableStateFlow<List<String>>(emptyList())
     val log: StateFlow<List<String>> = _log.asStateFlow()
 
     fun prootAvailable(context: Context) = File(context.applicationInfo.nativeLibraryDir, "libproot.so").isFile
 
+    /** Desktop options chosen in SpirOS (Settings > Performance & battery). */
+    data class Options(val geometry: String, val dpi: Int, val light: Boolean, val singleApp: String?)
+
+    /** Xvnc's private socket; SpirOS gets a connected copy of it through EngineService. */
+    fun displaySocket(context: Context) = File(LinuxDistro.root(context), "tmp/spiros-vnc")
+
     @Synchronized
-    fun start(context: Context, geometry: String, dpi: Int) {
+    fun start(context: Context, options: Options) {
         stop()
         _log.value = emptyList()
         val root = LinuxDistro.root(context)
         installLauncher(context, root)
         val socket = File(root, "tmp/spiros-vnc").apply { delete() }
-        val singleApp = Performance.linuxSession(context) == Performance.Session.SINGLE_APP
         val p = command(context, root, user = LinuxAccounts.desktopUser(context), envAndCommand = listOf(
-            "SPIROS_GEOMETRY=$geometry",
-            "SPIROS_DPI=$dpi",
-            "SPIROS_LIGHT=${if (Performance.linuxLight(context)) 1 else 0}",
-            "SPIROS_SESSION=${if (singleApp) "app" else "desktop"}",
-            "SPIROS_APP=${Performance.singleApp(context)}",
+            "SPIROS_GEOMETRY=${options.geometry}",
+            "SPIROS_DPI=${options.dpi}",
+            "SPIROS_LIGHT=${if (options.light) 1 else 0}",
+            "SPIROS_SESSION=${if (options.singleApp != null) "app" else "desktop"}",
+            "SPIROS_APP=${options.singleApp ?: "xfce4-terminal"}",
             "/usr/local/bin/spiros-desktop",
         )).start()
         process = p
         _running.value = true
         thread(name = "linux-log", isDaemon = true) { pump(p) }
-        _screen.value = VncClient(socket.path, connectTimeoutMs = 90_000, maxFps = Performance.linuxFps(context))
-            .also { it.start() }
     }
 
     @Synchronized
     fun stop() {
-        _screen.value?.close()
-        _screen.value = null
         process?.let { p ->
             p.destroy()
             thread(isDaemon = true) {

@@ -3,7 +3,7 @@
 # and prints its log. Exit code 0 only on "RESULT PASS".
 # Usage: tools/lab_device_test.sh <apk> [package] [activity] [log name] [max minutes]
 #   Lab (default):   tools/lab_device_test.sh SpirOS-x86_64.apk
-#   Linux desktop:   tools/lab_device_test.sh SpirOS-Linux-x86_64.apk com.spiros.app.speed .LinuxSelfTestActivity linux-selftest.log 25
+#   Linux desktop:   tools/lab_device_test.sh SpirOS-x86_64.apk com.spiros.app .LinuxSelfTestActivity (after installing SpirOS-Engine-x86_64.apk) linux-selftest.log 25
 set -uo pipefail
 APK="$1"
 PKG="${2:-com.spiros.app}"

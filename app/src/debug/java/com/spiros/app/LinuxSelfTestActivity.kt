@@ -4,18 +4,19 @@ import android.app.Activity
 import android.os.Bundle
 import android.os.SystemClock
 import android.widget.TextView
-import com.spiros.app.linux.LinuxAccounts
-import com.spiros.app.linux.LinuxDistro
-import com.spiros.app.linux.LinuxSession
+import com.spiros.app.remote.Engine
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
 /**
- * End-to-end test of the Linux desktop (speed edition), run inside the app exactly
- * like the Linux screen: download and verify the rootfs, extract it, start proot +
- * Xvnc + Xfce, and wait until the desktop has actually been drawn. The outcome goes
- * to no_backup/linux-selftest.log, ending with "RESULT PASS" or "RESULT FAIL".
+ * End-to-end test of the Linux desktop through the SpirOS Engine, exactly like the
+ * Linux screen: SpirOS binds to the engine (signature permission), asks it to
+ * download, verify and extract the rootfs, manages accounts, starts proot + Xvnc +
+ * Xfce, and draws the desktop from the socket the engine hands over. The outcome
+ * goes to no_backup/linux-selftest.log, ending with "RESULT PASS" or "RESULT FAIL".
  */
 class LinuxSelfTestActivity : Activity() {
 
@@ -33,59 +34,66 @@ class LinuxSelfTestActivity : Activity() {
                 write("ERROR ${e.javaClass.simpleName}: ${e.message}")
                 false
             }
-            LinuxSession.log.value.takeLast(60).forEach { write("| $it") }
-            LinuxSession.stop()
+            runBlocking { Engine.call(this@LinuxSelfTestActivity) { it.desktopLog() } }.orEmpty()
+                .takeLast(60).forEach { write("| $it") }
+            Engine.stopDesktop(this)
             write(if (ok) "RESULT PASS" else "RESULT FAIL")
         }
     }
 
+    private fun <T> engine(block: (com.spiros.app.remote.IEngine) -> T): T? = runBlocking { Engine.call(this@LinuxSelfTestActivity, block) }
+
     private fun runTest(): Boolean {
-        write("flavor=${BuildConfig.FLAVOR} arch=${LinuxDistro.arch()} proot=${LinuxSession.prootAvailable(this)}")
-        if (BuildConfig.FLAVOR != "speed" || !LinuxSession.prootAvailable(this)) return false
+        write("engine installed=${Engine.isInstalled(this)}")
+        if (!Engine.connect(this)) return false
+        val version = engine { it.version() }
+        Engine.refresh()
+        val status = Engine.status.value
+        write("ENGINE version=$version connected=${status.connected} arch=${status.arch} proot=${status.proot}")
+        if (!status.connected || !status.proot) return false
 
         var t = SystemClock.elapsedRealtime()
-        runBlocking {
-            var lastStage: LinuxDistro.Stage? = null
-            LinuxDistro.install(this@LinuxSelfTestActivity) { stage, _ ->
-                if (stage != lastStage) {
-                    lastStage = stage
-                    write("stage=$stage")
-                }
-            }
+        val done = CountDownLatch(1)
+        var error: String? = null
+        var lastStage = ""
+        engine {
+            it.installLinux(Engine.callback(
+                onProgress = { stage, _ -> if (stage != lastStage) { lastStage = stage; write("stage=$stage") } },
+                onDone = { e -> error = e; done.countDown() },
+            ))
+        }
+        if (!done.await(15, TimeUnit.MINUTES) || error != null) {
+            write("INSTALL_FAILED $error")
+            return false
         }
         write("INSTALLED in ${(SystemClock.elapsedRealtime() - t) / 1000}s")
 
-        // proot itself works: run a command in the Debian root.
-        val probe = LinuxSession.command(this, LinuxDistro.root(this), listOf("/bin/sh", "-c", "cat /etc/debian_version; uname -m"))
-            .start()
-        val probeOut = probe.inputStream.bufferedReader().readText().trim()
-        write("PROOT exit=${probe.waitFor()} out=${probeOut.replace('\n', ' ')}")
-
-        // Accounts managed from the app: create an admin user, set root's password,
+        // Accounts managed from SpirOS: create an admin user, set root's password,
         // and run the desktop as the new user (proot --change-id).
-        val added = runBlocking { LinuxAccounts.addUser(this@LinuxSelfTestActivity, "spiros", "test1234", admin = true) }
-        val rootPw = runBlocking { LinuxAccounts.setPassword(this@LinuxSelfTestActivity, "root", "root1234") }
-        val users = LinuxAccounts.users(this).joinToString { "${it.name}(${it.uid}${if (it.admin) ",admin" else ""})" }
-        write("ACCOUNTS add=${added.isSuccess} rootpw=${rootPw.isSuccess} users=$users ${added.exceptionOrNull()?.message ?: ""}")
-        if (added.isSuccess) LinuxAccounts.setDesktopUser(this, "spiros")
-        write("desktop user=${LinuxAccounts.desktopUser(this).name}")
+        val added = engine { it.account("add", "spiros", "test1234", true) }
+        val rootPw = engine { it.account("password", "root", "root1234", false) }
+        val users = Engine.parseUsers(engine { it.users() }).joinToString { "${it.name}(${it.uid}${if (it.admin) ",admin" else ""})" }
+        write("ACCOUNTS add=${added ?: "ok"} rootpw=${rootPw ?: "ok"} users=$users")
+        if (added == null) engine { it.setDesktopUser("spiros") }
+        write("desktop user=${engine { it.desktopUser() }}")
 
         t = SystemClock.elapsedRealtime()
-        LinuxSession.start(this, "1280x720", 120)
+        Engine.startDesktop(this, "1280x720", dpi = 120, light = true, singleApp = null, fps = 30)
         while (SystemClock.elapsedRealtime() - t < TIMEOUT_MS) {
             Thread.sleep(3000)
-            val client = LinuxSession.screen.value
+            Engine.refresh()
+            val client = Engine.screen.value
             val bitmap = client?.bitmap?.value
             if (client != null && bitmap != null && client.frame.value > 0) {
                 // A fresh Xvnc screen is one solid colour; Xfce's panel and desktop are not.
                 val colours = HashSet<Int>()
                 for (y in 0 until bitmap.height step 16) for (x in 0 until bitmap.width step 16) colours += bitmap.getPixel(x, y)
                 if (colours.size > 20) {
-                    write("DESKTOP_OK ${bitmap.width}x${bitmap.height} colours=${colours.size} after ${(SystemClock.elapsedRealtime() - t) / 1000}s")
+                    write("DESKTOP_OK ${bitmap.width}x${bitmap.height} colours=${colours.size} after ${(SystemClock.elapsedRealtime() - t) / 1000}s (via engine socket)")
                     return true
                 }
             }
-            if (!LinuxSession.running.value) {
+            if (SystemClock.elapsedRealtime() - t > 10_000 && !Engine.status.value.desktopRunning) {
                 write("SESSION_EXITED")
                 return false
             }

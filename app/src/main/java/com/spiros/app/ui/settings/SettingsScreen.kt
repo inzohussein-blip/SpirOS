@@ -53,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
-import com.spiros.app.BuildConfig
 import com.spiros.app.security.FlipToPanic
 import com.spiros.app.ui.Disguise
 import com.spiros.app.ui.ScreenSecurity
@@ -277,7 +276,7 @@ fun SettingsScreen(
                     colors = itemColors,
                 )
             }
-            if (BuildConfig.FLAVOR == "speed") {
+            run {
                 if (query.isBlank()) GroupTitle(stringResource(R.string.dock_linux))
                 if (match(R.string.accounts_title, R.string.accounts_settings_desc)) {
                     ListItem(
