@@ -413,6 +413,8 @@ private fun AppearanceSection() {
                 if (Build.VERSION.SDK_INT >= 31) add(Appearance.Palette.MATERIAL_YOU to R.string.appearance_material_you)
                 add(Appearance.Palette.CYBER_GREEN to R.string.appearance_cyber_green)
                 add(Appearance.Palette.CYBER_CYAN to R.string.appearance_cyber_cyan)
+                add(Appearance.Palette.OBSIDIAN to R.string.appearance_obsidian)
+                add(Appearance.Palette.NEON_INDIGO to R.string.appearance_neon_indigo)
             },
             state.palette,
         ) { palette -> Appearance.update(context) { it.copy(palette = palette) } }
@@ -425,6 +427,15 @@ private fun AppearanceSection() {
             ),
             state.style,
         ) { style -> Appearance.update(context) { it.copy(style = style) } }
+
+        Text(stringResource(R.string.appearance_font), style = MaterialTheme.typography.labelLarge)
+        ChoiceRow(
+            listOf(
+                Appearance.Font.SYSTEM to R.string.appearance_font_system,
+                Appearance.Font.INTER to R.string.appearance_font_inter,
+            ),
+            state.font,
+        ) { font -> Appearance.update(context) { it.copy(font = font) } }
 
         Text(stringResource(R.string.appearance_lock_screen), style = MaterialTheme.typography.labelLarge)
         ChoiceRow(

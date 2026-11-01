@@ -85,6 +85,11 @@ object SpaceOwner {
             val filter = IntentFilter(ACTION_COMMAND).apply { addCategory(Intent.CATEGORY_DEFAULT) }
             dpm.addCrossProfileIntentFilter(admin, filter, DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED)
         }
+        // Second, direct channel: allow SpirOS (the same app in the main profile) to start
+        // its command activity in here once the user approves "connected apps".
+        if (Build.VERSION.SDK_INT >= 30) {
+            runCatching { dpm.setCrossProfilePackages(admin, setOf(context.packageName)) }
+        }
         // Nothing copied in the space can be pasted outside, and vice versa.
         runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE) }
         // The SpirOS copy in the space has no UI of its own; hide its launcher icon.

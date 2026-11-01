@@ -127,6 +127,9 @@ fun LinuxScreen(onBack: () -> Unit) {
     var input by remember { mutableStateOf("") }
     var touchpad by remember { mutableStateOf(Performance.touchpad(context)) }
     var typing by remember { mutableStateOf(false) }
+    // A TV / monitor (HDMI, USB-C or wireless) shows the desktop when allowed in Settings.
+    val external = rememberExternalDisplay()
+    val externalNow = external?.takeIf { Performance.externalDisplay(context) }
     var accountsVersion by remember { mutableIntStateOf(0) }
     var accountSkipped by remember { mutableStateOf(false) }
     val cursor = remember { Cursor() }
@@ -173,6 +176,16 @@ fun LinuxScreen(onBack: () -> Unit) {
                 }
                 if (firstFrame == null) {
                     BootOverlay(log, stringResource(R.string.boot_linux), Modifier.weight(1f))
+                } else if (externalNow != null) {
+                    // Desktop on the TV / monitor; the phone is the touchpad and keyboard.
+                    ExternalDesktop(externalNow, client, cursor)
+                    Text(
+                        stringResource(R.string.external_showing, externalNow.name),
+                        color = Color(0xFF9FB0D0),
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                    Touchpad(client, cursor, Modifier.weight(1f).fillMaxWidth())
                 } else if (touchpad) {
                     // Landscape: touchpad beside the screen; portrait: below it.
                     val wide = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
@@ -315,7 +328,11 @@ fun LinuxScreen(onBack: () -> Unit) {
                             }
                         }
                         Button(
-                            onClick = { Engine.startDesktop(context, resolution) },
+                            onClick = {
+                                val geometry = externalNow?.takeIf { Performance.externalMatch(context) }
+                                    ?.let(ExternalDisplay::geometryFor) ?: resolution
+                                Engine.startDesktop(context, geometry)
+                            },
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text(stringResource(R.string.linux_start)) }
                         Text(

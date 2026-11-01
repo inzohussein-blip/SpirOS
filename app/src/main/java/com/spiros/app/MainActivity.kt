@@ -119,7 +119,9 @@ class MainActivity : ComponentActivity() {
     private fun destroySpace() {
         val space = SpaceManager(this)
         if (space.spaceUser() != null) {
-            space.command(SpaceOwner.CMD_DESTROY)?.let { runCatching { startActivity(it) } }
+            if (!space.sendDirect(this, SpaceOwner.CMD_DESTROY)) {
+                space.command(SpaceOwner.CMD_DESTROY)?.let { runCatching { startActivity(it) } }
+            }
         }
         space.forget()
     }

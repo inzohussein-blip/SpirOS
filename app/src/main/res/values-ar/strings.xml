@@ -357,7 +357,7 @@
     <string name="touchpad_hide">إخفاء لوحة اللمس</string>
     <string name="space_unreachable_none">لا توجد مساحة SpirOS على هذا الهاتف.</string>
     <string name="space_unreachable_paused">المساحة متوقفة مؤقتًا. استأنفها أولًا ثم أعد المحاولة.</string>
-    <string name="space_unreachable_channel">نسخة SpirOS داخل المساحة لم تفتح قناة الأوامر بعد (تُصلح نفسها بعد تحديث SpirOS أو إعادة تشغيل الهاتف أو استئناف المساحة). أعد تشغيل الهاتف ثم حاول مجددًا.</string>
+    <string name="space_unreachable_channel">نسخة SpirOS داخل المساحة لم تفتح قناة الأوامر بعد (تُصلح نفسها بعد تحديث SpirOS أو إعادة تشغيل الهاتف أو استئناف المساحة). أعد تشغيل الهاتف ثم حاول مجددًا، أو وافق على الاتصال المباشر في شاشة المساحة.</string>
     <string name="space_unreachable_unsafe">يوجد تطبيق آخر يستقبل أوامر مساحة SpirOS، لذلك لم يرسل SpirOS مفتاحه. احذف التطبيقات غير المعروفة التي قد تفعل ذلك.</string>
     <string name="space_command_refused">المساحة لم تقبل الأمر (مفتاح الربط غير مطابق، وغالبًا بعد إعادة تثبيت SpirOS). احذف المساحة من إعدادات النظام ثم أنشئها من جديد.</string>
     <string name="space_delete_manual">يمكنك دائمًا حذف المساحة بنفسك: الإعدادات ← الحسابات (أو كلمات المرور والحسابات / المستخدمون والحسابات) ← العمل ← إزالة ملف العمل.</string>
@@ -411,4 +411,20 @@
     <string name="space_delete_kept">خزنتك وتطبيقات ملفك الرئيسي لا تتأثر.</string>
     <string name="space_empty_title">لا شيء في المساحة بعد</string>
     <string name="space_open_app">فتح</string>
+    <string name="space_connect_title">اربط SpirOS بالمساحة (مُستحسن)</string>
+    <string name="space_connect_desc">ميزة \"التطبيقات المرتبطة\" في أندرويد تجعل SpirOS يصل إلى نسخته داخل المساحة مباشرة، على أي نوع هاتف. وافق مرة واحدة في الشاشة التالية؛ ولا يُسمح إلا لـ SpirOS نفسه.</string>
+    <string name="space_connect">الموافقة على الربط</string>
+    <string name="space_link_direct">الاتصال المباشر مفعّل · التفاصيل</string>
+    <string name="space_link_details">تفاصيل الاتصال</string>
+    <string name="external_showing">يُعرض على %1$s · هذه الشاشة لوحة لمس</string>
+    <string name="perf_external">شاشة خارجية (HDMI أو لاسلكي)</string>
+    <string name="perf_external_desc">عند توصيل تلفاز أو شاشة بالكابل (HDMI / USB-C) أو كشاشة لاسلكية، يظهر سطح مكتب لينكس عليها ويصبح الهاتف لوحة لمس ولوحة مفاتيح.</string>
+    <string name="perf_external_match">استخدام دقة الشاشة</string>
+    <string name="perf_external_match_desc">تشغيل سطح المكتب بمقاس الشاشة الخارجية (حتى عرض 1920).</string>
+    <string name="perf_external_wireless">إعدادات العرض اللاسلكي (بث الشاشة)</string>
+    <string name="appearance_obsidian">أوبسيديان</string>
+    <string name="appearance_neon_indigo">نيون إنديغو</string>
+    <string name="appearance_font">الخط</string>
+    <string name="appearance_font_system">خط الهاتف</string>
+    <string name="appearance_font_inter">Inter</string>
 </resources>

@@ -357,7 +357,7 @@
     <string name="touchpad_hide">Hide touchpad</string>
     <string name="space_unreachable_none">There is no SpirOS space on this phone.</string>
     <string name="space_unreachable_paused">The space is paused. Resume it first, then try again.</string>
-    <string name="space_unreachable_channel">SpirOS inside the space has not opened its command channel yet (it repairs itself after a SpirOS update, a phone restart or resuming the space). Restart the phone and try again.</string>
+    <string name="space_unreachable_channel">SpirOS inside the space has not opened its command channel yet (it repairs itself after a SpirOS update, a phone restart or resuming the space). Restart the phone and try again, or approve the direct connection on the space screen.</string>
     <string name="space_unreachable_unsafe">Another app is listening for SpirOS\'s space commands, so SpirOS did not send its key. Uninstall unknown apps that might do this.</string>
     <string name="space_command_refused">The space did not accept the command (its pairing key does not match, often after reinstalling SpirOS). Delete the space from system settings and create it again.</string>
     <string name="space_delete_manual">You can always delete the space yourself: system Settings → Accounts (or Passwords &amp; accounts / Users &amp; accounts) → Work → Remove work profile.</string>
@@ -411,4 +411,20 @@
     <string name="space_delete_kept">Your vault and the apps on your main profile are not affected.</string>
     <string name="space_empty_title">Nothing in the space yet</string>
     <string name="space_open_app">Open</string>
+    <string name="space_connect_title">Connect SpirOS to the space (recommended)</string>
+    <string name="space_connect_desc">Android\'s \"connected apps\" lets SpirOS reach its copy inside the space directly, on every phone brand. Approve it once on the next screen; only SpirOS itself is allowed.</string>
+    <string name="space_connect">Approve the connection</string>
+    <string name="space_link_direct">Direct connection active · details</string>
+    <string name="space_link_details">Connection details</string>
+    <string name="external_showing">Showing on %1$s · this screen is the touchpad</string>
+    <string name="perf_external">External screen (HDMI or wireless)</string>
+    <string name="perf_external_desc">When a TV or monitor is connected by cable (HDMI / USB-C) or as a wireless display, the Linux desktop appears on it and the phone becomes the touchpad and keyboard.</string>
+    <string name="perf_external_match">Use the screen\'s resolution</string>
+    <string name="perf_external_match_desc">Start the desktop at the external screen\'s size (up to 1920 wide).</string>
+    <string name="perf_external_wireless">Wireless display settings (Cast screen)</string>
+    <string name="appearance_obsidian">Obsidian</string>
+    <string name="appearance_neon_indigo">Neon Indigo</string>
+    <string name="appearance_font">Font</string>
+    <string name="appearance_font_system">Phone font</string>
+    <string name="appearance_font_inter">Inter</string>
 </resources>

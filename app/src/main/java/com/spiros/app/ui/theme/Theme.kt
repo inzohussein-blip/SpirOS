@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 val SpirNight = Color(0xFF0B0F1A)
@@ -129,6 +130,86 @@ private fun cyberScheme(neon: Color) = darkColorScheme(
     error = Color(0xFFFF3B5C),
 )
 
+/** Charcoal with a golden-orange glow (reference: dark fintech / security sites). */
+private val ObsidianScheme = darkColorScheme(
+    primary = Color(0xFFFB6A0C),
+    onPrimary = Color(0xFF1A0A00),
+    primaryContainer = Color(0xFF3A1E0A),
+    onPrimaryContainer = Color(0xFFFFD2B0),
+    secondary = Color(0xFFF8CC4B),
+    onSecondary = Color(0xFF221800),
+    secondaryContainer = Color(0xFF332A12),
+    onSecondaryContainer = Color(0xFFFFE9A8),
+    tertiary = Color(0xFFCDA07D),
+    background = Color(0xFF0F0F10),
+    onBackground = Color(0xFFECE7E2),
+    surface = Color(0xFF17171A),
+    onSurface = Color(0xFFECE7E2),
+    surfaceVariant = Color(0xFF222226),
+    onSurfaceVariant = Color(0xFFA9A39C),
+    surfaceContainerLowest = Color(0xFF0A0A0B),
+    surfaceContainerLow = Color(0xFF131315),
+    surfaceContainer = Color(0xFF17171A),
+    surfaceContainerHigh = Color(0xFF1D1D21),
+    surfaceContainerHighest = Color(0xFF242428),
+    surfaceBright = Color(0xFF2B2B30),
+    surfaceDim = Color(0xFF0F0F10),
+    outline = Color(0xFF4A4642),
+    outlineVariant = Color(0xFF2E2C2A),
+    error = Color(0xFFFF5D4F),
+)
+
+/** Deep indigo with a neon-green action colour (reference: dark AI-tool sites). */
+private val NeonIndigoScheme = darkColorScheme(
+    primary = Color(0xFF04F17E),
+    onPrimary = Color(0xFF00210F),
+    primaryContainer = Color(0xFF0B3D2A),
+    onPrimaryContainer = Color(0xFFB8FFD9),
+    secondary = Color(0xFFB88CFB),
+    onSecondary = Color(0xFF240A4D),
+    secondaryContainer = Color(0xFF34216B),
+    onSecondaryContainer = Color(0xFFE8DBFF),
+    tertiary = Color(0xFF7C8CFF),
+    background = Color(0xFF0D0B26),
+    onBackground = Color(0xFFE9E6FF),
+    surface = Color(0xFF15123A),
+    onSurface = Color(0xFFE9E6FF),
+    surfaceVariant = Color(0xFF1E1A4D),
+    onSurfaceVariant = Color(0xFFA7A2D8),
+    surfaceContainerLowest = Color(0xFF09081C),
+    surfaceContainerLow = Color(0xFF110F30),
+    surfaceContainer = Color(0xFF15123A),
+    surfaceContainerHigh = Color(0xFF1B1846),
+    surfaceContainerHighest = Color(0xFF221E52),
+    surfaceBright = Color(0xFF2A255E),
+    surfaceDim = Color(0xFF0D0B26),
+    outline = Color(0xFF4B4690),
+    outlineVariant = Color(0xFF2C2866),
+    error = Color(0xFFFF6B8B),
+)
+
+/** Inter for titles and Latin text; Arabic falls back to the phone's own font. */
+val InterFamily = androidx.compose.ui.text.font.FontFamily(
+    androidx.compose.ui.text.font.Font(com.spiros.app.R.font.inter_regular, androidx.compose.ui.text.font.FontWeight.Normal),
+    androidx.compose.ui.text.font.Font(com.spiros.app.R.font.inter_medium, androidx.compose.ui.text.font.FontWeight.Medium),
+    androidx.compose.ui.text.font.Font(com.spiros.app.R.font.inter_semibold, androidx.compose.ui.text.font.FontWeight.SemiBold),
+    androidx.compose.ui.text.font.Font(com.spiros.app.R.font.inter_bold, androidx.compose.ui.text.font.FontWeight.Bold),
+)
+
+private fun interTypography(): androidx.compose.material3.Typography {
+    val base = androidx.compose.material3.Typography()
+    fun androidx.compose.ui.text.TextStyle.inter(weight: androidx.compose.ui.text.font.FontWeight? = null) =
+        copy(fontFamily = InterFamily, fontWeight = weight ?: fontWeight, letterSpacing = if (fontSize.value >= 22f) (-0.4).sp else letterSpacing)
+    val semi = androidx.compose.ui.text.font.FontWeight.SemiBold
+    return base.copy(
+        displayLarge = base.displayLarge.inter(semi), displayMedium = base.displayMedium.inter(semi), displaySmall = base.displaySmall.inter(semi),
+        headlineLarge = base.headlineLarge.inter(semi), headlineMedium = base.headlineMedium.inter(semi), headlineSmall = base.headlineSmall.inter(semi),
+        titleLarge = base.titleLarge.inter(semi), titleMedium = base.titleMedium.inter(), titleSmall = base.titleSmall.inter(),
+        bodyLarge = base.bodyLarge.inter(), bodyMedium = base.bodyMedium.inter(), bodySmall = base.bodySmall.inter(),
+        labelLarge = base.labelLarge.inter(), labelMedium = base.labelMedium.inter(), labelSmall = base.labelSmall.inter(),
+    )
+}
+
 val CyberGreen = Color(0xFF39FF88)
 val CyberCyan = Color(0xFF00E5FF)
 
@@ -143,7 +224,8 @@ private val SpirShapes = Shapes(
 @Composable
 fun SpirTheme(content: @Composable () -> Unit) {
     val state by Appearance.state.collectAsState()
-    val cyber = state.palette == Appearance.Palette.CYBER_GREEN || state.palette == Appearance.Palette.CYBER_CYAN
+    val cyber = state.palette == Appearance.Palette.CYBER_GREEN || state.palette == Appearance.Palette.CYBER_CYAN ||
+        state.palette == Appearance.Palette.OBSIDIAN || state.palette == Appearance.Palette.NEON_INDIGO
     val dark = cyber || when (state.mode) {
         Appearance.Mode.SYSTEM -> isSystemInDarkTheme()
         Appearance.Mode.DARK -> true
@@ -153,6 +235,8 @@ fun SpirTheme(content: @Composable () -> Unit) {
     val scheme: ColorScheme = when {
         state.palette == Appearance.Palette.CYBER_GREEN -> cyberScheme(CyberGreen)
         state.palette == Appearance.Palette.CYBER_CYAN -> cyberScheme(CyberCyan)
+        state.palette == Appearance.Palette.OBSIDIAN -> ObsidianScheme
+        state.palette == Appearance.Palette.NEON_INDIGO -> NeonIndigoScheme
         state.palette == Appearance.Palette.MATERIAL_YOU && Build.VERSION.SDK_INT >= 31 ->
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         dark -> SpirDark
@@ -172,6 +256,11 @@ fun SpirTheme(content: @Composable () -> Unit) {
     }
 
     CompositionLocalProvider(LocalElegant provides (state.style == Appearance.Style.ELEGANT)) {
-        MaterialTheme(colorScheme = scheme, shapes = SpirShapes, content = content)
+        MaterialTheme(
+            colorScheme = scheme,
+            shapes = SpirShapes,
+            typography = if (state.font == Appearance.Font.INTER) interTypography() else androidx.compose.material3.Typography(),
+            content = content,
+        )
     }
 }

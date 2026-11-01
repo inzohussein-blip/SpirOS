@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.spiros.app.R
+import com.spiros.app.ui.space.findActivityOrNull
 import com.spiros.app.ai.AiServer
 import com.spiros.app.security.Panic
 import com.spiros.app.remote.Engine
@@ -154,7 +155,10 @@ fun HomeScreen(
 
     fun launch(app: SpaceManager.App, user: UserHandle) {
         if (!space.launch(app, user)) {
-            space.command(SpaceOwner.CMD_LAUNCH, listOf(app.packageName))?.let { runCatching { context.startActivity(it) } }
+            val activity = context.findActivityOrNull()
+            if (activity == null || !space.sendDirect(activity, SpaceOwner.CMD_LAUNCH, listOf(app.packageName))) {
+                space.command(SpaceOwner.CMD_LAUNCH, listOf(app.packageName))?.let { runCatching { context.startActivity(it) } }
+            }
         }
     }
 

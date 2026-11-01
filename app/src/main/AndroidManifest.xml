@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Direct, reliable channel to SpirOS inside the isolated space (user-approved
+         "connected apps"; the space allows only SpirOS itself). -->
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_PROFILES" />
     <!-- Only used inside the isolated space, to repair its command channel at start. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 

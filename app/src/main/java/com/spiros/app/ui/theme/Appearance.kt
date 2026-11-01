@@ -9,10 +9,13 @@ import kotlinx.coroutines.flow.asStateFlow
 object Appearance {
     enum class Mode { SYSTEM, DARK, LIGHT }
     /** CYBER_*: pure AMOLED black with a neon accent (always dark). */
-    enum class Palette { SPIROS, MATERIAL_YOU, CYBER_GREEN, CYBER_CYAN }
+    /** OBSIDIAN: charcoal with a golden-orange glow; NEON_INDIGO: deep indigo with a neon-green action colour. */
+    enum class Palette { SPIROS, MATERIAL_YOU, CYBER_GREEN, CYBER_CYAN, OBSIDIAN, NEON_INDIGO }
     enum class Style { ELEGANT, MINIMAL }
+    /** SYSTEM: the phone's font everywhere; INTER: the Inter typeface for titles and Latin text. */
+    enum class Font { SYSTEM, INTER }
 
-    data class State(val mode: Mode, val palette: Palette, val style: Style, val stealthLock: Boolean = false)
+    data class State(val mode: Mode, val palette: Palette, val style: Style, val stealthLock: Boolean = false, val font: Font = Font.SYSTEM)
 
     private const val PREFS = "appearance"
     private val _state = MutableStateFlow(State(Mode.DARK, Palette.SPIROS, Style.ELEGANT))
@@ -25,6 +28,7 @@ object Appearance {
             palette = enumOr(p.getString("palette", null), Palette.SPIROS),
             style = enumOr(p.getString("style", null), Style.ELEGANT),
             stealthLock = p.getBoolean("stealth_lock", false),
+            font = enumOr(p.getString("font", null), Font.SYSTEM),
         )
     }
 
@@ -36,6 +40,7 @@ object Appearance {
             .putString("palette", next.palette.name)
             .putString("style", next.style.name)
             .putBoolean("stealth_lock", next.stealthLock)
+            .putString("font", next.font.name)
             .apply()
     }
 

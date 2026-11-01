@@ -40,6 +40,14 @@ object Performance {
     fun pip(c: Context) = prefs(c).getBoolean("pip", true)
     fun setPip(c: Context, v: Boolean) = prefs(c).edit().putBoolean("pip", v).apply()
 
+    /** Show the Linux desktop on a connected TV / monitor (HDMI or wireless). */
+    fun externalDisplay(c: Context) = prefs(c).getBoolean("external_display", true)
+    fun setExternalDisplay(c: Context, v: Boolean) = prefs(c).edit().putBoolean("external_display", v).apply()
+
+    /** Start the desktop at the external screen's resolution. */
+    fun externalMatch(c: Context) = prefs(c).getBoolean("external_match", true)
+    fun setExternalMatch(c: Context, v: Boolean) = prefs(c).edit().putBoolean("external_match", v).apply()
+
     /** Touchpad under the Linux screen (button in the desktop's top bar). */
     fun touchpad(c: Context) = prefs(c).getBoolean("touchpad", false)
     fun setTouchpad(c: Context, v: Boolean) = prefs(c).edit().putBoolean("touchpad", v).apply()

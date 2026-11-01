@@ -2,6 +2,7 @@ package com.spiros.app.ui.home
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,6 +81,8 @@ fun StatusHero(
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.22f), scheme.surface.copy(alpha = 0.6f))))
+            // A thin glowing edge in the status colour.
+            .border(1.dp, Brush.linearGradient(listOf(accent.copy(alpha = 0.85f), accent.copy(alpha = 0.08f))), RoundedCornerShape(24.dp))
             .padding(18.dp)
             .animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -94,7 +97,7 @@ fun StatusHero(
             Column(Modifier.weight(1f).padding(start = 14.dp)) {
                 Text(
                     stringResource(if (good) R.string.hero_protected else R.string.hero_attention, missing.size),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
                     stringResource(R.string.hero_score, checks.size - missing.size, checks.size),

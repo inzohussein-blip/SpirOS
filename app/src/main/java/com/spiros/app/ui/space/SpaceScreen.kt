@@ -136,6 +136,12 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
 
     fun send(cmd: String, packages: List<String> = emptyList()) {
         lastCommand = cmd
+        // Direct channel first (works on every skin once approved), then the forwarder.
+        val activity = context.findActivity()
+        if (activity != null && space.sendDirect(activity, cmd, packages)) {
+            scope.launch { repeat(3) { delay(1200); refresh++ } }
+            return
+        }
         val intent = space.command(cmd, packages)
         if (intent == null) {
             // Deleting must always be possible: offer the system's own removal instead.
@@ -205,6 +211,9 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
                     Text(stringResource(R.string.space_creating), textAlign = TextAlign.Center)
                 }
                 else -> Unit
+            }
+            if (current is SpaceState.Active || current is SpaceState.Paused) {
+                SpaceConnection(space, refresh, onLeaveApp = { vault.holdLock = true })
             }
             if (!creating || current is SpaceState.Active || current is SpaceState.Paused) when (current) {
                 null -> androidx.compose.foundation.layout.Column(
@@ -423,6 +432,53 @@ private fun AppTile(
                 text = { Text(stringResource(R.string.space_remove_app)) },
                 onClick = { menu = false; onRemove() },
             )
+        }
+    }
+}
+
+/**
+ * Reliable link to SpirOS inside the space: offers Android's "connected apps" approval
+ * (works on every skin), and shows the connection details to report a problem.
+ */
+@Composable
+private fun SpaceConnection(space: SpaceManager, refresh: Int, onLeaveApp: () -> Unit) {
+    val context = LocalContext.current
+    var details by remember { mutableStateOf(false) }
+    val ready = remember(refresh) { space.directReady() }
+    val connect = remember(refresh) { space.connectIntent() }
+    androidx.compose.foundation.layout.Column(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (!ready && connect != null) {
+            androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
+                androidx.compose.foundation.layout.Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.space_connect_title), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.space_connect_desc), style = MaterialTheme.typography.bodySmall)
+                    androidx.compose.material3.Button(onClick = {
+                        onLeaveApp()
+                        runCatching { context.startActivity(connect) }
+                    }) { Text(stringResource(R.string.space_connect)) }
+                }
+            }
+        }
+        TextButton(onClick = { details = !details }) {
+            Text(stringResource(if (ready) R.string.space_link_direct else R.string.space_link_details))
+        }
+        if (details) {
+            val lines = remember(refresh) { space.diagnostics() }
+            val text = lines.joinToString("\n") { (k, v) -> "$k: $v" }
+            androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
+                androidx.compose.foundation.layout.Column(Modifier.padding(12.dp)) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(text, style = MaterialTheme.typography.labelSmall)
+                    }
+                    TextButton(onClick = {
+                        val clip = context.getSystemService(android.content.ClipboardManager::class.java)
+                        clip.setPrimaryClip(android.content.ClipData.newPlainText("SpirOS space", text))
+                    }) { Text(stringResource(R.string.ai_copy)) }
+                }
+            }
         }
     }
 }

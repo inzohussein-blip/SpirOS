@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
+import com.spiros.app.ui.space.findActivityOrNull
 import com.spiros.app.shield.Blocklist
 import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.shield.ShieldVpnService
@@ -86,6 +87,7 @@ fun ShieldScreen(vault: Vault, onBack: () -> Unit) {
     }
 
     fun sendToSpace(cmd: String, extras: Bundle? = null): Boolean {
+        context.findActivityOrNull()?.let { if (space.sendDirect(it, cmd, extras = extras)) return true }
         val intent = space.command(cmd, extras = extras)
         if (intent == null) {
             message(space.unreachableReason())

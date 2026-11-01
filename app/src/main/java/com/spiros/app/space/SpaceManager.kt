@@ -149,12 +149,7 @@ class SpaceManager(private val context: Context) {
      * [unreachableReason] then says why.
      */
     fun command(cmd: String, packages: List<String> = emptyList(), extras: Bundle? = null): Intent? {
-        val t = token ?: return null
-        val intent = Intent(SpaceOwner.ACTION_COMMAND)
-            .apply { if (extras != null) putExtras(extras) }
-            .putExtra(SpaceOwner.EXTRA_TOKEN, t)
-            .putExtra(SpaceOwner.EXTRA_COMMAND, cmd)
-            .putStringArrayListExtra(SpaceOwner.EXTRA_PACKAGES, ArrayList(packages))
+        val intent = commandIntent(cmd, packages, extras) ?: return null
         val targets = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
         // Only the system's cross-profile forwarder may receive it (some skins ship their
         // own forwarder that does not carry the AOSP flag, but it is always a system app).
@@ -163,6 +158,65 @@ class SpaceManager(private val context: Context) {
                 (r.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
         }
         return if (safe) intent else null
+    }
+
+    private fun commandIntent(cmd: String, packages: List<String>, extras: Bundle?): Intent? {
+        val t = token ?: return null
+        return Intent(SpaceOwner.ACTION_COMMAND)
+            .apply { if (extras != null) putExtras(extras) }
+            .putExtra(SpaceOwner.EXTRA_TOKEN, t)
+            .putExtra(SpaceOwner.EXTRA_COMMAND, cmd)
+            .putStringArrayListExtra(SpaceOwner.EXTRA_PACKAGES, ArrayList(packages))
+    }
+
+    // ---- direct channel: Android's "connected apps" across profiles ----------------------
+    // The space allows it (Profile Owner, setCrossProfilePackages) and the user approves it
+    // once in system settings. Then SpirOS starts its own command activity inside the space
+    // directly, without the system's intent forwarder that some skins break.
+
+    private val crossProfile get() = context.getSystemService(android.content.pm.CrossProfileApps::class.java)
+
+    /** The direct channel is approved and the space is there. */
+    fun directReady(): Boolean = runCatching { crossProfile.canInteractAcrossProfiles() }.getOrDefault(false) && spaceUser() != null
+
+    /** System screen where the user approves the direct channel, or null if not offered (yet). */
+    fun connectIntent(): Intent? = runCatching {
+        val cp = crossProfile
+        if (!cp.canInteractAcrossProfiles() && cp.canRequestInteractAcrossProfiles()) cp.createRequestInteractAcrossProfilesIntent() else null
+    }.getOrNull()
+
+    /** Sends a command straight to SpirOS in the space; false if the direct channel is not available. */
+    fun sendDirect(activity: android.app.Activity, cmd: String, packages: List<String> = emptyList(), extras: Bundle? = null): Boolean {
+        if (!runCatching { crossProfile.canInteractAcrossProfiles() }.getOrDefault(false)) return false
+        val user = spaceUser() ?: return false
+        val intent = commandIntent(cmd, packages, extras)?.setComponent(ComponentName(context, SpaceCommandActivity::class.java))
+            ?: return false
+        return runCatching { crossProfile.startActivity(intent, user, activity) }.isSuccess
+    }
+
+    /** Human-readable connection report for the diagnostics card. */
+    fun diagnostics(): List<Pair<String, String>> {
+        val user = spaceUser()
+        val probe = Intent(SpaceOwner.ACTION_COMMAND)
+        val targets = context.packageManager.queryIntentActivities(probe, PackageManager.MATCH_DEFAULT_ONLY)
+        val cp = runCatching { crossProfile }.getOrNull()
+        return listOf(
+            "pairing key" to if (token != null) "yes" else "NO",
+            "space profile" to (user?.toString() ?: "not found"),
+            "paused" to (user?.let { isPaused(it).toString() } ?: "-"),
+            "direct channel" to when {
+                cp == null -> "unavailable"
+                runCatching { cp.canInteractAcrossProfiles() }.getOrDefault(false) -> "approved"
+                runCatching { cp.canRequestInteractAcrossProfiles() }.getOrDefault(false) -> "can be approved"
+                else -> "not offered by the space yet"
+            },
+            "forwarders" to if (targets.isEmpty()) "none" else targets.joinToString { r ->
+                r.activityInfo.packageName.substringAfterLast('.') + "/" + r.activityInfo.name.substringAfterLast('.') +
+                    if (r.isCrossProfileIntentForwarderActivity) "*" else ""
+            },
+            "other profiles" to (userManager.userProfiles.size - 1 - (if (user != null) 1 else 0)).toString(),
+            "device" to "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}",
+        )
     }
 
     /** Why [command] returned null, as a message for the user. */

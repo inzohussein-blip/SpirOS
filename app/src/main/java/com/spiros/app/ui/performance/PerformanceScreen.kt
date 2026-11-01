@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
+import com.spiros.app.ui.space.findActivityOrNull
 import com.spiros.app.perf.Performance
 import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.space.SpaceManager
@@ -63,6 +64,8 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
     var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
     var freeze by remember { mutableStateOf(Performance.freezeInBackground(context)) }
     var pip by remember { mutableStateOf(Performance.pip(context)) }
+    var external by remember { mutableStateOf(Performance.externalDisplay(context)) }
+    var externalMatch by remember { mutableStateOf(Performance.externalMatch(context)) }
     var session by remember { mutableStateOf(Performance.linuxSession(context)) }
     var singleApp by remember { mutableStateOf(Performance.singleApp(context)) }
     var fastCores by remember { mutableStateOf(Performance.aiFastCores(context)) }
@@ -78,6 +81,7 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
     }
 
     fun sendToSpace(cmd: String): Boolean {
+        context.findActivityOrNull()?.let { if (space.sendDirect(it, cmd)) return true }
         val intent = space.command(cmd) ?: run { message(space.unreachableReason()); return false }
         vault.holdLock = true
         return runCatching { commands.launch(intent) }.onFailure {
@@ -135,6 +139,24 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
                     Toggle(stringResource(R.string.perf_pip), stringResource(R.string.perf_pip_desc), pip) {
                         pip = it
                         Performance.setPip(context, it)
+                    }
+                    // External screen: HDMI / USB-C cable or a wireless display.
+                    Toggle(stringResource(R.string.perf_external), stringResource(R.string.perf_external_desc), external) {
+                        external = it
+                        Performance.setExternalDisplay(context, it)
+                    }
+                    if (external) {
+                        Toggle(stringResource(R.string.perf_external_match), stringResource(R.string.perf_external_match_desc), externalMatch) {
+                            externalMatch = it
+                            Performance.setExternalMatch(context, it)
+                        }
+                        androidx.compose.material3.OutlinedButton(onClick = {
+                            vault.holdLock = true
+                            // Wireless display / "Cast screen" (name and place vary by phone).
+                            val opened = listOf(android.provider.Settings.ACTION_CAST_SETTINGS, "android.settings.WIFI_DISPLAY_SETTINGS", android.provider.Settings.ACTION_SETTINGS)
+                                .any { action -> runCatching { context.startActivity(android.content.Intent(action)) }.isSuccess }
+                            if (!opened) vault.holdLock = false
+                        }) { Text(stringResource(R.string.perf_external_wireless)) }
                     }
                     Toggle(stringResource(R.string.perf_freeze), stringResource(R.string.perf_freeze_desc), freeze) {
                         freeze = it
