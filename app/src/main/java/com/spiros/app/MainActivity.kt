@@ -31,6 +31,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Started inside the isolated space (Repair): finish its setup and leave at once.
+        if (SpaceOwner.repairFromLauncher(this)) {
+            android.widget.Toast.makeText(this, R.string.space_repaired, android.widget.Toast.LENGTH_LONG).show()
+            finishAndRemoveTask()
+            return
+        }
         // No screenshots, screen recording or recents preview unless allowed in Settings.
         ScreenSecurity.apply(this)
         Navigation.handle(intent)

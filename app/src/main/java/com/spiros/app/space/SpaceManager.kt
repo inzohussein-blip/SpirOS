@@ -194,6 +194,23 @@ class SpaceManager(private val context: Context) {
         return runCatching { crossProfile.startActivity(intent, user, activity) }.isSuccess
     }
 
+    /**
+     * Starts SpirOS inside the space so it can finish its own setup (some skins never
+     * deliver the provisioning-complete signal). False if its icon there is gone.
+     */
+    fun repair(): Boolean {
+        val user = spaceUser() ?: return false
+        val own = runCatching { launcherApps.getActivityList(context.packageName, user) }.getOrNull()?.firstOrNull() ?: return false
+        return runCatching { launcherApps.startMainActivity(own.componentName, user, null, null) }.isSuccess
+    }
+
+    /** Neither channel exists: SpirOS in the space never finished its setup. */
+    fun needsRepair(): Boolean {
+        if (spaceUser() == null || directReady() || connectIntent() != null) return false
+        val targets = context.packageManager.queryIntentActivities(Intent(SpaceOwner.ACTION_COMMAND), PackageManager.MATCH_DEFAULT_ONLY)
+        return targets.isEmpty()
+    }
+
     /** Human-readable connection report for the diagnostics card. */
     fun diagnostics(): List<Pair<String, String>> {
         val user = spaceUser()

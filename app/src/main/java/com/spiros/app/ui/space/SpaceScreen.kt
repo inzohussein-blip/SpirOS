@@ -450,6 +450,26 @@ private fun SpaceConnection(space: SpaceManager, refresh: Int, onLeaveApp: () ->
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        val broken = remember(refresh) { space.needsRepair() }
+        var repairFailed by remember { mutableStateOf(false) }
+        if (broken) {
+            androidx.compose.material3.Card(
+                Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            ) {
+                androidx.compose.foundation.layout.Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.space_repair_title), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.space_repair_desc), style = MaterialTheme.typography.bodySmall)
+                    androidx.compose.material3.Button(onClick = {
+                        onLeaveApp()
+                        repairFailed = !space.repair()
+                    }) { Text(stringResource(R.string.space_repair)) }
+                    if (repairFailed) {
+                        Text(stringResource(R.string.space_repair_failed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        }
         if (!ready && connect != null) {
             androidx.compose.material3.Card(Modifier.fillMaxWidth()) {
                 androidx.compose.foundation.layout.Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {

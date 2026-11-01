@@ -24,6 +24,7 @@ object SpaceOwner {
     const val EXTRA_COMMAND = "com.spiros.app.extra.COMMAND"
     const val EXTRA_PACKAGES = "com.spiros.app.extra.PACKAGES"
     const val KEY_TOKEN = "token"
+    private const val KEY_ADOPT_UNTIL = "adopt_until"
 
     const val CMD_CLONE = "clone"
     const val CMD_REMOVE = "remove"
@@ -92,7 +93,46 @@ object SpaceOwner {
         }
         // Nothing copied in the space can be pasted outside, and vice versa.
         runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE) }
-        // The SpirOS copy in the space has no UI of its own; hide its launcher icon.
+        // The SpirOS copy in the space has no UI of its own; its icon is hidden once the
+        // main profile can reach it directly (until then it is how Repair starts it).
+        hideLauncherWhenLinked(context)
+    }
+
+    fun isAuthorized(context: Context, intent: Intent): Boolean {
+        val given = intent.getStringExtra(EXTRA_TOKEN) ?: return false
+        val expected = prefs(context).getString(KEY_TOKEN, null)
+        if (expected == null) {
+            // Some skins never hand the pairing key over at provisioning. Right after the
+            // user repaired the space (SpirOS opened in here, see repairFromLauncher), take
+            // the first key that arrives, once, within a few minutes.
+            val until = prefs(context).getLong(KEY_ADOPT_UNTIL, 0)
+            if (System.currentTimeMillis() > until || given.length < 32) return false
+            prefs(context).edit().putString(KEY_TOKEN, given).remove(KEY_ADOPT_UNTIL).apply()
+            return true
+        }
+        return MessageDigest.isEqual(expected.toByteArray(), given.toByteArray())
+    }
+
+    /**
+     * SpirOS was opened inside the space (the main profile's "Repair" button starts it
+     * through the launcher). Finish whatever provisioning left undone and open the
+     * channels. Returns true when this ran in the space.
+     */
+    fun repairFromLauncher(context: Context): Boolean {
+        if (!isProfileOwner(context)) return false
+        finalize(context, null)
+        if (prefs(context).getString(KEY_TOKEN, null) == null) {
+            prefs(context).edit().putLong(KEY_ADOPT_UNTIL, System.currentTimeMillis() + 10 * 60_000).apply()
+        }
+        return true
+    }
+
+    /** Hide SpirOS's own icon in the space once the main profile can reach it directly. */
+    fun hideLauncherWhenLinked(context: Context) {
+        val linked = Build.VERSION.SDK_INT >= 30 && runCatching {
+            context.getSystemService(android.content.pm.CrossProfileApps::class.java).canInteractAcrossProfiles()
+        }.getOrDefault(false)
+        if (!linked) return
         runCatching {
             context.packageManager.setComponentEnabledSetting(
                 ComponentName(context.packageName, LAUNCHER_ALIAS),
@@ -100,12 +140,6 @@ object SpaceOwner {
                 PackageManager.DONT_KILL_APP,
             )
         }
-    }
-
-    fun isAuthorized(context: Context, intent: Intent): Boolean {
-        val expected = prefs(context).getString(KEY_TOKEN, null) ?: return false
-        val given = intent.getStringExtra(EXTRA_TOKEN) ?: return false
-        return MessageDigest.isEqual(expected.toByteArray(), given.toByteArray())
     }
 
     fun execute(context: Context, intent: Intent): Boolean {
