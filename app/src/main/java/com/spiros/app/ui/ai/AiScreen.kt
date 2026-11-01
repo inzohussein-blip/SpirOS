@@ -49,6 +49,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import com.spiros.app.ai.AiChat
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
@@ -77,7 +83,10 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     var refresh by remember { mutableIntStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
     var preset by remember { mutableIntStateOf(0) }
-    val messages = remember { mutableStateListOf<AiChat.Message>() }
+    val vault = (context.applicationContext as com.spiros.app.SpirApp).vault
+    // The conversation is kept encrypted in the vault (never in plain files).
+    val messages = remember { mutableStateListOf<AiChat.Message>().apply { addAll(loadHistory(vault)) } }
+    var modelMenu by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var answering by remember { mutableStateOf(false) }
     val downloaded by produceState(emptyList<String>(), refresh, status.connected) {
@@ -99,6 +108,9 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
         }
     }
     LaunchedEffect(status.taskActive) { if (!status.taskActive) refresh++ }
+    LaunchedEffect(messages.size, answering) {
+        if (!answering) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { saveHistory(vault, messages.toList()) }
+    }
     LaunchedEffect(state) {
         if (state == AiServer.State.FAILED) aiLog = Engine.call(context) { it.aiLog() }.orEmpty()
     }
@@ -106,6 +118,30 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     Scaffold(
         topBar = {
             SpirTopBar(stringResource(R.string.ai_title), onBack) {
+                if (state == AiServer.State.READY) {
+                    // Switch the model from the title bar (only models already downloaded).
+                    Box {
+                        androidx.compose.material3.AssistChip(
+                            onClick = { modelMenu = true },
+                            label = { Text(AiModels.byFileName(status.aiModel)?.name?.substringBefore(" ·") ?: status.aiModel, maxLines = 1) },
+                            trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, null) },
+                        )
+                        androidx.compose.material3.DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
+                            AiModels.catalog.filter { it.fileName in downloaded }.forEach { m ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    text = { Text(m.name) },
+                                    onClick = {
+                                        modelMenu = false
+                                        if (m.fileName != status.aiModel) {
+                                            selected = m
+                                            Engine.startAi(context, m)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
                 if (state == AiServer.State.READY || state == AiServer.State.LOADING) {
                     IconButton(onClick = { messages.clear() }) {
                         Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.ai_clear))
@@ -135,8 +171,8 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                     onPreset = { preset = it },
                     input = input,
                     onInput = { input = it },
-                    onSend = {
-                        val text = input.trim()
+                    onSend = { suggestion ->
+                        val text = (suggestion ?: input).trim()
                         if (text.isEmpty() || answering) return@Chat
                         input = ""
                         messages += AiChat.Message("user", text)
@@ -234,6 +270,14 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     }
 }
 
+/** Ready-made questions per preset, shown before the first message. */
+private val SUGGESTIONS = listOf(
+    listOf(R.string.ai_s_general_1, R.string.ai_s_general_2, R.string.ai_s_general_3),
+    listOf(R.string.ai_s_trading_1, R.string.ai_s_trading_2, R.string.ai_s_trading_3),
+    listOf(R.string.ai_s_code_1, R.string.ai_s_code_2, R.string.ai_s_code_3),
+)
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun Chat(
     messages: List<AiChat.Message>,
@@ -242,8 +286,10 @@ private fun Chat(
     onPreset: (Int) -> Unit,
     input: String,
     onInput: (String) -> Unit,
-    onSend: () -> Unit,
+    /** Sends [input], or the given suggestion. */
+    onSend: (String?) -> Unit,
 ) {
+    val context = LocalContext.current
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size, messages.lastOrNull()?.text?.length) {
         if (messages.isNotEmpty()) listState.scrollToItem(messages.lastIndex)
@@ -254,24 +300,53 @@ private fun Chat(
                 FilterChip(selected = preset == i, onClick = { onPreset(i) }, label = { Text(stringResource(label)) })
             }
         }
-        LazyColumn(
+        if (messages.isEmpty()) {
+            // Empty chat: a few ready-made questions to start with.
+            Column(
+                Modifier.weight(1f).fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(8.dp))
+                Text(stringResource(R.string.ai_empty_title), style = MaterialTheme.typography.titleMedium)
+                SUGGESTIONS[preset].forEach { res ->
+                    val text = stringResource(res)
+                    androidx.compose.material3.SuggestionChip(onClick = { onSend(text) }, label = { Text(text) })
+                }
+            }
+        } else LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(messages) { m ->
                 val mine = m.role == "user"
-                Box(Modifier.fillMaxWidth(), contentAlignment = if (mine) Alignment.CenterEnd else Alignment.CenterStart) {
-                    Text(
-                        m.text.ifEmpty { "…" },
-                        modifier = Modifier
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
+                    Box(
+                        Modifier
                             .widthIn(max = 320.dp)
                             .background(
                                 if (mine) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface,
                                 RoundedCornerShape(14.dp),
                             )
                             .padding(10.dp),
-                    )
+                    ) {
+                        if (m.text.isEmpty()) TypingDots() else androidx.compose.foundation.text.selection.SelectionContainer { Text(m.text) }
+                    }
+                    if (!mine && m.text.isNotEmpty()) {
+                        Row {
+                            IconButton(onClick = {
+                                val clip = context.getSystemService(android.content.ClipboardManager::class.java)
+                                clip.setPrimaryClip(android.content.ClipData.newPlainText("SpirOS AI", m.text))
+                            }) { Icon(Icons.Rounded.ContentCopy, stringResource(R.string.ai_copy), Modifier.padding(2.dp)) }
+                            IconButton(onClick = {
+                                val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                                    .putExtra(android.content.Intent.EXTRA_TEXT, m.text)
+                                (context.applicationContext as com.spiros.app.SpirApp).vault.holdLock = true
+                                runCatching { context.startActivity(android.content.Intent.createChooser(send, null)) }
+                            }) { Icon(Icons.Rounded.Share, stringResource(R.string.ai_share), Modifier.padding(2.dp)) }
+                        }
+                    }
                 }
             }
         }
@@ -283,10 +358,52 @@ private fun Chat(
                 modifier = Modifier.weight(1f),
                 maxLines = 5,
             )
-            IconButton(onClick = onSend, enabled = !answering) {
+            IconButton(onClick = { onSend(null) }, enabled = !answering) {
                 if (answering) CircularProgressIndicator(Modifier.padding(4.dp)) else
                     Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send))
             }
+        }
+    }
+}
+
+/** "…" that pulses while the model is thinking. */
+@Composable
+private fun TypingDots() {
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "dots")
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(vertical = 6.dp)) {
+        repeat(3) { i ->
+            val alpha by t.animateFloat(
+                0.2f, 1f,
+                androidx.compose.animation.core.infiniteRepeatable(
+                    androidx.compose.animation.core.tween(500, delayMillis = i * 160),
+                    androidx.compose.animation.core.RepeatMode.Reverse,
+                ),
+                label = "dot$i",
+            )
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha), androidx.compose.foundation.shape.CircleShape),
+            )
+        }
+    }
+}
+
+private const val HISTORY = "ai-chat"
+
+private fun loadHistory(vault: com.spiros.app.vault.Vault): List<AiChat.Message> = runCatching {
+    val json = org.json.JSONArray(String(vault.files.readPrivate(HISTORY) ?: return emptyList()))
+    (0 until json.length()).map { json.getJSONObject(it) }.map { AiChat.Message(it.getString("role"), it.getString("text")) }
+}.getOrDefault(emptyList())
+
+private fun saveHistory(vault: com.spiros.app.vault.Vault, messages: List<AiChat.Message>) {
+    runCatching {
+        if (messages.isEmpty()) {
+            vault.files.writePrivate(HISTORY, null)
+        } else {
+            val json = org.json.JSONArray()
+            messages.takeLast(200).forEach { json.put(org.json.JSONObject().put("role", it.role).put("text", it.text)) }
+            vault.files.writePrivate(HISTORY, json.toString().toByteArray())
         }
     }
 }

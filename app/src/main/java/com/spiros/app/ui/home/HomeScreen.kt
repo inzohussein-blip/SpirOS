@@ -200,6 +200,19 @@ fun HomeScreen(
                 }
             }
 
+            // Overall protection and the one thing to do next.
+            fullWidth {
+                StatusHero(
+                    shieldOn = shieldPhone || shieldSpace,
+                    spaceReady = desktop?.user != null,
+                    onOpenShield = onOpenShield,
+                    onOpenSpace = onOpenSpace,
+                    onOpenSettings = onOpenSettings,
+                )
+            }
+            // Downloads and installs running in the background.
+            fullWidth { TaskPill() }
+
             // Status at a glance; each chip opens its screen.
             fullWidth {
                 Row(

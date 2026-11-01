@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AcUnit
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.WbSunny
@@ -205,7 +207,17 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
                 else -> Unit
             }
             if (!creating || current is SpaceState.Active || current is SpaceState.Paused) when (current) {
-                null -> Centered { CircularProgressIndicator() }
+                null -> androidx.compose.foundation.layout.Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Placeholders shaped like the app grid while the space is read.
+                    repeat(3) {
+                        androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            repeat(4) { com.spiros.app.ui.common.Skeleton(Modifier.size(64.dp), corner = 16.dp) }
+                        }
+                    }
+                }
                 is SpaceState.Unsupported -> Column(
                     Modifier
                         .fillMaxSize()
@@ -259,12 +271,12 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
                     }) { Text(stringResource(R.string.space_resume)) }
                 }
                 is SpaceState.Active -> if (current.apps.isEmpty()) {
-                    Centered {
-                        Text(
-                            stringResource(R.string.space_empty),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
+                    com.spiros.app.ui.common.EmptyState(
+                        Icons.Rounded.Apps,
+                        stringResource(R.string.space_empty_title),
+                        stringResource(R.string.space_empty),
+                    ) {
+                        androidx.compose.material3.Button(onClick = { adding = true }) { Text(stringResource(R.string.space_add_apps)) }
                     }
                 } else {
                     LazyVerticalGrid(
@@ -308,18 +320,16 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
     }
 
     if (confirmDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmDelete = false },
-            title = { Text(stringResource(R.string.space_delete)) },
-            text = { Text(stringResource(R.string.space_delete_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    send(SpaceOwner.CMD_DESTROY)
-                    space.forget()
-                }) { Text(stringResource(R.string.space_delete), color = MaterialTheme.colorScheme.error) }
+        com.spiros.app.ui.common.ConfirmSheet(
+            title = stringResource(R.string.space_delete),
+            lost = stringResource(R.string.space_delete_confirm),
+            kept = stringResource(R.string.space_delete_kept),
+            confirm = stringResource(R.string.space_delete),
+            onConfirm = {
+                send(SpaceOwner.CMD_DESTROY)
+                space.forget()
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+            onDismiss = { confirmDelete = false },
         )
     }
 }
@@ -356,10 +366,35 @@ private fun AppTile(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onLaunch, onLongClick = { menu = true })
-                .alpha(if (app.frozen) 0.45f else 1f),
+                .combinedClickable(onClick = onLaunch, onLongClick = { menu = true }),
         ) {
-            Image(app.icon.asImageBitmap(), contentDescription = null, modifier = Modifier.size(56.dp))
+            Box {
+                Image(
+                    app.icon.asImageBitmap(),
+                    contentDescription = null,
+                    // Frozen apps look "switched off": greyscale with a snowflake.
+                    colorFilter = if (app.frozen) {
+                        androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                            androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) },
+                        )
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.size(56.dp),
+                )
+                if (app.frozen) {
+                    Icon(
+                        Icons.Rounded.AcUnit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(20.dp)
+                            .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CircleShape)
+                            .padding(3.dp),
+                    )
+                }
+            }
             Text(
                 app.label,
                 maxLines = 1,
@@ -376,6 +411,10 @@ private fun AppTile(
             }
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.space_open_app)) },
+                onClick = { menu = false; onLaunch() },
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(if (app.frozen) R.string.space_unfreeze else R.string.space_freeze)) },
                 onClick = { menu = false; onToggleFreeze() },

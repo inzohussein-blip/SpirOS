@@ -61,6 +61,8 @@ import com.spiros.app.SpirApp
 import com.spiros.app.remote.Engine
 import com.spiros.app.remote.EngineInstaller
 import com.spiros.app.ui.common.TaskCard
+import com.spiros.app.ui.common.StepIndicator
+import androidx.compose.runtime.produceState
 import androidx.compose.material3.CircularProgressIndicator
 import kotlinx.coroutines.delay
 import com.spiros.app.security.Panic
@@ -70,6 +72,8 @@ import com.spiros.app.ui.lab.VmScreen
 import com.spiros.app.ui.lab.Cursor
 import com.spiros.app.ui.lab.Touchpad
 import androidx.compose.material.icons.rounded.Mouse
+import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.platform.LocalConfiguration
 import com.spiros.app.ui.Pip
@@ -122,6 +126,9 @@ fun LinuxScreen(onBack: () -> Unit) {
     var confirmRemove by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
     var touchpad by remember { mutableStateOf(Performance.touchpad(context)) }
+    var typing by remember { mutableStateOf(false) }
+    var accountsVersion by remember { mutableIntStateOf(0) }
+    var accountSkipped by remember { mutableStateOf(false) }
     val cursor = remember { Cursor() }
 
     // Full-screen desktop while running.
@@ -138,41 +145,24 @@ fun LinuxScreen(onBack: () -> Unit) {
             onDispose { Pip.desktopVisible = false }
         }
         Surface(Modifier.fillMaxSize(), color = Color.Black) {
+          Box(Modifier.fillMaxSize()) {
             Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_back), tint = Color.White)
-                    }
-                    OutlinedTextField(
-                        value = input,
-                        onValueChange = { input = it },
-                        singleLine = true,
-                        placeholder = { Text(stringResource(R.string.linux_type_hint)) },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send, autoCorrectEnabled = false),
-                        keyboardActions = KeyboardActions(onSend = { client.type(input + "\n"); input = "" }),
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = { client.type(input); input = "" }) {
-                        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
-                    }
-                    IconButton(onClick = {
-                        touchpad = !touchpad
-                        Performance.setTouchpad(context, touchpad)
-                    }) {
-                        Icon(
-                            Icons.Rounded.Mouse,
-                            contentDescription = stringResource(if (touchpad) R.string.touchpad_hide else R.string.touchpad_show),
-                            tint = if (touchpad) Color(0xFF7CE7C3) else Color.White,
+                // Typing bar only while the keyboard tool is on: the desktop gets the
+                // whole screen otherwise.
+                if (typing) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = input,
+                            onValueChange = { input = it },
+                            singleLine = true,
+                            placeholder = { Text(stringResource(R.string.linux_type_hint)) },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send, autoCorrectEnabled = false),
+                            keyboardActions = KeyboardActions(onSend = { client.type(input + "\n"); input = "" }),
+                            modifier = Modifier.weight(1f).padding(start = 8.dp),
                         )
-                    }
-                    IconButton(onClick = { (context as? Activity)?.let(Pip::enter) }) {
-                        Icon(Icons.Rounded.PictureInPicture, contentDescription = stringResource(R.string.linux_pip), tint = Color.White)
-                    }
-                    IconButton(onClick = { Panic.trigger(context) }) {
-                        Icon(Icons.Rounded.Warning, contentDescription = stringResource(R.string.panic), tint = Color(0xFFFF6B6B))
-                    }
-                    IconButton(onClick = { Engine.stopDesktop(context) }) {
-                        Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.linux_stop), tint = Color(0xFFFF6B6B))
+                        IconButton(onClick = { client.type(input); input = "" }) {
+                            Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
+                        }
                     }
                 }
                 // Digital-rain boot screen with the real log until the desktop draws.
@@ -199,6 +189,31 @@ fun LinuxScreen(onBack: () -> Unit) {
                     VmScreen(client, Modifier.weight(1f))
                 }
             }
+            // One floating, draggable button holds every desktop tool.
+            FloatingDock(
+                tools = listOf(
+                    DockTool(Icons.Rounded.Close, stringResource(R.string.action_back), Color.White, onBack),
+                    DockTool(Icons.Rounded.Keyboard, stringResource(R.string.linux_type_hint), if (typing) Color(0xFF7CE7C3) else Color.White) {
+                        typing = !typing
+                    },
+                    DockTool(
+                        Icons.Rounded.Mouse,
+                        stringResource(if (touchpad) R.string.touchpad_hide else R.string.touchpad_show),
+                        if (touchpad) Color(0xFF7CE7C3) else Color.White,
+                    ) {
+                        touchpad = !touchpad
+                        Performance.setTouchpad(context, touchpad)
+                    },
+                    DockTool(Icons.Rounded.PictureInPicture, stringResource(R.string.linux_pip), Color.White) {
+                        (context as? Activity)?.let(Pip::enter)
+                    },
+                    DockTool(Icons.Rounded.Warning, stringResource(R.string.panic), Color(0xFFFF6B6B)) { Panic.trigger(context) },
+                    DockTool(Icons.Rounded.PowerSettingsNew, stringResource(R.string.linux_stop), Color(0xFFFF6B6B)) {
+                        Engine.stopDesktop(context)
+                    },
+                ),
+            )
+          }
         }
         return
     }
@@ -216,6 +231,37 @@ fun LinuxScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.linux_intro), style = MaterialTheme.typography.bodyMedium)
+
+            // Three-step setup: choose → download → your account.
+            val users by produceState(emptyList<Engine.User>(), status.connected, installed, accountsVersion) {
+                value = if (status.connected && installed) Engine.parseUsers(Engine.call(context) { it.users() }) else emptyList()
+            }
+            val needsAccount = installed && users.none { it.uid != 0 } && !Performance.accountPromptDone(context) && !accountSkipped
+            val step = when {
+                linuxTask?.active == true -> 1
+                needsAccount -> 2
+                !installed || changing -> 0
+                else -> -1
+            }
+            if (engineInstalled && status.connected && step >= 0) {
+                StepIndicator(
+                    listOf(
+                        stringResource(R.string.wizard_choose),
+                        stringResource(R.string.wizard_download),
+                        stringResource(R.string.wizard_account),
+                    ),
+                    step,
+                )
+            }
+            if (step == 2 && linuxTask?.active != true) {
+                AccountStep(
+                    onCreated = { accountsVersion++ },
+                    onSkip = {
+                        Performance.setAccountPromptDone(context, true)
+                        accountSkipped = true
+                    },
+                )
+            }
 
             when {
                 !engineInstalled -> Card(Modifier.fillMaxWidth()) {
@@ -322,18 +368,16 @@ fun LinuxScreen(onBack: () -> Unit) {
     }
 
     if (confirmRemove) {
-        AlertDialog(
-            onDismissRequest = { confirmRemove = false },
-            title = { Text(stringResource(R.string.linux_remove)) },
-            text = { Text(stringResource(R.string.linux_remove_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmRemove = false
-                    Engine.stopDesktop(context)
-                    Engine.send(context) { it.removeLinux() }
-                }) { Text(stringResource(R.string.linux_remove), color = MaterialTheme.colorScheme.error) }
+        com.spiros.app.ui.common.ConfirmSheet(
+            title = stringResource(R.string.linux_remove),
+            lost = stringResource(R.string.linux_remove_confirm),
+            kept = stringResource(R.string.linux_remove_kept),
+            confirm = stringResource(R.string.linux_remove),
+            onConfirm = {
+                Engine.stopDesktop(context)
+                Engine.send(context) { it.removeLinux() }
             },
-            dismissButton = { OutlinedButton(onClick = { confirmRemove = false }) { Text(stringResource(R.string.cancel)) } },
+            onDismiss = { confirmRemove = false },
         )
     }
 }
@@ -371,6 +415,68 @@ private fun EngineInstallButton(state: EngineInstaller.State, update: Boolean = 
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+/** Last setup step: your own Linux account (admin), used for the desktop. */
+@Composable
+private fun AccountStep(onCreated: () -> Unit, onSkip: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val view = androidx.compose.ui.platform.LocalView.current
+    var name by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.wizard_account_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.wizard_account_desc), style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it.lowercase().trim() },
+                label = { Text(stringResource(R.string.accounts_username)) },
+                singleLine = true,
+                isError = name.isNotEmpty() && !com.spiros.app.linux.LinuxAccounts.isValidName(name),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.accounts_password)) },
+                singleLine = true,
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                supportingText = { Text(stringResource(R.string.accounts_password_rule)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    enabled = !busy && com.spiros.app.linux.LinuxAccounts.isValidName(name) &&
+                        com.spiros.app.linux.LinuxAccounts.isValidPassword(password),
+                    onClick = {
+                        busy = true
+                        val n = name
+                        val p = password
+                        scope.launch {
+                            val result = Engine.call(context) { e ->
+                                (e.account("add", n, p, true) ?: "").also { if (it.isEmpty()) e.setDesktopUser(n) }
+                            } ?: "engine not connected"
+                            busy = false
+                            if (result.isEmpty()) {
+                                com.spiros.app.ui.common.Haptics.success(view)
+                                Performance.setAccountPromptDone(context, true)
+                                onCreated()
+                            } else {
+                                com.spiros.app.ui.common.Haptics.error(view)
+                                error = result
+                            }
+                        }
+                    },
+                ) { Text(stringResource(R.string.wizard_account_create)) }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.wizard_skip)) }
             }
         }
     }

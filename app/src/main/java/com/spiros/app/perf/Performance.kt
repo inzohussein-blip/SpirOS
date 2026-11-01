@@ -44,6 +44,14 @@ object Performance {
     fun touchpad(c: Context) = prefs(c).getBoolean("touchpad", false)
     fun setTouchpad(c: Context, v: Boolean) = prefs(c).edit().putBoolean("touchpad", v).apply()
 
+    /** The Linux setup's "create your account" step was done or skipped. */
+    fun accountPromptDone(c: Context) = prefs(c).getBoolean("account_prompt_done", false)
+    fun setAccountPromptDone(c: Context, v: Boolean) = prefs(c).edit().putBoolean("account_prompt_done", v).apply()
+
+    /** Vault shown as a grid (true) or a list. */
+    fun vaultGrid(c: Context) = prefs(c).getBoolean("vault_grid", true)
+    fun setVaultGrid(c: Context, v: Boolean) = prefs(c).edit().putBoolean("vault_grid", v).apply()
+
     // ---- AI ----
     fun aiFastCores(c: Context) = prefs(c).getBoolean("ai_fast_cores", true)
     fun setAiFastCores(c: Context, v: Boolean) = prefs(c).edit().putBoolean("ai_fast_cores", v).apply()

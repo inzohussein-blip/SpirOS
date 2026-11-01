@@ -37,6 +37,7 @@ fun LockScreen(vault: Vault) {
     val context = LocalContext.current
     val activity = context as Activity
     val scope = rememberCoroutineScope()
+    val view = androidx.compose.ui.platform.LocalView.current
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val biometric = remember { vault.isBiometricEnabled && BiometricGate.isAvailable(context) }
@@ -88,6 +89,8 @@ fun LockScreen(vault: Vault) {
                 val result = vault.unlock(pin)
                 pin.fill('0')
                 busy = false
+                if (result == Vault.UnlockResult.Success) com.spiros.app.ui.common.Haptics.success(view)
+                else com.spiros.app.ui.common.Haptics.error(view)
                 error = when (result) {
                     Vault.UnlockResult.Success -> null
                     Vault.UnlockResult.Wrong -> context.getString(R.string.pin_wrong)

@@ -138,6 +138,34 @@ class VaultFiles internal constructor(
 
     internal fun clearCache() = thumbCache.evictAll()
 
+    // ---- small private records (e.g. AI chat history), never shown as vault items ----
+
+    private val privateDir get() = File(dir, "private").apply { mkdirs() }
+
+    /** Reads a private record, or null if absent (or the vault is locked). */
+    fun readPrivate(label: String): ByteArray? = runCatching {
+        val file = File(privateDir, label)
+        if (!file.exists()) null else Gcm.decrypt(subKey(PRIVATE_LABEL), file.readBytes(), label.toByteArray())
+    }.getOrNull()
+
+    /** Encrypts and stores a private record (null deletes it). */
+    fun writePrivate(label: String, data: ByteArray?) {
+        val file = AtomicFile(File(privateDir, label))
+        if (data == null) {
+            file.delete()
+            return
+        }
+        val sealed = Gcm.encrypt(subKey(PRIVATE_LABEL), data, label.toByteArray())
+        val out = file.startWrite()
+        try {
+            out.write(sealed)
+            file.finishWrite(out)
+        } catch (e: Exception) {
+            file.failWrite(out)
+            throw e
+        }
+    }
+
     private fun openDecrypted(id: String): InputStream =
         streaming().newDecryptingStream(FileInputStream(File(blobDir, id)), id.toByteArray())
 
@@ -218,5 +246,6 @@ class VaultFiles internal constructor(
         const val THUMB_SIZE = 320
         const val INDEX_LABEL = "spiros.index"
         const val THUMB_LABEL = "spiros.thumb"
+        const val PRIVATE_LABEL = "spiros.private"
     }
 }

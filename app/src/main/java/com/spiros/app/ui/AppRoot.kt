@@ -174,8 +174,15 @@ private fun ScreensAnimated(screen: Screen, vault: Vault, navigate: (Screen) -> 
             // Deeper screens slide in from the reading end; going back reverses it.
             val forward = depth(targetState) > depth(initialState)
             val sign = (if (forward) 1 else -1) * (if (rtl) -1 else 1)
-            (slideInHorizontally(tween(260)) { it / 4 * sign } + fadeIn(tween(220)))
-                .togetherWith(slideOutHorizontally(tween(260)) { -it / 4 * sign } + fadeOut(tween(180)))
+            // Opening a section zooms in slightly from its tile; going back zooms out.
+            (
+                slideInHorizontally(tween(280)) { it / 5 * sign } + fadeIn(tween(220)) +
+                    androidx.compose.animation.scaleIn(tween(280), initialScale = if (forward) 0.94f else 1.03f)
+                )
+                .togetherWith(
+                    slideOutHorizontally(tween(280)) { -it / 5 * sign } + fadeOut(tween(180)) +
+                        androidx.compose.animation.scaleOut(tween(280), targetScale = if (forward) 1.03f else 0.94f),
+                )
         },
         label = "screens",
     ) { current -> ScreenContent(current, vault, navigate) }
