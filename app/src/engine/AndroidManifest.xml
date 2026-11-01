@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" tools:node="remove" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove" />
 
     <application
         android:name="com.spiros.app.remote.EngineApp"
@@ -27,6 +28,7 @@
         <activity android:name="com.spiros.app.space.PolicyComplianceActivity" tools:node="remove" />
         <activity android:name="com.spiros.app.space.SpaceCommandActivity" tools:node="remove" />
         <receiver android:name="com.spiros.app.space.UninstallResultReceiver" tools:node="remove" />
+        <receiver android:name="com.spiros.app.space.SpaceRepairReceiver" tools:node="remove" />
         <service android:name="com.spiros.app.security.SessionService" tools:node="remove" />
         <service android:name="com.spiros.app.security.PanicTileService" tools:node="remove" />
         <receiver android:name="com.spiros.app.remote.EngineInstallReceiver" tools:node="remove" />

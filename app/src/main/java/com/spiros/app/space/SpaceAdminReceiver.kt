@@ -15,3 +15,10 @@ class SpaceAdminReceiver : DeviceAdminReceiver() {
         )
     }
 }
+
+/** Repairs the space's command channel after a SpirOS update or a restart (space side). */
+class SpaceRepairReceiver : android.content.BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        SpaceOwner.ensureSetup(context)
+    }
+}

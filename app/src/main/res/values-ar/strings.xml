@@ -355,4 +355,11 @@
     <string name="touchpad_right">أيمن</string>
     <string name="touchpad_show">إظهار لوحة اللمس</string>
     <string name="touchpad_hide">إخفاء لوحة اللمس</string>
+    <string name="space_unreachable_none">لا توجد مساحة SpirOS على هذا الهاتف.</string>
+    <string name="space_unreachable_paused">المساحة متوقفة مؤقتًا. استأنفها أولًا ثم أعد المحاولة.</string>
+    <string name="space_unreachable_channel">نسخة SpirOS داخل المساحة لم تفتح قناة الأوامر بعد (تُصلح نفسها بعد تحديث SpirOS أو إعادة تشغيل الهاتف أو استئناف المساحة). أعد تشغيل الهاتف ثم حاول مجددًا.</string>
+    <string name="space_unreachable_unsafe">يوجد تطبيق آخر يستقبل أوامر مساحة SpirOS، لذلك لم يرسل SpirOS مفتاحه. احذف التطبيقات غير المعروفة التي قد تفعل ذلك.</string>
+    <string name="space_command_refused">المساحة لم تقبل الأمر (مفتاح الربط غير مطابق، وغالبًا بعد إعادة تثبيت SpirOS). احذف المساحة من إعدادات النظام ثم أنشئها من جديد.</string>
+    <string name="space_delete_manual">يمكنك دائمًا حذف المساحة بنفسك: الإعدادات ← الحسابات (أو كلمات المرور والحسابات / المستخدمون والحسابات) ← العمل ← إزالة ملف العمل.</string>
+    <string name="space_creating">جارٍ إنشاء المساحة المعزولة…\nيكمل الهاتف إعدادها خلال ثوانٍ.</string>
 </resources>

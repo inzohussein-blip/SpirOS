@@ -145,7 +145,8 @@ class SpaceManager(private val context: Context) {
 
     /**
      * Intent for a command inside the space, or null if it would not go straight to
-     * the space (e.g. another app registered the same action and could read the token).
+     * the space (e.g. another app registered the same action and could read the token);
+     * [unreachableReason] then says why.
      */
     fun command(cmd: String, packages: List<String> = emptyList(), extras: Bundle? = null): Intent? {
         val t = token ?: return null
@@ -155,8 +156,23 @@ class SpaceManager(private val context: Context) {
             .putExtra(SpaceOwner.EXTRA_COMMAND, cmd)
             .putStringArrayListExtra(SpaceOwner.EXTRA_PACKAGES, ArrayList(packages))
         val targets = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        if (targets.isEmpty() || targets.any { !it.isCrossProfileIntentForwarderActivity }) return null
-        return intent
+        // Only the system's cross-profile forwarder may receive it (some skins ship their
+        // own forwarder that does not carry the AOSP flag, but it is always a system app).
+        val safe = targets.isNotEmpty() && targets.all { r ->
+            r.isCrossProfileIntentForwarderActivity ||
+                (r.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        }
+        return if (safe) intent else null
+    }
+
+    /** Why [command] returned null, as a message for the user. */
+    fun unreachableReason(): Int {
+        val user = spaceUser() ?: return com.spiros.app.R.string.space_unreachable_none
+        if (isPaused(user)) return com.spiros.app.R.string.space_unreachable_paused
+        val probe = Intent(SpaceOwner.ACTION_COMMAND)
+        val targets = context.packageManager.queryIntentActivities(probe, PackageManager.MATCH_DEFAULT_ONLY)
+        return if (targets.isEmpty()) com.spiros.app.R.string.space_unreachable_channel
+        else com.spiros.app.R.string.space_unreachable_unsafe
     }
 
     /** Forget the space (after it was destroyed). */

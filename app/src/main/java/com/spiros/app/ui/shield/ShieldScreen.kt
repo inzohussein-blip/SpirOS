@@ -80,14 +80,15 @@ fun ShieldScreen(vault: Vault, onBack: () -> Unit) {
         vault.holdLock = false
         if (result.resultCode == Activity.RESULT_OK) ShieldVpnService.start(context) else message(R.string.shield_consent_denied)
     }
-    val spaceCommand = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    val spaceCommand = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         vault.holdLock = false
+        if (result.resultCode != Activity.RESULT_OK) message(R.string.space_command_refused)
     }
 
     fun sendToSpace(cmd: String, extras: Bundle? = null): Boolean {
         val intent = space.command(cmd, extras = extras)
         if (intent == null) {
-            message(R.string.space_unreachable)
+            message(space.unreachableReason())
             return false
         }
         vault.holdLock = true

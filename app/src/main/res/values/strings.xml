@@ -355,4 +355,11 @@
     <string name="touchpad_right">Right</string>
     <string name="touchpad_show">Show touchpad</string>
     <string name="touchpad_hide">Hide touchpad</string>
+    <string name="space_unreachable_none">There is no SpirOS space on this phone.</string>
+    <string name="space_unreachable_paused">The space is paused. Resume it first, then try again.</string>
+    <string name="space_unreachable_channel">SpirOS inside the space has not opened its command channel yet (it repairs itself after a SpirOS update, a phone restart or resuming the space). Restart the phone and try again.</string>
+    <string name="space_unreachable_unsafe">Another app is listening for SpirOS\'s space commands, so SpirOS did not send its key. Uninstall unknown apps that might do this.</string>
+    <string name="space_command_refused">The space did not accept the command (its pairing key does not match, often after reinstalling SpirOS). Delete the space from system settings and create it again.</string>
+    <string name="space_delete_manual">You can always delete the space yourself: system Settings → Accounts (or Passwords &amp; accounts / Users &amp; accounts) → Work → Remove work profile.</string>
+    <string name="space_creating">Creating the isolated space…\nThe phone finishes setting it up in a few seconds.</string>
 </resources>

@@ -22,6 +22,8 @@ class SpirApp : Application() {
     override fun onCreate() {
         super.onCreate()
         SpaceManager.configureComponents(this)
+        // Inside the space: make sure the main profile can still reach us.
+        if (SpaceOwner.isProfileOwner(this)) Thread { SpaceOwner.ensureSetup(this) }.start()
         Appearance.load(this)
         // Launcher shortcuts belong to the main profile's SpirOS, not the copy in the space.
         if (!SpaceOwner.isProfileOwner(this)) Shortcuts.update(this)

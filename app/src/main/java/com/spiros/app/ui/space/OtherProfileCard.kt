@@ -133,7 +133,7 @@ fun OtherProfileCard(
 }
 
 /** Accounts settings hold "Remove work profile" on stock Android and most skins. */
-private fun openRemovalSettings(context: Context, type: SpaceManager.ProfileType) {
+internal fun openRemovalSettings(context: Context, type: SpaceManager.ProfileType) {
     val candidates = when (type) {
         SpaceManager.ProfileType.CLONE -> listOf(Settings.ACTION_APPLICATION_SETTINGS, Settings.ACTION_SETTINGS)
         SpaceManager.ProfileType.PRIVATE -> listOf(Settings.ACTION_SECURITY_SETTINGS, Settings.ACTION_SETTINGS)

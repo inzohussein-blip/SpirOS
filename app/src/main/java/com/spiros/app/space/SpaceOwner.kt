@@ -64,19 +64,37 @@ object SpaceOwner {
 
         extras?.getString(KEY_TOKEN)?.let { prefs(context).edit().putString(KEY_TOKEN, it).apply() }
 
-        dpm.setProfileName(admin, "SpirOS")
+        runCatching { dpm.setProfileName(admin, "SpirOS") }
+        ensureSetup(context)
+        runCatching { dpm.setProfileEnabled(admin) }
+    }
+
+    /**
+     * (Re)applies what the main profile needs to reach the space. Idempotent; runs at
+     * provisioning and again whenever SpirOS starts in the space (after an update, a
+     * phone restart or the space being resumed), so a channel lost on some skins
+     * repairs itself.
+     */
+    fun ensureSetup(context: Context) {
+        if (!isProfileOwner(context)) return
+        val dpm = context.getSystemService(DevicePolicyManager::class.java)
+        val admin = admin(context)
         // Let the main profile reach SpaceCommandActivity in here.
-        val filter = IntentFilter(ACTION_COMMAND).apply { addCategory(Intent.CATEGORY_DEFAULT) }
-        dpm.addCrossProfileIntentFilter(admin, filter, DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED)
+        runCatching {
+            dpm.clearCrossProfileIntentFilters(admin)
+            val filter = IntentFilter(ACTION_COMMAND).apply { addCategory(Intent.CATEGORY_DEFAULT) }
+            dpm.addCrossProfileIntentFilter(admin, filter, DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED)
+        }
         // Nothing copied in the space can be pasted outside, and vice versa.
-        dpm.addUserRestriction(admin, UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE)
+        runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE) }
         // The SpirOS copy in the space has no UI of its own; hide its launcher icon.
-        context.packageManager.setComponentEnabledSetting(
-            ComponentName(context.packageName, LAUNCHER_ALIAS),
-            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP,
-        )
-        dpm.setProfileEnabled(admin)
+        runCatching {
+            context.packageManager.setComponentEnabledSetting(
+                ComponentName(context.packageName, LAUNCHER_ALIAS),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP,
+            )
+        }
     }
 
     fun isAuthorized(context: Context, intent: Intent): Boolean {

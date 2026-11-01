@@ -71,13 +71,14 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
 
     fun message(res: Int) = scope.launch { snackbar.showSnackbar(context.getString(res)) }
 
-    val commands = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    val commands = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         vault.holdLock = false
+        if (result.resultCode != android.app.Activity.RESULT_OK) message(R.string.space_command_refused)
         refresh++
     }
 
     fun sendToSpace(cmd: String): Boolean {
-        val intent = space.command(cmd) ?: run { message(R.string.space_unreachable); return false }
+        val intent = space.command(cmd) ?: run { message(space.unreachableReason()); return false }
         vault.holdLock = true
         return runCatching { commands.launch(intent) }.onFailure {
             vault.holdLock = false

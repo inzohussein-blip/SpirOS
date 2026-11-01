@@ -90,6 +90,11 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var lastCommand by remember { mutableStateOf("") }
+    /** A failed delete: explain and offer the system settings. */
+    var problem by remember { mutableStateOf<Int?>(null) }
+    /** Just provisioned: the new profile finishes setting itself up for a few seconds. */
+    var creating by remember { mutableStateOf(false) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
     LaunchedEffect(refresh) {
@@ -102,24 +107,37 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
         vault.holdLock = false
         busy = false
         if (result.resultCode != Activity.RESULT_OK) message(R.string.space_create_failed)
-        // The new profile finishes setting itself up in the background; look again shortly.
+        // The new profile finishes setting itself up in the background (some skins take
+        // a while): show "creating" instead of the state of the half-made profile.
+        creating = true
         scope.launch {
-            repeat(5) {
+            repeat(40) {
                 refresh++
                 delay(1500)
+                if (state is SpaceState.Active || state is SpaceState.Paused) {
+                    creating = false
+                    return@launch
+                }
             }
+            creating = false
+            refresh++
         }
     }
-    val commands = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    val commands = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         vault.holdLock = false
         busy = false
+        if (result.resultCode != Activity.RESULT_OK) {
+            if (lastCommand == SpaceOwner.CMD_DESTROY) problem = R.string.space_command_refused else message(R.string.space_command_refused)
+        }
         refresh++
     }
 
     fun send(cmd: String, packages: List<String> = emptyList()) {
+        lastCommand = cmd
         val intent = space.command(cmd, packages)
         if (intent == null) {
-            message(R.string.space_unreachable)
+            // Deleting must always be possible: offer the system's own removal instead.
+            if (cmd == SpaceOwner.CMD_DESTROY) problem = space.unreachableReason() else message(space.unreachableReason())
             return
         }
         vault.holdLock = true
@@ -178,7 +196,15 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-            when (current) {
+            when {
+                creating && current !is SpaceState.Active && current !is SpaceState.Paused -> Centered {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text(stringResource(R.string.space_creating), textAlign = TextAlign.Center)
+                }
+                else -> Unit
+            }
+            if (!creating || current is SpaceState.Active || current is SpaceState.Paused) when (current) {
                 null -> Centered { CircularProgressIndicator() }
                 is SpaceState.Unsupported -> Column(
                     Modifier
@@ -263,6 +289,22 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    problem?.let { reason ->
+        AlertDialog(
+            onDismissRequest = { problem = null },
+            title = { Text(stringResource(R.string.space_delete)) },
+            text = { Text(stringResource(reason) + "\n\n" + stringResource(R.string.space_delete_manual)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    problem = null
+                    vault.holdLock = true
+                    openRemovalSettings(context, SpaceManager.ProfileType.WORK)
+                }) { Text(stringResource(R.string.other_open_settings)) }
+            },
+            dismissButton = { TextButton(onClick = { problem = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 
     if (confirmDelete) {
