@@ -1,18 +1,21 @@
 #!/bin/sh
 # Starts the SpirOS Linux desktop: an Xvnc server on a private Unix socket (no TCP
-# port) and an Xfce session. SpirOS's built-in viewer connects to the socket.
+# port) and an Xfce session, as whichever account SpirOS started it with.
+# SpirOS copies this script into the Linux system before every start (single source:
+# app/src/main/assets/linux/spiros-desktop).
 #   SPIROS_GEOMETRY  screen size, e.g. 1280x720
 #   SPIROS_DPI       font DPI (larger = bigger UI for touch)
 export DISPLAY=:1
-export HOME=/root
-export USER=root
-export LANG=C.UTF-8
-export XDG_RUNTIME_DIR=/tmp/runtime-root
+export HOME="${HOME:-/root}"
+export USER="${USER:-$(id -un)}"
+export LANG="${LANG:-C.UTF-8}"
+export XDG_RUNTIME_DIR="/tmp/runtime-$USER"
 export NO_AT_BRIDGE=1
-mkdir -p "$XDG_RUNTIME_DIR" /tmp/.X11-unix
+mkdir -p "$XDG_RUNTIME_DIR" /tmp/.X11-unix "$HOME"
 chmod 700 "$XDG_RUNTIME_DIR"
-chmod 1777 /tmp/.X11-unix
+chmod 1777 /tmp/.X11-unix 2>/dev/null
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 /tmp/spiros-vnc
+cd "$HOME" || cd /
 
 Xvnc :1 \
     -geometry "${SPIROS_GEOMETRY:-1280x720}" -depth 24 -dpi "${SPIROS_DPI:-120}" \

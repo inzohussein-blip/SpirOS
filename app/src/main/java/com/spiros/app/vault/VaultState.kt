@@ -17,6 +17,8 @@ internal data class VaultState(
     val panicSalt: ByteArray? = null,
     /** deviceKey( PBKDF2(panicPin) ) */
     val panicHash: ByteArray? = null,
+    /** deviceKey( dataKey ) when the user turned the PIN lock off; null = PIN required. */
+    val openWrapped: ByteArray? = null,
     val failedAttempts: Int = 0,
     val lockoutUntil: Long = 0,
 ) {
@@ -28,6 +30,7 @@ internal data class VaultState(
         bioWrapped?.let { put("bioWrapped", it.b64()) }
         panicSalt?.let { put("panicSalt", it.b64()) }
         panicHash?.let { put("panicHash", it.b64()) }
+        openWrapped?.let { put("openWrapped", it.b64()) }
         put("failedAttempts", failedAttempts)
         put("lockoutUntil", lockoutUntil)
     }.toString()
@@ -42,6 +45,7 @@ internal data class VaultState(
                 bioWrapped = o.bytes("bioWrapped"),
                 panicSalt = o.bytes("panicSalt"),
                 panicHash = o.bytes("panicHash"),
+                openWrapped = o.bytes("openWrapped"),
                 failedAttempts = o.optInt("failedAttempts"),
                 lockoutUntil = o.optLong("lockoutUntil"),
             )

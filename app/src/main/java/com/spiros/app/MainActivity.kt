@@ -3,7 +3,6 @@ package com.spiros.app
 import android.app.ActivityManager
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +11,7 @@ import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
 import com.spiros.app.ui.AppRoot
 import com.spiros.app.ui.Disguise
+import com.spiros.app.ui.ScreenSecurity
 import com.spiros.app.ui.theme.SpirTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,8 +20,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // No screenshots, screen recording, or previews in the recents screen.
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        // No screenshots, screen recording or recents preview unless allowed in Settings.
+        ScreenSecurity.apply(this)
         enableEdgeToEdge()
         if (Disguise.isEnabled(this)) {
             // The recents screen shows the task label; keep the disguise there too.
@@ -52,7 +52,8 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Leaving SpirOS locks it, except while a system screen we opened is in front.
-        if (!isChangingConfigurations && !vault.holdLock) {
+        // With the PIN lock turned off in Settings the session simply stays open.
+        if (!isChangingConfigurations && !vault.holdLock && vault.isLockEnabled) {
             vault.lock()
             LabSession.stop()
         }

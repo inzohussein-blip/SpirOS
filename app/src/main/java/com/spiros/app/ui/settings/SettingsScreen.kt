@@ -11,6 +11,9 @@ import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.ManageAccounts
+import androidx.compose.material.icons.outlined.Pin
+import androidx.compose.material.icons.outlined.Screenshot
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
@@ -35,7 +38,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
+import com.spiros.app.BuildConfig
 import com.spiros.app.ui.Disguise
+import com.spiros.app.ui.ScreenSecurity
 import com.spiros.app.ui.SpirTopBar
 import com.spiros.app.ui.lock.PinEntry
 import com.spiros.app.vault.BiometricGate
@@ -43,7 +48,7 @@ import com.spiros.app.vault.Vault
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
+fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit, onOpenLinuxAccounts: () -> Unit) {
     val context = LocalContext.current
     val activity = context as Activity
     val scope = rememberCoroutineScope()
@@ -55,6 +60,9 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
     var panicBusy by remember { mutableStateOf(false) }
     var confirmWipe by remember { mutableStateOf(false) }
     var disguised by remember { mutableStateOf(Disguise.isEnabled(context)) }
+    var lockEnabled by remember { mutableStateOf(vault.isLockEnabled) }
+    var confirmNoLock by remember { mutableStateOf(false) }
+    var screenshots by remember { mutableStateOf(ScreenSecurity.screenshotsAllowed(context)) }
     val bioTitle = stringResource(R.string.biometric_enable_title)
     val cancel = stringResource(R.string.cancel)
 
@@ -96,6 +104,22 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
         ) {
             val itemColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background)
             GroupTitle(stringResource(R.string.settings_group_unlock))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_require_pin)) },
+                supportingContent = { Text(stringResource(R.string.settings_require_pin_desc)) },
+                leadingContent = { Icon(Icons.Outlined.Pin, contentDescription = null) },
+                trailingContent = {
+                    Switch(checked = lockEnabled, onCheckedChange = { on ->
+                        if (on) {
+                            vault.setLockEnabled(true)
+                            lockEnabled = true
+                        } else {
+                            confirmNoLock = true
+                        }
+                    })
+                },
+                colors = itemColors,
+            )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_biometric)) },
                 leadingContent = { Icon(Icons.Outlined.Fingerprint, contentDescription = null) },
@@ -140,6 +164,18 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
             )
             GroupTitle(stringResource(R.string.settings_group_privacy))
             ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_screenshots)) },
+                supportingContent = { Text(stringResource(R.string.settings_screenshots_desc)) },
+                leadingContent = { Icon(Icons.Outlined.Screenshot, contentDescription = null) },
+                trailingContent = {
+                    Switch(checked = screenshots, onCheckedChange = { on ->
+                        ScreenSecurity.setScreenshotsAllowed(context, on)
+                        screenshots = on
+                    })
+                },
+                colors = itemColors,
+            )
+            ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_disguise)) },
                 leadingContent = { Icon(Icons.Outlined.Calculate, contentDescription = null) },
                 supportingContent = { Text(stringResource(R.string.settings_disguise_desc)) },
@@ -151,6 +187,16 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 },
                 colors = itemColors,
             )
+            if (BuildConfig.FLAVOR == "speed") {
+                GroupTitle(stringResource(R.string.dock_linux))
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.accounts_title)) },
+                    supportingContent = { Text(stringResource(R.string.accounts_settings_desc)) },
+                    leadingContent = { Icon(Icons.Outlined.ManageAccounts, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = onOpenLinuxAccounts),
+                    colors = itemColors,
+                )
+            }
             GroupTitle(stringResource(R.string.settings_group_device))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.compat_title)) },
@@ -174,6 +220,22 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 colors = itemColors,
             )
         }
+    }
+
+    if (confirmNoLock) {
+        AlertDialog(
+            onDismissRequest = { confirmNoLock = false },
+            title = { Text(stringResource(R.string.settings_no_lock_title)) },
+            text = { Text(stringResource(R.string.settings_no_lock_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmNoLock = false
+                    vault.setLockEnabled(false)
+                    lockEnabled = false
+                }) { Text(stringResource(R.string.settings_no_lock_confirm), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { confirmNoLock = false }) { Text(cancel) } },
+        )
     }
 
     if (confirmWipe) {

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.os.SystemClock
 import android.widget.TextView
+import com.spiros.app.linux.LinuxAccounts
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
 import kotlinx.coroutines.runBlocking
@@ -59,6 +60,15 @@ class LinuxSelfTestActivity : Activity() {
             .start()
         val probeOut = probe.inputStream.bufferedReader().readText().trim()
         write("PROOT exit=${probe.waitFor()} out=${probeOut.replace('\n', ' ')}")
+
+        // Accounts managed from the app: create an admin user, set root's password,
+        // and run the desktop as the new user (proot --change-id).
+        val added = runBlocking { LinuxAccounts.addUser(this@LinuxSelfTestActivity, "spiros", "test1234", admin = true) }
+        val rootPw = runBlocking { LinuxAccounts.setPassword(this@LinuxSelfTestActivity, "root", "root1234") }
+        val users = LinuxAccounts.users(this).joinToString { "${it.name}(${it.uid}${if (it.admin) ",admin" else ""})" }
+        write("ACCOUNTS add=${added.isSuccess} rootpw=${rootPw.isSuccess} users=$users ${added.exceptionOrNull()?.message ?: ""}")
+        if (added.isSuccess) LinuxAccounts.setDesktopUser(this, "spiros")
+        write("desktop user=${LinuxAccounts.desktopUser(this).name}")
 
         t = SystemClock.elapsedRealtime()
         LinuxSession.start(this, "1280x720", 120)

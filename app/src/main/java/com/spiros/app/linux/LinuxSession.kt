@@ -34,8 +34,9 @@ object LinuxSession {
         stop()
         _log.value = emptyList()
         val root = LinuxDistro.root(context)
+        installLauncher(context, root)
         val socket = File(root, "tmp/spiros-vnc").apply { delete() }
-        val p = command(context, root, listOf(
+        val p = command(context, root, user = LinuxAccounts.desktopUser(context), envAndCommand = listOf(
             "SPIROS_GEOMETRY=$geometry",
             "SPIROS_DPI=$dpi",
             "/usr/local/bin/spiros-desktop",
@@ -61,15 +62,31 @@ object LinuxSession {
         _running.value = false
     }
 
-    /** proot invocation that runs [envAndCommand] inside the Debian root as (fake) root. */
-    fun command(context: Context, root: File, envAndCommand: List<String>): ProcessBuilder {
+    /** Always run the launcher shipped with this app version (assets/linux/spiros-desktop). */
+    private fun installLauncher(context: Context, root: File) {
+        val target = File(root, "usr/local/bin/spiros-desktop")
+        target.parentFile?.mkdirs()
+        context.assets.open("linux/spiros-desktop").use { input -> target.outputStream().use { input.copyTo(it) } }
+        target.setExecutable(true, false)
+    }
+
+    /**
+     * proot invocation that runs [envAndCommand] inside the Debian root, as fake root
+     * by default or as [user] (proot --change-id), with that user's HOME and USER.
+     */
+    fun command(
+        context: Context,
+        root: File,
+        envAndCommand: List<String>,
+        user: LinuxAccounts.User = LinuxAccounts.ROOT,
+    ): ProcessBuilder {
         val lib = context.applicationInfo.nativeLibraryDir
         val tmp = File(context.cacheDir, "proot-tmp").apply { mkdirs() }
         File(root, "tmp").mkdirs()
         val fakes = FakeProc.prepare(context)
         val args = buildList {
             add("$lib/libproot.so")
-            add("-0")
+            if (user.uid == 0) add("-0") else { add("-i"); add("${user.uid}:${user.gid}") }
             add("--link2symlink")
             add("--kill-on-exit")
             add("-r"); add(root.path)
@@ -79,10 +96,10 @@ object LinuxSession {
             add("-b"); add("${root.path}/tmp:/dev/shm")
             // Android hides parts of /proc from apps; give programs harmless stand-ins.
             fakes.forEach { (file, target) -> add("-b"); add("${file.path}:$target") }
-            add("-w"); add("/root")
+            add("-w"); add(user.home)
             add("/usr/bin/env"); add("-i")
-            add("HOME=/root")
-            add("USER=root")
+            add("HOME=${user.home}")
+            add("USER=${user.name}")
             add("TERM=xterm-256color")
             add("LANG=C.UTF-8")
             add("PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")

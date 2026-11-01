@@ -52,6 +52,8 @@ umount "$ROOT/proc" "$ROOT/dev"
 trap - EXIT
 
 cp -a "$HERE/overlay/." "$ROOT/"
+# The desktop launcher lives with the app (which refreshes it before every start).
+install -D -m 755 "$HERE/../app/src/main/assets/linux/spiros-desktop" "$ROOT/usr/local/bin/spiros-desktop"
 # DNS for proot: Android has no /etc/resolv.conf to bind, so ship one.
 printf 'nameserver 9.9.9.9\nnameserver 1.1.1.1\n' > "$ROOT/etc/resolv.conf"
 echo spiros > "$ROOT/etc/hostname"

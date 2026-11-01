@@ -151,6 +151,32 @@ class Vault(private val root: File) {
         }
     }
 
+    // ---- optional lock --------------------------------------------------------------------
+
+    /**
+     * False when the user chose to open SpirOS without a PIN. The data stay encrypted;
+     * the data key is then protected only by this phone's hardware Keystore key, so
+     * the files are still unreadable on any other device or from a copied backup.
+     */
+    val isLockEnabled: Boolean get() = !stateFile.baseFile.exists() || readState().openWrapped == null
+
+    @Synchronized
+    fun setLockEnabled(enabled: Boolean) {
+        val key = dataKey ?: throw IllegalStateException("Vault is locked")
+        val wrapped = if (enabled) null else Gcm.encrypt(KeystoreKeys.deviceKey(), key, AAD_OPEN)
+        writeState(readState().copy(openWrapped = wrapped))
+    }
+
+    /** Opens the vault without a PIN when the lock is turned off. */
+    @Synchronized
+    fun openWithoutPin(): Boolean {
+        if (_status.value == Status.UNLOCKED) return true
+        val blob = readState().openWrapped ?: return false
+        val key = runCatching { Gcm.decrypt(KeystoreKeys.deviceKey(), blob, AAD_OPEN) }.getOrNull() ?: return false
+        open(key)
+        return true
+    }
+
     // ---- emergency (duress) PIN ----------------------------------------------------------
 
     val hasPanicPin: Boolean get() = stateFile.baseFile.exists() && readState().panicHash != null
@@ -254,6 +280,7 @@ class Vault(private val root: File) {
         val AAD_PIN = "spiros.pin".toByteArray()
         val AAD_DEVICE = "spiros.device".toByteArray()
         val AAD_PANIC = "spiros.panic".toByteArray()
+        val AAD_OPEN = "spiros.open".toByteArray()
 
         /** 5 free attempts, then 30s, 1m, 2m, ... capped at 1h. */
         fun lockoutDelayMs(failed: Int): Long {

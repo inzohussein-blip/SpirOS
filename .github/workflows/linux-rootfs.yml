@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - "linux/**"
+      - "app/src/main/assets/linux/**"
       - ".github/workflows/linux-rootfs.yml"
   workflow_dispatch:
 

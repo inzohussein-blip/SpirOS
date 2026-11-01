@@ -11,6 +11,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,10 +25,9 @@ import com.spiros.app.ui.compat.CompatScreen
 import com.spiros.app.ui.home.HomeScreen
 import com.spiros.app.ui.lock.CalculatorScreen
 import com.spiros.app.ui.lock.LockScreen
-import com.spiros.app.ui.onboarding.Onboarding
-import com.spiros.app.ui.onboarding.OnboardingScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
+import com.spiros.app.ui.linux.LinuxAccountsScreen
 import com.spiros.app.ui.linux.LinuxScreen
 import com.spiros.app.ui.ai.AiScreen
 import com.spiros.app.ui.settings.SettingsScreen
@@ -44,6 +46,7 @@ private sealed interface Screen {
     data object Lab : Screen
     data object Linux : Screen
     data object Ai : Screen
+    data object LinuxAccounts : Screen
     data object Shield : Screen
     data object Browser : Screen
     data object Settings : Screen
@@ -55,19 +58,18 @@ private sealed interface Screen {
 fun AppRoot(vault: Vault) {
     val status by vault.status.collectAsState()
     when (status) {
-        Vault.Status.NEW -> {
-            val context = LocalContext.current
-            var introDone by remember { mutableStateOf(Onboarding.seen(context)) }
-            if (introDone) {
-                SetupScreen(vault)
-            } else {
-                OnboardingScreen(onDone = {
-                    Onboarding.markSeen(context)
-                    introDone = true
-                })
+        Vault.Status.NEW -> SetupScreen(vault)
+        Vault.Status.LOCKED -> when {
+            // PIN lock turned off in Settings: open straight away.
+            !vault.isLockEnabled -> {
+                // PIN lock turned off in Settings: open straight away (PIN screen if that fails).
+                var failed by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { failed = !withContext(Dispatchers.IO) { vault.openWithoutPin() } }
+                if (failed) LockScreen(vault)
             }
+            Disguise.isEnabled(LocalContext.current) -> CalculatorScreen(vault)
+            else -> LockScreen(vault)
         }
-        Vault.Status.LOCKED -> if (Disguise.isEnabled(LocalContext.current)) CalculatorScreen(vault) else LockScreen(vault)
         Vault.Status.UNLOCKED -> Unlocked(vault)
     }
 }
@@ -79,7 +81,7 @@ private fun Unlocked(vault: Vault) {
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
             is Screen.Viewer -> Screen.VaultList
-            Screen.Compat -> Screen.Settings
+            Screen.Compat, Screen.LinuxAccounts -> Screen.Settings
             else -> Screen.Home
         }
     }
@@ -100,7 +102,7 @@ private fun Unlocked(vault: Vault) {
 
 private fun depth(screen: Screen) = when (screen) {
     Screen.Home -> 0
-    is Screen.Viewer, Screen.Compat -> 2
+    is Screen.Viewer, Screen.Compat, Screen.LinuxAccounts -> 2
     else -> 1
 }
 
@@ -126,7 +128,13 @@ private fun ScreenContent(current: Screen, vault: Vault, navigate: (Screen) -> U
         Screen.Lab -> LabScreen(vault, onBack = { navigate(Screen.Home) })
         Screen.Shield -> ShieldScreen(vault, onBack = { navigate(Screen.Home) })
         Screen.Browser -> BrowserScreen(vault, onBack = { navigate(Screen.Home) })
-        Screen.Settings -> SettingsScreen(vault, onBack = { navigate(Screen.Home) }, onOpenCompat = { navigate(Screen.Compat) })
+        Screen.Settings -> SettingsScreen(
+            vault,
+            onBack = { navigate(Screen.Home) },
+            onOpenCompat = { navigate(Screen.Compat) },
+            onOpenLinuxAccounts = { navigate(Screen.LinuxAccounts) },
+        )
+        Screen.LinuxAccounts -> LinuxAccountsScreen(onBack = { navigate(Screen.Settings) })
         Screen.Compat -> CompatScreen(onBack = { navigate(Screen.Settings) })
     }
 }
