@@ -44,15 +44,17 @@ jobs:
       - name: Check API levels (lint NewApi)
         run: ./gradlew --no-daemon lintSecureDebug lintSpeedDebug
 
-      - name: Build debug APKs
-        run: ./gradlew --no-daemon assembleDebug
+      # Debug APKs carry the CI self-tests; release APKs (R8-optimised, faster) are
+      # what people install.
+      - name: Build APKs
+        run: ./gradlew --no-daemon assembleDebug assembleRelease
 
       - name: Name APKs
         run: |
           OUT=app/build/outputs/apk
-          cp $OUT/secure/debug/app-secure-arm64-v8a-debug.apk SpirOS.apk
+          cp $OUT/secure/release/app-secure-arm64-v8a-release.apk SpirOS.apk
+          cp $OUT/speed/release/app-speed-arm64-v8a-release.apk SpirOS-Linux.apk
           cp $OUT/secure/debug/app-secure-x86_64-debug.apk SpirOS-x86_64.apk
-          cp $OUT/speed/debug/app-speed-arm64-v8a-debug.apk SpirOS-Linux.apk
           cp $OUT/speed/debug/app-speed-x86_64-debug.apk SpirOS-Linux-x86_64.apk
 
       - uses: actions/upload-artifact@v4

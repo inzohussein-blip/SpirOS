@@ -199,4 +199,27 @@
     <string name="ai_preset_general">General</string>
     <string name="ai_preset_trading">Trading</string>
     <string name="ai_preset_code">Python / MQL5</string>
+    <string name="status_on">on</string>
+    <string name="status_off">off</string>
+    <string name="status_ready">ready</string>
+    <string name="status_not_set">not set up</string>
+    <string name="status_running">running</string>
+    <string name="status_starting">starting</string>
+    <string name="home_tools">SpirOS tools</string>
+    <string name="home_space_apps">Isolated space apps</string>
+    <string name="onb_skip">Skip</string>
+    <string name="onb_next">Next</string>
+    <string name="onb_start">Get started</string>
+    <string name="onb_vault_title">Your encrypted vault</string>
+    <string name="onb_vault_body">Photos, videos and files locked with a PIN or fingerprint, encrypted with a key that never leaves this phone.</string>
+    <string name="onb_space_title">A second, isolated phone</string>
+    <string name="onb_space_body">Run apps in a separate space with their own accounts and data. They cannot see your main apps or files.</string>
+    <string name="onb_shield_title">Shield and private browser</string>
+    <string name="onb_shield_body">Block trackers and ads, and browse without history or cookies. Downloads go straight into the vault.</string>
+    <string name="onb_linux_title">Linux and private AI</string>
+    <string name="onb_linux_body">A full Linux desktop and AI models that run on your phone, offline, without sending anything anywhere.</string>
+    <string name="settings_group_unlock">Unlocking</string>
+    <string name="settings_group_privacy">Privacy</string>
+    <string name="settings_group_device">Device</string>
+    <string name="settings_group_danger">Danger zone</string>
 </resources>

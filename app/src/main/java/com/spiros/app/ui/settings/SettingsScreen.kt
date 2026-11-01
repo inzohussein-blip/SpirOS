@@ -6,7 +6,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -25,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.dp
 import com.spiros.app.R
 import com.spiros.app.ui.Disguise
 import com.spiros.app.ui.SpirTopBar
@@ -86,8 +95,10 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
         ) {
             val itemColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background)
+            GroupTitle(stringResource(R.string.settings_group_unlock))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_biometric)) },
+                leadingContent = { Icon(Icons.Outlined.Fingerprint, contentDescription = null) },
                 supportingContent = {
                     if (!bioAvailable) Text(stringResource(R.string.compat_biometric_missing))
                 },
@@ -112,9 +123,9 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 },
                 colors = itemColors,
             )
-            HorizontalDivider()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_panic)) },
+                leadingContent = { Icon(Icons.Outlined.Warning, contentDescription = null) },
                 supportingContent = { Text(stringResource(R.string.settings_panic_desc)) },
                 trailingContent = {
                     if (hasPanic) {
@@ -127,9 +138,10 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 },
                 colors = itemColors,
             )
-            HorizontalDivider()
+            GroupTitle(stringResource(R.string.settings_group_privacy))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_disguise)) },
+                leadingContent = { Icon(Icons.Outlined.Calculate, contentDescription = null) },
                 supportingContent = { Text(stringResource(R.string.settings_disguise_desc)) },
                 trailingContent = {
                     Switch(checked = disguised, onCheckedChange = { on ->
@@ -139,22 +151,24 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
                 },
                 colors = itemColors,
             )
-            HorizontalDivider()
+            GroupTitle(stringResource(R.string.settings_group_device))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.compat_title)) },
+                leadingContent = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
                 supportingContent = { Text(stringResource(R.string.compat_subtitle)) },
                 modifier = Modifier.clickable(onClick = onOpenCompat),
                 colors = itemColors,
             )
-            HorizontalDivider()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_lock_now)) },
+                leadingContent = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                 modifier = Modifier.clickable { vault.lock() },
                 colors = itemColors,
             )
-            HorizontalDivider()
+            GroupTitle(stringResource(R.string.settings_group_danger), danger = true)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_wipe), color = MaterialTheme.colorScheme.error) },
+                leadingContent = { Icon(Icons.Outlined.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                 supportingContent = { Text(stringResource(R.string.settings_wipe_desc)) },
                 modifier = Modifier.clickable { confirmWipe = true },
                 colors = itemColors,
@@ -175,4 +189,14 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit) {
             dismissButton = { TextButton(onClick = { confirmWipe = false }) { Text(cancel) } },
         )
     }
+}
+
+@Composable
+private fun GroupTitle(text: String, danger: Boolean = false) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
+    )
 }

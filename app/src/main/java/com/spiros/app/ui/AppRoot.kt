@@ -1,6 +1,15 @@
 package com.spiros.app.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,6 +22,8 @@ import com.spiros.app.ui.compat.CompatScreen
 import com.spiros.app.ui.home.HomeScreen
 import com.spiros.app.ui.lock.CalculatorScreen
 import com.spiros.app.ui.lock.LockScreen
+import com.spiros.app.ui.onboarding.Onboarding
+import com.spiros.app.ui.onboarding.OnboardingScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
 import com.spiros.app.ui.linux.LinuxScreen
@@ -44,7 +55,18 @@ private sealed interface Screen {
 fun AppRoot(vault: Vault) {
     val status by vault.status.collectAsState()
     when (status) {
-        Vault.Status.NEW -> SetupScreen(vault)
+        Vault.Status.NEW -> {
+            val context = LocalContext.current
+            var introDone by remember { mutableStateOf(Onboarding.seen(context)) }
+            if (introDone) {
+                SetupScreen(vault)
+            } else {
+                OnboardingScreen(onDone = {
+                    Onboarding.markSeen(context)
+                    introDone = true
+                })
+            }
+        }
         Vault.Status.LOCKED -> if (Disguise.isEnabled(LocalContext.current)) CalculatorScreen(vault) else LockScreen(vault)
         Vault.Status.UNLOCKED -> Unlocked(vault)
     }
@@ -62,27 +84,49 @@ private fun Unlocked(vault: Vault) {
         }
     }
 
-    when (val s = screen) {
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    AnimatedContent(
+        targetState = screen,
+        transitionSpec = {
+            // Deeper screens slide in from the reading end; going back reverses it.
+            val forward = depth(targetState) > depth(initialState)
+            val sign = (if (forward) 1 else -1) * (if (rtl) -1 else 1)
+            (slideInHorizontally(tween(260)) { it / 4 * sign } + fadeIn(tween(220)))
+                .togetherWith(slideOutHorizontally(tween(260)) { -it / 4 * sign } + fadeOut(tween(180)))
+        },
+        label = "screens",
+    ) { current -> ScreenContent(current, vault) { screen = it } }
+}
+
+private fun depth(screen: Screen) = when (screen) {
+    Screen.Home -> 0
+    is Screen.Viewer, Screen.Compat -> 2
+    else -> 1
+}
+
+@Composable
+private fun ScreenContent(current: Screen, vault: Vault, navigate: (Screen) -> Unit) {
+    when (val s = current) {
         Screen.Home -> HomeScreen(
-            onOpenVault = { screen = Screen.VaultList },
-            onOpenSpace = { screen = Screen.Space },
-            onOpenLab = { screen = Screen.Lab },
-            onOpenLinux = { screen = Screen.Linux },
-            onOpenAi = { screen = Screen.Ai },
-            onOpenShield = { screen = Screen.Shield },
-            onOpenBrowser = { screen = Screen.Browser },
-            onOpenSettings = { screen = Screen.Settings },
+            onOpenVault = { navigate(Screen.VaultList) },
+            onOpenSpace = { navigate(Screen.Space) },
+            onOpenLab = { navigate(Screen.Lab) },
+            onOpenLinux = { navigate(Screen.Linux) },
+            onOpenAi = { navigate(Screen.Ai) },
+            onOpenShield = { navigate(Screen.Shield) },
+            onOpenBrowser = { navigate(Screen.Browser) },
+            onOpenSettings = { navigate(Screen.Settings) },
             onLock = vault::lock,
         )
-        Screen.VaultList -> VaultScreen(vault, onBack = { screen = Screen.Home }, onOpen = { screen = Screen.Viewer(it) })
-        is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
-        Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
-        Screen.Linux -> LinuxScreen(onBack = { screen = Screen.Home })
-        Screen.Ai -> AiScreen(onBack = { screen = Screen.Home }, onOpenLinux = { screen = Screen.Linux })
-        Screen.Lab -> LabScreen(vault, onBack = { screen = Screen.Home })
-        Screen.Shield -> ShieldScreen(vault, onBack = { screen = Screen.Home })
-        Screen.Browser -> BrowserScreen(vault, onBack = { screen = Screen.Home })
-        Screen.Settings -> SettingsScreen(vault, onBack = { screen = Screen.Home }, onOpenCompat = { screen = Screen.Compat })
-        Screen.Compat -> CompatScreen(onBack = { screen = Screen.Settings })
+        Screen.VaultList -> VaultScreen(vault, onBack = { navigate(Screen.Home) }, onOpen = { navigate(Screen.Viewer(it)) })
+        is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { navigate(Screen.VaultList) })
+        Screen.Space -> SpaceScreen(vault, onBack = { navigate(Screen.Home) })
+        Screen.Linux -> LinuxScreen(onBack = { navigate(Screen.Home) })
+        Screen.Ai -> AiScreen(onBack = { navigate(Screen.Home) }, onOpenLinux = { navigate(Screen.Linux) })
+        Screen.Lab -> LabScreen(vault, onBack = { navigate(Screen.Home) })
+        Screen.Shield -> ShieldScreen(vault, onBack = { navigate(Screen.Home) })
+        Screen.Browser -> BrowserScreen(vault, onBack = { navigate(Screen.Home) })
+        Screen.Settings -> SettingsScreen(vault, onBack = { navigate(Screen.Home) }, onOpenCompat = { navigate(Screen.Compat) })
+        Screen.Compat -> CompatScreen(onBack = { navigate(Screen.Settings) })
     }
 }

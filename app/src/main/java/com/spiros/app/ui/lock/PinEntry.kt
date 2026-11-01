@@ -1,6 +1,16 @@
 package com.spiros.app.ui.lock
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +68,22 @@ fun PinEntry(
     onCancel: (() -> Unit)? = null,
 ) {
     val digits = remember { mutableStateListOf<Char>() }
+    val haptics = LocalHapticFeedback.current
+    // Shake the PIN dots whenever a new error appears.
+    val shake = remember { Animatable(0f) }
+    LaunchedEffect(error) {
+        if (error != null) {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            for (offset in listOf(24f, -20f, 14f, -8f, 0f)) shake.animateTo(offset, tween(45))
+        }
+    }
+
+    fun press(d: Char) {
+        if (digits.size < PIN_MAX && !busy) {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            digits.add(d)
+        }
+    }
 
     fun submit() {
         if (digits.size < PIN_MIN || busy) return
@@ -74,6 +100,15 @@ fun PinEntry(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            Image(
+                painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            )
+            Spacer(Modifier.height(12.dp))
             Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             if (subtitle != null) {
                 Spacer(Modifier.height(8.dp))
@@ -85,7 +120,12 @@ fun PinEntry(
                 )
             }
             Spacer(Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .height(16.dp)
+                    .offset { IntOffset(shake.value.roundToInt(), 0) },
+            ) {
                 repeat(maxOf(PIN_MIN, digits.size)) { i ->
                     Box(
                         Modifier
@@ -112,12 +152,12 @@ fun PinEntry(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     listOf("123", "456", "789").forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                            row.forEach { d -> DigitKey(d) { if (digits.size < PIN_MAX && !busy) digits.add(d) } }
+                            row.forEach { d -> DigitKey(d) { press(d) } }
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(KEY_SIZE), contentAlignment = Alignment.Center) { extraKey?.invoke() }
-                        DigitKey('0') { if (digits.size < PIN_MAX && !busy) digits.add('0') }
+                        DigitKey('0') { press('0') }
                         Box(Modifier.size(KEY_SIZE), contentAlignment = Alignment.Center) {
                             IconButton(onClick = { if (digits.isNotEmpty()) digits.removeAt(digits.lastIndex) }) {
                                 Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = stringResource(R.string.action_backspace))

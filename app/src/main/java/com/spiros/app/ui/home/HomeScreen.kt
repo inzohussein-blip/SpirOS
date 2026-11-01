@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,16 +14,21 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,7 +42,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +50,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,22 +75,26 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.spiros.app.R
+import com.spiros.app.ai.AiServer
+import com.spiros.app.linux.LinuxSession
+import com.spiros.app.shield.ShieldSettings
+import com.spiros.app.shield.ShieldVpnService
 import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
-import com.spiros.app.ui.theme.SpirAccent
 import com.spiros.app.ui.theme.SpirNight
+import com.spiros.app.ui.theme.ToolColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.util.Date
 
-private data class Tool(val icon: ImageVector, @StringRes val label: Int, val onClick: () -> Unit)
+private data class Tool(val icon: ImageVector, @StringRes val label: Int, val color: Color, val onClick: () -> Unit)
 
 private data class Desktop(val user: UserHandle?, val apps: List<SpaceManager.App>)
 
 /**
- * The SpirOS "second interface": a launcher-style home showing only the isolated
- * space's apps, with SpirOS's own tools in the dock.
+ * The SpirOS "second interface": status at a glance, SpirOS's tools as colourful
+ * tiles, and the isolated space's apps, in one scrolling launcher.
  */
 @Composable
 fun HomeScreen(
@@ -116,22 +125,26 @@ fun HomeScreen(
             Desktop(user, apps)
         }
     }
-
     val now by produceState(Date()) {
         while (true) {
             value = Date()
             delay(60_000 - System.currentTimeMillis() % 60_000)
         }
     }
+    val shieldPhone by ShieldVpnService.running.collectAsState()
+    val linuxRunning by LinuxSession.running.collectAsState()
+    val aiState by AiServer.state.collectAsState()
+    val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
 
-    val dock = listOf(
-        Tool(Icons.Outlined.Lock, R.string.section_vault, onOpenVault),
-        Tool(Icons.Outlined.Public, R.string.dock_browser, onOpenBrowser),
-        Tool(Icons.Outlined.Shield, R.string.section_shield, onOpenShield),
-        Tool(Icons.Outlined.Apps, R.string.dock_space, onOpenSpace),
-        Tool(Icons.Outlined.Computer, R.string.dock_linux, onOpenLinux),
-        Tool(Icons.Outlined.AutoAwesome, R.string.dock_ai, onOpenAi),
-        Tool(Icons.Outlined.Memory, R.string.dock_lab, onOpenLab),
+    val tools = listOf(
+        Tool(Icons.Outlined.Lock, R.string.section_vault, ToolColors.Vault, onOpenVault),
+        Tool(Icons.Outlined.Public, R.string.dock_browser, ToolColors.Browser, onOpenBrowser),
+        Tool(Icons.Outlined.Shield, R.string.section_shield, ToolColors.Shield, onOpenShield),
+        Tool(Icons.Outlined.Apps, R.string.dock_space, ToolColors.Space, onOpenSpace),
+        Tool(Icons.Outlined.Computer, R.string.dock_linux, ToolColors.Linux, onOpenLinux),
+        Tool(Icons.Outlined.AutoAwesome, R.string.dock_ai, ToolColors.Ai, onOpenAi),
+        Tool(Icons.Outlined.Memory, R.string.dock_lab, ToolColors.Lab, onOpenLab),
+        Tool(Icons.Outlined.Settings, R.string.settings, ToolColors.Settings, onOpenSettings),
     )
 
     fun launch(app: SpaceManager.App, user: UserHandle) {
@@ -143,134 +156,233 @@ fun HomeScreen(
     Surface(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF1B1440), SpirNight))),
+            .background(Brush.verticalGradient(listOf(Color(0xFF1B1440), SpirNight, SpirNight))),
         color = Color.Transparent,
     ) {
-        Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 16.dp)) {
-            // Clock and quick actions.
-            Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 16.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        DateFormat.getTimeFormat(context).format(now),
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.Light,
-                        color = Color.White,
-                    )
-                    Text(
-                        DateFormat.format("EEEE, d MMMM", now).toString(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = 0.75f),
-                    )
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings), tint = Color.White)
-                }
-                IconButton(onClick = onLock) {
-                    Icon(Icons.Outlined.Lock, contentDescription = stringResource(R.string.settings_lock_now), tint = Color.White)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            fullWidth {
+                Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 16.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            DateFormat.getTimeFormat(context).format(now),
+                            fontSize = 52.sp,
+                            fontWeight = FontWeight.Light,
+                            color = Color.White,
+                        )
+                        Text(
+                            DateFormat.format("EEEE, d MMMM", now).toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White.copy(alpha = 0.7f),
+                        )
+                    }
+                    RoundIcon(Icons.Outlined.Lock, stringResource(R.string.settings_lock_now), onLock)
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                placeholder = { Text(stringResource(R.string.home_search)) },
-                shape = RoundedCornerShape(28.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.08f),
-                    focusedContainerColor = Color.White.copy(alpha = 0.12f),
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(16.dp))
+            // Status at a glance; each chip opens its screen.
+            fullWidth {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    StatusChip(
+                        stringResource(R.string.section_shield),
+                        stringResource(if (shieldPhone || shieldSpace) R.string.status_on else R.string.status_off),
+                        ToolColors.Shield,
+                        active = shieldPhone || shieldSpace,
+                        onClick = onOpenShield,
+                    )
+                    StatusChip(
+                        stringResource(R.string.dock_space),
+                        stringResource(if (desktop?.user != null) R.string.status_ready else R.string.status_not_set),
+                        ToolColors.Space,
+                        active = desktop?.user != null,
+                        onClick = onOpenSpace,
+                    )
+                    StatusChip(
+                        stringResource(R.string.dock_linux),
+                        stringResource(if (linuxRunning) R.string.status_running else R.string.status_off),
+                        ToolColors.Linux,
+                        active = linuxRunning,
+                        onClick = onOpenLinux,
+                    )
+                    StatusChip(
+                        stringResource(R.string.dock_ai),
+                        stringResource(
+                            when (aiState) {
+                                AiServer.State.READY -> R.string.status_running
+                                AiServer.State.LOADING -> R.string.status_starting
+                                else -> R.string.status_off
+                            },
+                        ),
+                        ToolColors.Ai,
+                        active = aiState == AiServer.State.READY,
+                        onClick = onOpenAi,
+                    )
+                }
+            }
 
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                val d = desktop
-                when {
-                    d == null -> Unit
-                    d.user == null -> NoSpaceCard(onOpenSpace)
-                    d.apps.isEmpty() -> Text(
+            fullWidth { SectionTitle(stringResource(R.string.home_tools)) }
+            items(tools, key = { it.label }) { ToolTile(it) }
+
+            fullWidth { SectionTitle(stringResource(R.string.home_space_apps)) }
+            val d = desktop
+            when {
+                d == null -> Unit
+                d.user == null -> fullWidth { NoSpaceCard(onOpenSpace) }
+                d.apps.isEmpty() -> fullWidth {
+                    Text(
                         stringResource(R.string.home_space_empty),
                         color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center).clickable(onClick = onOpenSpace).padding(24.dp),
+                        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenSpace).padding(24.dp),
                     )
-                    else -> {
-                        val shown = d.apps.filter { query.isBlank() || it.label.contains(query.trim(), ignoreCase = true) }
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(4),
-                            contentPadding = PaddingValues(vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                        ) {
-                            items(shown, key = { it.packageName }) { app ->
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier
-                                        .clickable { launch(app, d.user) }
-                                        .alpha(if (app.frozen) 0.4f else 1f),
-                                ) {
-                                    Image(app.icon.asImageBitmap(), contentDescription = null, modifier = Modifier.size(54.dp))
-                                    Text(
-                                        app.label,
-                                        color = Color.White,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
-            }
-
-            // Dock with SpirOS's own tools.
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(Color.White.copy(alpha = 0.08f))
-                    .padding(vertical = 10.dp),
-            ) {
-                dock.forEach { tool ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable(onClick = tool.onClick).padding(4.dp),
-                    ) {
-                        Box(
-                            Modifier.size(40.dp).clip(CircleShape).background(SpirAccent.copy(alpha = 0.25f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(tool.icon, contentDescription = null, tint = Color.White)
-                        }
-                        Text(
-                            stringResource(tool.label),
-                            color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            modifier = Modifier.padding(top = 4.dp),
+                else -> {
+                    fullWidth {
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                            placeholder = { Text(stringResource(R.string.home_search)) },
+                            shape = RoundedCornerShape(28.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
+                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
+                                unfocusedBorderColor = Color.Transparent,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
+                    val shown = d.apps.filter { query.isBlank() || it.label.contains(query.trim(), ignoreCase = true) }
+                    items(shown, key = { it.packageName }) { app -> AppIcon(app) { launch(app, d.user) } }
                 }
             }
         }
     }
 }
 
+private fun LazyGridScope.fullWidth(content: @Composable () -> Unit) =
+    item(span = { GridItemSpan(maxLineSpan) }) { content() }
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleSmall,
+        color = Color.White.copy(alpha = 0.6f),
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+@Composable
+private fun RoundIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.08f)),
+    ) {
+        Icon(icon, contentDescription = description, tint = Color.White)
+    }
+}
+
+@Composable
+private fun StatusChip(label: String, value: String, color: Color, active: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (active) color.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Box(
+            Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(if (active) color else Color.White.copy(alpha = 0.3f)),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text("$label · $value", style = MaterialTheme.typography.labelMedium, color = Color.White)
+    }
+}
+
+@Composable
+private fun ToolTile(tool: Tool) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = tool.onClick)
+            .padding(vertical = 4.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth(0.8f)
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(18.dp))
+                .background(ToolColors.gradient(tool.color)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(tool.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+        }
+        Text(
+            stringResource(tool.label),
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun AppIcon(app: SpaceManager.App, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .alpha(if (app.frozen) 0.4f else 1f)
+            .padding(vertical = 4.dp),
+    ) {
+        val image = remember(app.icon) { app.icon.asImageBitmap() }
+        Image(image, contentDescription = null, modifier = Modifier.size(54.dp))
+        Text(
+            app.label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp),
+        )
+    }
+}
+
 @Composable
 private fun NoSpaceCard(onOpenSpace: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Outlined.Apps, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.home_no_space), textAlign = TextAlign.Center)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onOpenSpace) { Text(stringResource(R.string.space_create)) }
-        }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(ToolColors.Space.copy(alpha = 0.12f))
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(Icons.Outlined.Apps, contentDescription = null, tint = ToolColors.Space, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.home_no_space), textAlign = TextAlign.Center, color = Color.White)
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = onOpenSpace) { Text(stringResource(R.string.space_create)) }
     }
 }

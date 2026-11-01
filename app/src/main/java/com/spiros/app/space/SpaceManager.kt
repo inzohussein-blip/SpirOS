@@ -165,12 +165,20 @@ class SpaceManager(private val context: Context) {
     private fun LauncherActivityInfo.toApp(badged: Boolean) = App(
         packageName = applicationInfo.packageName,
         label = label.toString(),
-        icon = (if (badged) getBadgedIcon(0) else getIcon(0)).toBitmap(ICON_PX, ICON_PX),
+        icon = cachedIcon(this, badged),
         component = componentName,
         frozen = (applicationInfo.flags and ApplicationInfo.FLAG_SUSPENDED) != 0,
     )
 
+    /** Turning drawables into bitmaps is the slow part of listing apps; do it once. */
+    private fun cachedIcon(info: LauncherActivityInfo, badged: Boolean): Bitmap {
+        val key = "${info.user.hashCode()}/${info.componentName.flattenToShortString()}/$badged/${info.applicationInfo.sourceDir}"
+        ICONS.get(key)?.let { return it }
+        return (if (badged) info.getBadgedIcon(0) else info.getIcon(0)).toBitmap(ICON_PX, ICON_PX).also { ICONS.put(key, it) }
+    }
+
     companion object {
+        private val ICONS = android.util.LruCache<String, Bitmap>(256)
         private const val PREFS = "space"
         private const val ICON_PX = 128
 

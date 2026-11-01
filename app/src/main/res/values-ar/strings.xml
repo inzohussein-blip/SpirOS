@@ -199,4 +199,27 @@
     <string name="ai_preset_general">عام</string>
     <string name="ai_preset_trading">تداول</string>
     <string name="ai_preset_code">بايثون / MQL5</string>
+    <string name="status_on">يعمل</string>
+    <string name="status_off">متوقف</string>
+    <string name="status_ready">جاهزة</string>
+    <string name="status_not_set">غير منشأة</string>
+    <string name="status_running">يعمل</string>
+    <string name="status_starting">يبدأ</string>
+    <string name="home_tools">أدوات SpirOS</string>
+    <string name="home_space_apps">تطبيقات المساحة المعزولة</string>
+    <string name="onb_skip">تخطٍّ</string>
+    <string name="onb_next">التالي</string>
+    <string name="onb_start">ابدأ</string>
+    <string name="onb_vault_title">خزنتك المشفّرة</string>
+    <string name="onb_vault_body">صور وفيديو وملفات محمية برمز أو بصمة، ومشفّرة بمفتاح لا يغادر هذا الهاتف أبدًا.</string>
+    <string name="onb_space_title">هاتف ثانٍ معزول</string>
+    <string name="onb_space_body">شغّل التطبيقات في مساحة منفصلة بحساباتها وبياناتها الخاصة. لا ترى تطبيقاتك الأساسية ولا ملفاتك.</string>
+    <string name="onb_shield_title">الدرع والمتصفح الخاص</string>
+    <string name="onb_shield_body">احجب المتتبعات والإعلانات، وتصفّح بلا سجل ولا كوكيز. التنزيلات تذهب مباشرة إلى الخزنة.</string>
+    <string name="onb_linux_title">لينكس وذكاء اصطناعي خاص</string>
+    <string name="onb_linux_body">سطح مكتب لينكس كامل ونماذج ذكاء اصطناعي تعمل على هاتفك بدون إنترنت، ولا ترسل أي شيء لأي مكان.</string>
+    <string name="settings_group_unlock">الفتح</string>
+    <string name="settings_group_privacy">الخصوصية</string>
+    <string name="settings_group_device">الجهاز</string>
+    <string name="settings_group_danger">منطقة الخطر</string>
 </resources>

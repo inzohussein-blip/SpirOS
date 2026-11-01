@@ -12,7 +12,8 @@ android {
         applicationId = "com.spiros.app"
         minSdk = 30
         targetSdk = 35
-        versionCode = 1
+        // CI run number, so every published build updates in place over the previous one.
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
         versionName = "0.1.0"
 
         externalNativeBuild {
@@ -57,8 +58,13 @@ android {
         debug {
             signingConfig = signingConfigs.getByName("debug")
         }
+        // What users install: optimised by R8 and not debuggable, which makes the
+        // Compose UI noticeably faster than the debug build. Signed with the same
+        // project key as debug builds, so it updates over them keeping all data.
         release {
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

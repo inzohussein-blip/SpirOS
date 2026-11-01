@@ -47,6 +47,7 @@ fun LockScreen(vault: Vault) {
         busy = busy,
         onSubmit = { pin ->
             busy = true
+            error = null // so the same message again still triggers the shake
             scope.launch {
                 val result = vault.unlock(pin)
                 pin.fill('0')
