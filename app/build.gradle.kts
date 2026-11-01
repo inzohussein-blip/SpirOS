@@ -22,6 +22,26 @@ android {
         }
     }
 
+    // Two editions from one codebase:
+    //  - secure: the main app, modern targetSdk with every Android hardening.
+    //  - speed:  "SpirOS Linux", adds the fast Linux desktop (proot). Running Linux
+    //    programs from app storage is only allowed for apps targeting Android 9
+    //    (API 28) or lower, like Termux, so this edition targets 28. It installs
+    //    side by side with the secure edition and keeps its own data.
+    flavorDimensions += "edition"
+    productFlavors {
+        create("secure") {
+            dimension = "edition"
+            isDefault = true
+        }
+        create("speed") {
+            dimension = "edition"
+            applicationIdSuffix = ".speed"
+            versionNameSuffix = "-linux"
+            targetSdk = 28
+        }
+    }
+
     signingConfigs {
         // Fixed debug key so CI builds update in place instead of forcing an
         // uninstall (which would wipe the vault). Never used for releases.
@@ -58,6 +78,7 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     // One APK per ABI: phones get only arm64 (QEMU is ~40 MB per ABI); the x86_64 APK
@@ -98,5 +119,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.tink.android)
+    implementation(libs.commons.compress)
+    implementation(libs.xz)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

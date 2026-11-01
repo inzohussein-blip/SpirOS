@@ -159,4 +159,24 @@
     <string name="other_open_owner">Open %1$s (remove it from there)</string>
     <string name="other_pause">Pause this profile</string>
     <string name="lab_share_log">Share log</string>
+    <string name="dock_linux">Linux</string>
+    <string name="linux_title">Linux desktop</string>
+    <string name="linux_intro">A full Debian Linux with the Xfce desktop, running directly on your phone\'s processor (no emulation), inside SpirOS\'s private storage. Use it like a computer: files, terminal, Python, and later AI models and MT5 for desktop.</string>
+    <string name="linux_needs_edition">The fast Linux desktop needs the \"SpirOS Linux\" edition. Android only lets apps built for Android 9 run Linux programs from their storage (like Termux), so it is a separate app that installs next to SpirOS. The main SpirOS keeps all of Android\'s protections.</string>
+    <string name="linux_get_edition">Download SpirOS Linux</string>
+    <string name="linux_unsupported">This phone\'s processor or this build does not support the Linux desktop.</string>
+    <string name="linux_install_desc">Downloads Debian + Xfce (about 300 MB, around 1.2 GB once installed) from the SpirOS project, checks its fingerprint (SHA-256) and installs it privately inside the app.</string>
+    <string name="linux_install">Download and install Linux</string>
+    <string name="linux_stage_download">Downloading…</string>
+    <string name="linux_stage_verify">Checking the download…</string>
+    <string name="linux_stage_extract">Installing…</string>
+    <string name="linux_resolution">Screen size</string>
+    <string name="linux_start">Start the desktop</string>
+    <string name="linux_stop">Shut down Linux</string>
+    <string name="linux_touch_help">Tap = click · Long press = right click · Drag = move/select · ⇞ ⇟ = scroll · Type in the bar at the top. For a full keyboard inside Linux: Applications › Accessibility › Onboard. Turn the phone sideways for a wider desktop.</string>
+    <string name="linux_type_hint">Type to Linux</string>
+    <string name="linux_remove">Remove Linux</string>
+    <string name="linux_remove_confirm">The Linux system and every file inside it will be deleted.</string>
+    <string name="linux_android_limits">Android 12+ may close Linux programs when there are many running in the background. If the desktop stops by itself, open Settings › Developer options and turn on \"Disable child process restrictions\".</string>
+    <string name="linux_last_log">Last messages</string>
 </resources>

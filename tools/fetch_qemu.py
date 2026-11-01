@@ -37,7 +37,9 @@ import urllib.request
 # path of equal or shorter length, at a file SpirOS writes before starting QEMU
 # (LabVm.writeResolvConf). Without this the guest has no DNS at all.
 TERMUX_RESOLV = b"/data/data/com.termux/files/usr/etc/resolv.conf"
-SPIROS_RESOLV = b"/data/data/com.spiros.app/files/resolv.conf"
+# Relative: QEMU runs with filesDir as its working directory (QemuRunner), so this
+# works for every SpirOS edition and Android user.
+SPIROS_RESOLV = b"resolv.conf"
 
 # Official repository first, then public mirrors (same signed index and SHA-256 sums).
 MIRRORS = [
@@ -123,9 +125,8 @@ def deb_members(data: bytes):
         pos += 60 + size + (size % 2)
 
 
-def extract(deb: bytes, dest: str):
-    """Extract only regular files we need (libraries and the QEMU binary); never links."""
-    wanted = (PREFIX + "lib/", PREFIX + EXECUTABLE) + tuple(PREFIX + d for d in DATA_DIRS)
+def extract(deb: bytes, dest: str, wanted: tuple):
+    """Extract only regular files we need (libraries, executables, data); never links."""
     for name, payload in deb_members(deb):
         if not name.startswith("data.tar"):
             continue
@@ -237,12 +238,21 @@ def main():
     parser.add_argument("--arch", default="aarch64")
     parser.add_argument("--out", default="app/src/main/jniLibs/arm64-v8a")
     parser.add_argument("--data-out", help="also copy QEMU data files (keymaps) here, e.g. app/src/main/assets/qemu")
+    parser.add_argument("--package", default=ROOT_PACKAGE, help="Termux package to bundle (e.g. proot)")
+    parser.add_argument("--executable", default=EXECUTABLE, help="its executable, relative to the Termux prefix")
+    parser.add_argument("--name", default=OUTPUT_EXECUTABLE, help="file name of the executable in jniLibs")
+    parser.add_argument("--extra", action="append", default=[],
+                        help="additional file to bundle as-is: path/in/prefix=libname.so (e.g. proot's loader)")
     args = parser.parse_args()
 
     repo, text = pick_mirror(args.arch)
     print(f"Index: {repo} ({args.arch})")
     index = parse_index(text)
-    packages = resolve(index, ROOT_PACKAGE)
+    extras = dict(item.split("=", 1) for item in args.extra)
+    packages = resolve(index, args.package)
+    wanted = (PREFIX + "lib/", PREFIX + args.executable) + tuple(PREFIX + p for p in extras)
+    if args.data_out:
+        wanted += tuple(PREFIX + d for d in DATA_DIRS)
     print(f"Packages ({len(packages)}): {' '.join(packages)}")
 
     with tempfile.TemporaryDirectory() as work:
@@ -253,7 +263,7 @@ def main():
             digest = hashlib.sha256(deb).hexdigest()
             if digest != fields["SHA256"]:
                 sys.exit(f"SHA-256 mismatch for {name}")
-            extract(deb, root)
+            extract(deb, root, wanted)
             print(f"  + {name} {fields['Version']}")
 
         usr = os.path.join(root, PREFIX)
@@ -270,7 +280,7 @@ def main():
                 libs.setdefault(soname, path)
 
         # Bundle only what QEMU actually loads: the DT_NEEDED closure of the executable.
-        executable = os.path.join(usr, EXECUTABLE)
+        executable = os.path.join(usr, args.executable)
         closure, missing, queue = set(), set(), [executable]
         while queue:
             for needed in elf_needed(queue.pop()):
@@ -282,13 +292,12 @@ def main():
                 closure.add(needed)
                 queue.append(libs[needed])
         if missing:
-            sys.exit(f"Unresolved libraries needed by QEMU: {sorted(missing)}")
+            sys.exit(f"Unresolved libraries needed by {args.package}: {sorted(missing)}")
 
         rename = {soname: apk_name(soname) for soname in closure}
 
-        if os.path.isdir(args.out):
-            shutil.rmtree(args.out)
-        os.makedirs(args.out)
+        # Several packages (QEMU, proot) share one jniLibs/<abi> directory: add, don't wipe.
+        os.makedirs(args.out, exist_ok=True)
 
         def install(src: str, dest_name: str):
             # Only DT_NEEDED/DT_SONAME strings change; DT_RUNPATH (Termux's prefix) is
@@ -303,9 +312,12 @@ def main():
         for soname in sorted(closure):
             redirected += install(libs[soname], rename[soname])
             print(f"  = {rename[soname]}")
-        redirected += install(executable, OUTPUT_EXECUTABLE)
+        redirected += install(executable, args.name)
+        for path, name in extras.items():
+            install(os.path.join(usr, path), name)
+            print(f"  = {name} (from {path})")
         print(f"resolv.conf path redirected in {redirected} place(s)")
-        if redirected == 0:
+        if redirected == 0 and args.package.startswith("qemu"):
             print("  ! WARNING: Termux resolv.conf path not found; the guest may have no DNS")
 
         if args.data_out:

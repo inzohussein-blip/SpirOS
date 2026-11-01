@@ -31,6 +31,13 @@ import androidx.compose.ui.unit.sp
 import com.spiros.app.engine.VncClient
 import kotlin.math.roundToInt
 
+private const val SCROLL_UP = -1
+private const val SCROLL_DOWN = -2
+
+/** Scroll at the centre of the guest screen (the wheel acts on the window under it). */
+private fun lastX(client: VncClient) = (client.bitmap.value?.width ?: 0) / 2
+private fun lastY(client: VncClient) = (client.bitmap.value?.height ?: 0) / 2
+
 /** Maps between the on-screen canvas and guest pixels (aspect-fit, centred). */
 private class Fit(var scale: Float = 1f, var left: Float = 0f, var top: Float = 0f) {
     fun toGuest(p: Offset) = ((p.x - left) / scale).roundToInt() to ((p.y - top) / scale).roundToInt()
@@ -60,10 +67,16 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier) {
                     Modifier
                         .fillMaxSize()
                         .pointerInput(client) {
-                            detectTapGestures(onTap = { p ->
-                                val (x, y) = fit.toGuest(p)
-                                client.click(x, y)
-                            })
+                            detectTapGestures(
+                                onTap = { p ->
+                                    val (x, y) = fit.toGuest(p)
+                                    client.click(x, y)
+                                },
+                                onLongPress = { p ->
+                                    val (x, y) = fit.toGuest(p)
+                                    client.rightClick(x, y)
+                                },
+                            )
                         }
                         .pointerInput(client) {
                             var last = Offset.Zero
@@ -102,6 +115,8 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier) {
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
             listOf(
+                "⇞" to SCROLL_UP,
+                "⇟" to SCROLL_DOWN,
                 "Esc" to VncClient.KEY_ESCAPE,
                 "Tab" to VncClient.KEY_TAB,
                 "⌫" to VncClient.KEY_BACKSPACE,
@@ -112,7 +127,13 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier) {
                 "⏎" to VncClient.KEY_ENTER,
             ).forEach { (label, key) ->
                 FilledTonalButton(
-                    onClick = { client.key(key) },
+                    onClick = {
+                        when (key) {
+                            SCROLL_UP -> client.scroll(lastX(client), lastY(client), up = true)
+                            SCROLL_DOWN -> client.scroll(lastX(client), lastY(client), up = false)
+                            else -> client.key(key)
+                        }
+                    },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                     modifier = Modifier.weight(1f),
                 ) { Text(label, fontSize = 12.sp) }

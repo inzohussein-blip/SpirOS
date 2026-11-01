@@ -15,6 +15,7 @@ import com.spiros.app.ui.lock.CalculatorScreen
 import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
+import com.spiros.app.ui.linux.LinuxScreen
 import com.spiros.app.ui.settings.SettingsScreen
 import com.spiros.app.ui.shield.ShieldScreen
 import com.spiros.app.ui.space.SpaceScreen
@@ -29,6 +30,7 @@ private sealed interface Screen {
     data class Viewer(val item: VaultItem) : Screen
     data object Space : Screen
     data object Lab : Screen
+    data object Linux : Screen
     data object Shield : Screen
     data object Browser : Screen
     data object Settings : Screen
@@ -63,6 +65,7 @@ private fun Unlocked(vault: Vault) {
             onOpenVault = { screen = Screen.VaultList },
             onOpenSpace = { screen = Screen.Space },
             onOpenLab = { screen = Screen.Lab },
+            onOpenLinux = { screen = Screen.Linux },
             onOpenShield = { screen = Screen.Shield },
             onOpenBrowser = { screen = Screen.Browser },
             onOpenSettings = { screen = Screen.Settings },
@@ -71,6 +74,7 @@ private fun Unlocked(vault: Vault) {
         Screen.VaultList -> VaultScreen(vault, onBack = { screen = Screen.Home }, onOpen = { screen = Screen.Viewer(it) })
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
         Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
+        Screen.Linux -> LinuxScreen(onBack = { screen = Screen.Home })
         Screen.Lab -> LabScreen(vault, onBack = { screen = Screen.Home })
         Screen.Shield -> ShieldScreen(vault, onBack = { screen = Screen.Home })
         Screen.Browser -> BrowserScreen(vault, onBack = { screen = Screen.Home })

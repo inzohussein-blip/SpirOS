@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Public
@@ -90,6 +91,7 @@ fun HomeScreen(
     onOpenVault: () -> Unit,
     onOpenSpace: () -> Unit,
     onOpenLab: () -> Unit,
+    onOpenLinux: () -> Unit,
     onOpenShield: () -> Unit,
     onOpenBrowser: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -125,6 +127,7 @@ fun HomeScreen(
         Tool(Icons.Outlined.Public, R.string.dock_browser, onOpenBrowser),
         Tool(Icons.Outlined.Shield, R.string.section_shield, onOpenShield),
         Tool(Icons.Outlined.Apps, R.string.dock_space, onOpenSpace),
+        Tool(Icons.Outlined.Computer, R.string.dock_linux, onOpenLinux),
         Tool(Icons.Outlined.Memory, R.string.dock_lab, onOpenLab),
     )
 

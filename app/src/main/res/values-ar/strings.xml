@@ -159,4 +159,24 @@
     <string name="other_open_owner">فتح %1$s (واحذفه من داخله)</string>
     <string name="other_pause">إيقاف هذا الملف مؤقتًا</string>
     <string name="lab_share_log">مشاركة السجل</string>
+    <string name="dock_linux">لينكس</string>
+    <string name="linux_title">سطح مكتب لينكس</string>
+    <string name="linux_intro">نظام Debian Linux كامل بواجهة Xfce، يعمل مباشرة على معالج هاتفك (بدون محاكاة) داخل مساحة SpirOS الخاصة. استخدمه كحاسوب: ملفات، وطرفية، وبايثون، ولاحقًا نماذج الذكاء الاصطناعي وMT5 للحاسوب.</string>
+    <string name="linux_needs_edition">سطح مكتب لينكس السريع يحتاج نسخة \"SpirOS Linux\". أندرويد لا يسمح بتشغيل برامج لينكس من مساحة التطبيق إلا للتطبيقات المبنية لأندرويد 9 (مثل Termux)، لذلك هي تطبيق منفصل يُثبَّت بجانب SpirOS، ويبقى SpirOS الأساسي بكامل حمايات أندرويد.</string>
+    <string name="linux_get_edition">تنزيل SpirOS Linux</string>
+    <string name="linux_unsupported">معالج هذا الهاتف أو هذه النسخة لا يدعمان سطح مكتب لينكس.</string>
+    <string name="linux_install_desc">ينزّل Debian مع Xfce (حوالي 300 ميغابايت، وحوالي 1.2 غيغابايت بعد التثبيت) من مشروع SpirOS، ويتحقق من بصمته (SHA-256)، ويثبّته بشكل خاص داخل التطبيق.</string>
+    <string name="linux_install">تنزيل وتثبيت لينكس</string>
+    <string name="linux_stage_download">جارٍ التنزيل…</string>
+    <string name="linux_stage_verify">جارٍ التحقق من الملف…</string>
+    <string name="linux_stage_extract">جارٍ التثبيت…</string>
+    <string name="linux_resolution">حجم الشاشة</string>
+    <string name="linux_start">تشغيل سطح المكتب</string>
+    <string name="linux_stop">إيقاف لينكس</string>
+    <string name="linux_touch_help">لمسة = نقرة · ضغط مطوّل = زر الفأرة الأيمن · سحب = تحريك وتحديد · ⇞ ⇟ = تمرير · اكتب في الشريط العلوي. للوحة مفاتيح كاملة داخل لينكس: التطبيقات ← إمكانية الوصول ← Onboard. أدر الهاتف أفقيًا لسطح مكتب أعرض.</string>
+    <string name="linux_type_hint">اكتب إلى لينكس</string>
+    <string name="linux_remove">حذف لينكس</string>
+    <string name="linux_remove_confirm">سيُحذف نظام لينكس وكل الملفات بداخله.</string>
+    <string name="linux_android_limits">أندرويد 12 وما بعده قد يغلق برامج لينكس عند كثرتها في الخلفية. إذا توقف سطح المكتب وحده، افتح الإعدادات ← خيارات المطور وفعّل \"Disable child process restrictions\" (تعطيل قيود العمليات الفرعية).</string>
+    <string name="linux_last_log">آخر الرسائل</string>
 </resources>

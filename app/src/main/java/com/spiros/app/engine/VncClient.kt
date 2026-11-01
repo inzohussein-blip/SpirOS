@@ -18,7 +18,7 @@ import kotlin.concurrent.thread
  * Raw encoding only (it is a local socket, bandwidth is not an issue) plus the
  * DesktopSize pseudo-encoding so the guest can change resolution.
  */
-class VncClient(private val socketPath: String) {
+class VncClient(private val socketPath: String, private val connectTimeoutMs: Long = 20_000) {
 
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
     val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
@@ -72,6 +72,25 @@ class VncClient(private val socketPath: String) {
     fun click(x: Int, y: Int) {
         pointer(x, y, true)
         pointer(x, y, false)
+    }
+
+    /** Right mouse button (desktop context menus); bound to a long press. */
+    fun rightClick(x: Int, y: Int) {
+        rawPointer(x, y, 4)
+        rawPointer(x, y, 0)
+    }
+
+    /** Mouse wheel: [up] scrolls up. */
+    fun scroll(x: Int, y: Int, up: Boolean) {
+        rawPointer(x, y, if (up) 8 else 16)
+        rawPointer(x, y, 0)
+    }
+
+    private fun rawPointer(x: Int, y: Int, mask: Int) = send {
+        writeByte(5)
+        writeByte(mask)
+        writeShort(x.coerceIn(0, maxOf(0, width - 1)))
+        writeShort(y.coerceIn(0, maxOf(0, height - 1)))
     }
 
     fun key(keysym: Int) {
@@ -224,7 +243,7 @@ class VncClient(private val socketPath: String) {
     }
 
     private fun connectWithRetry(): LocalSocket? {
-        repeat(80) {
+        repeat((connectTimeoutMs / 250).toInt()) {
             if (!running) return null
             val s = LocalSocket()
             try {

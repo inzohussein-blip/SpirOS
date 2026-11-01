@@ -30,16 +30,30 @@ jobs:
           python3 tools/fetch_qemu.py --arch aarch64 --out app/src/main/jniLibs/arm64-v8a --data-out app/src/main/assets/qemu
           python3 tools/fetch_qemu.py --arch x86_64 --out app/src/main/jniLibs/x86_64
 
+      # Linux desktop (speed edition): proot from Termux, with its loader.
+      - name: Bundle proot
+        continue-on-error: true
+        run: |
+          for a in "aarch64 arm64-v8a" "x86_64 x86_64"; do
+            set -- $a
+            python3 tools/fetch_qemu.py --arch $1 --out app/src/main/jniLibs/$2 \
+              --package proot --executable bin/proot --name libproot.so \
+              --extra libexec/proot/loader=libproot-loader.so
+          done
+
       - name: Check API levels (lint NewApi)
-        run: ./gradlew --no-daemon lintDebug
+        run: ./gradlew --no-daemon lintSecureDebug lintSpeedDebug
 
       - name: Build debug APKs
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Name APKs
         run: |
-          cp app/build/outputs/apk/debug/app-arm64-v8a-debug.apk SpirOS.apk
-          cp app/build/outputs/apk/debug/app-x86_64-debug.apk SpirOS-x86_64.apk
+          OUT=app/build/outputs/apk
+          cp $OUT/secure/debug/app-secure-arm64-v8a-debug.apk SpirOS.apk
+          cp $OUT/secure/debug/app-secure-x86_64-debug.apk SpirOS-x86_64.apk
+          cp $OUT/speed/debug/app-speed-arm64-v8a-debug.apk SpirOS-Linux.apk
+          cp $OUT/speed/debug/app-speed-x86_64-debug.apk SpirOS-Linux-x86_64.apk
 
       - uses: actions/upload-artifact@v4
         with:
@@ -53,6 +67,18 @@ jobs:
           path: SpirOS-x86_64.apk
           if-no-files-found: error
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpirOS-Linux-apk
+          path: SpirOS-Linux.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpirOS-Linux-x86_64-apk
+          path: SpirOS-Linux-x86_64.apk
+          if-no-files-found: error
+
       # A direct .apk link that opens on a phone (Actions artifacts are always zipped):
       # https://github.com/<owner>/<repo>/releases/download/dev-latest/SpirOS.apk
       - name: Publish APK to the dev-latest pre-release
@@ -61,11 +87,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete dev-latest --yes --cleanup-tag || true
-          gh release create dev-latest SpirOS.apk \
+          gh release create dev-latest SpirOS.apk SpirOS-Linux.apk \
             --prerelease \
             --target "${{ github.sha }}" \
             --title "SpirOS – آخر نسخة تجريبية" \
-            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. للتثبيت: نزّل SpirOS.apk وافتحه."
+            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. SpirOS.apk هو التطبيق الأساسي. SpirOS-Linux.apk يضيف سطح مكتب لينكس السريع ويُثبَّت بجانبه."
 
   # Fast check of the guest itself (Alpine URLs, kernel arguments, devices) with the
   # distribution's QEMU, using the same script as the in-app definition.
@@ -111,3 +137,32 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: bash tools/lab_device_test.sh SpirOS-x86_64.apk
+
+  # End-to-end: the speed edition on an Android 14 emulator downloads the Debian
+  # rootfs (amd64) from the linux-rootfs release, runs proot + Xvnc + Xfce and checks
+  # that the desktop is drawn.
+  linux-device:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: SpirOS-Linux-x86_64-apk
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Linux desktop self-test on Android 14 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          disk-size: 8G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash tools/lab_device_test.sh SpirOS-Linux-x86_64.apk com.spiros.app.speed .LinuxSelfTestActivity linux-selftest.log 25
