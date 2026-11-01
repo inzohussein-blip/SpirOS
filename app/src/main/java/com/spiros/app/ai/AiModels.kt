@@ -3,11 +3,9 @@ package com.spiros.app.ai
 import android.app.ActivityManager
 import android.content.Context
 import com.spiros.app.linux.LinuxDistro
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.spiros.app.linux.BackgroundTask
+import com.spiros.app.linux.Downloader
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * Small open models in GGUF format (4-bit), sized for phones. They are downloaded
@@ -70,46 +68,22 @@ object AiModels {
 
     fun delete(context: Context, fileName: String) = file(context, fileName).delete()
 
-    /** Downloads with resume support (large files on mobile networks). */
-    suspend fun download(context: Context, url: String, fileName: String, onProgress: (Float) -> Unit) = withContext(Dispatchers.IO) {
+    /**
+     * Downloads with resume support (large files on mobile networks), as the engine's
+     * background task: pause / resume / cancel, survives leaving SpirOS.
+     */
+    fun download(context: Context, url: String, fileName: String) {
         require(url.startsWith("https://huggingface.co/")) { "Untrusted model source" }
         val target = file(context, fileName)
-        target.parentFile?.mkdirs()
-        val part = File(target.path + ".part")
-        val connection = URL(url).openConnection() as HttpURLConnection
-        try {
-            connection.connectTimeout = 20_000
-            connection.readTimeout = 60_000
-            connection.instanceFollowRedirects = true
-            if (part.length() > 0) connection.setRequestProperty("Range", "bytes=${part.length()}-")
-            val code = connection.responseCode
-            check(code == 200 || code == 206) { "HTTP $code" }
-            val append = code == 206
-            val already = if (append) part.length() else 0L
-            val total = already + connection.contentLengthLong
-            java.io.FileOutputStream(part, append).use { output ->
-                connection.inputStream.use { input ->
-                    val buffer = ByteArray(1 shl 16)
-                    var done = already
-                    var lastReport = 0L
-                    while (true) {
-                        val n = input.read(buffer)
-                        if (n < 0) break
-                        output.write(buffer, 0, n)
-                        done += n
-                        if (done - lastReport > 1 shl 20) {
-                            lastReport = done
-                            if (total > 0) onProgress(done.toFloat() / total)
-                        }
-                    }
-                }
-            }
-            // GGUF files start with the magic "GGUF"; anything else is an error page.
-            val magic = part.inputStream().use { ByteArray(4).also { b -> it.read(b) } }
-            check(String(magic) == "GGUF") { "The downloaded file is not a GGUF model" }
-            check(part.renameTo(target)) { "rename failed" }
-        } finally {
-            connection.disconnect()
+        val tmp = File(target.path + ".download")
+        BackgroundTask.stage("DOWNLOADING")
+        Downloader.download(url, tmp)
+        // GGUF files start with the magic "GGUF"; anything else is an error page.
+        val magic = tmp.inputStream().use { ByteArray(4).also { b -> it.read(b) } }
+        if (String(magic) != "GGUF") {
+            tmp.delete()
+            error("The downloaded file is not a GGUF model")
         }
+        check(tmp.renameTo(target)) { "rename failed" }
     }
 }

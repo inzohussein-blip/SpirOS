@@ -1,0 +1,7 @@
+# Cinnamon: Linux Mint's flagship desktop. It needs OpenGL, which on a phone is
+# drawn by the CPU (Mesa llvmpipe): the heaviest option.
+cinnamon-core
+gnome-terminal
+xed
+libgl1-mesa-dri
+mesa-utils

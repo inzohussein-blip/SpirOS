@@ -10,7 +10,7 @@ object Performance {
     enum class Session { DESKTOP, SINGLE_APP }
 
     /** Programs offered for single-app mode (command inside Linux). */
-    val SINGLE_APPS = listOf("xfce4-terminal", "thunar", "mousepad")
+    val SINGLE_APPS = listOf("x-terminal-emulator", "thunar", "caja", "nemo", "mousepad", "pluma")
 
     val RESOLUTIONS = listOf("960x540", "1280x720", "1600x900", "1920x1080")
     val FPS_OPTIONS = listOf(15, 30, 60)
@@ -39,6 +39,10 @@ object Performance {
 
     fun pip(c: Context) = prefs(c).getBoolean("pip", true)
     fun setPip(c: Context, v: Boolean) = prefs(c).edit().putBoolean("pip", v).apply()
+
+    /** Touchpad under the Linux screen (button in the desktop's top bar). */
+    fun touchpad(c: Context) = prefs(c).getBoolean("touchpad", false)
+    fun setTouchpad(c: Context, v: Boolean) = prefs(c).edit().putBoolean("touchpad", v).apply()
 
     // ---- AI ----
     fun aiFastCores(c: Context) = prefs(c).getBoolean("ai_fast_cores", true)

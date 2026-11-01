@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.IBinder
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
@@ -50,8 +51,26 @@ object Engine {
         val aiModel: String = "",
         val frozen: Boolean = false,
         val memoryKb: Long = 0,
+        /** Installed system: xfce, mate, cinnamon, custom, debian (older) or "". */
+        val distro: String = "",
+        val task: Task? = null,
     ) {
+        val taskActive get() = task?.active == true
         val aiActive get() = aiState == AiServer.State.READY || aiState == AiServer.State.LOADING
+    }
+
+    /** The engine's background job (installing Linux or downloading a model). */
+    data class Task(
+        val kind: String,
+        val name: String,
+        val stage: String,
+        val done: Long,
+        val total: Long,
+        val paused: Boolean,
+        val active: Boolean,
+        val error: String?,
+    ) {
+        val fraction get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
     }
 
     data class User(val name: String, val uid: Int, val admin: Boolean)
@@ -124,7 +143,13 @@ object Engine {
             poller = scope.launch {
                 while (isActive) {
                     refresh()
-                    delay(if (_status.value.desktopRunning || _status.value.aiActive) 1500 else 4000)
+                    delay(
+                        when {
+                            _status.value.taskActive -> 1000
+                            _status.value.desktopRunning || _status.value.aiActive -> 1500
+                            else -> 4000
+                        },
+                    )
                 }
             }
         }
@@ -145,6 +170,19 @@ object Engine {
             aiModel = json.optString("aiModel"),
             frozen = json.optBoolean("frozen"),
             memoryKb = json.optLong("memoryKb"),
+            distro = json.optString("distro"),
+            task = json.optJSONObject("task")?.let {
+                Task(
+                    kind = it.optString("kind"),
+                    name = it.optString("name"),
+                    stage = it.optString("stage"),
+                    done = it.optLong("done"),
+                    total = it.optLong("total"),
+                    paused = it.optBoolean("paused"),
+                    active = it.optBoolean("active"),
+                    error = it.optString("error").ifEmpty { null },
+                )
+            },
         )
         _status.value = next
         if (!next.desktopRunning) closeScreen()
@@ -182,6 +220,25 @@ object Engine {
             fps = Performance.linuxFps(context),
         )
     }
+
+    /**
+     * Installs a Linux system in the background (see IEngine.installDistro). For a
+     * custom system from a file, [file] is a document the user picked; SpirOS opens it
+     * and hands the engine only that one file.
+     */
+    fun installDistro(context: Context, desktop: String, url: String? = null, sha256: String? = null, file: Uri? = null) {
+        val app = context.applicationContext
+        scope.launch {
+            val pfd = file?.let { runCatching { app.contentResolver.openFileDescriptor(it, "r") }.getOrNull() }
+            call(app) { it.installDistro(desktop, url, sha256, pfd) }
+            runCatching { pfd?.close() }
+        }
+    }
+
+    fun pauseTask(context: Context) = send(context) { it.pauseTask() }
+    fun resumeTask(context: Context) = send(context) { it.resumeTask() }
+    fun cancelTask(context: Context) = send(context) { it.cancelTask() }
+    fun clearTask(context: Context) = send(context) { it.clearTask() }
 
     fun startAi(context: Context, model: AiModels.Model) = send(context) {
         it.startAi(model.fileName, Performance.aiThreads(context), Performance.aiContext(context))

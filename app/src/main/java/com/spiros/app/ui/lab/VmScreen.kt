@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -45,7 +47,7 @@ private class Fit(var scale: Float = 1f, var left: Float = 0f, var top: Float = 
 
 /** The guest's graphical display with touch-as-mouse and a row of special keys. */
 @Composable
-fun VmScreen(client: VncClient, modifier: Modifier = Modifier, controls: Boolean = true) {
+fun VmScreen(client: VncClient, modifier: Modifier = Modifier, controls: Boolean = true, cursor: Cursor? = null) {
     val bitmap by client.bitmap.collectAsState()
     val frame by client.frame.collectAsState()
     val fit = remember { Fit() }
@@ -70,6 +72,7 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier, controls: Boolean
                             detectTapGestures(
                                 onTap = { p ->
                                     val (x, y) = fit.toGuest(p)
+                                    cursor?.let { it.x = x.toFloat(); it.y = y.toFloat() }
                                     client.click(x, y)
                                 },
                                 onLongPress = { p ->
@@ -110,6 +113,24 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier, controls: Boolean
                         dstSize = IntSize(w.roundToInt(), h.roundToInt()),
                         filterQuality = FilterQuality.Low,
                     )
+                    // Touchpad pointer: an arrow at the guest position.
+                    if (cursor != null && cursor.x >= 0) {
+                        val cx = fit.left + cursor.x * fit.scale
+                        val cy = fit.top + cursor.y * fit.scale
+                        val s = 22f
+                        val arrow = Path().apply {
+                            moveTo(cx, cy)
+                            lineTo(cx, cy + s)
+                            lineTo(cx + s * 0.28f, cy + s * 0.75f)
+                            lineTo(cx + s * 0.5f, cy + s * 1.15f)
+                            lineTo(cx + s * 0.65f, cy + s * 1.08f)
+                            lineTo(cx + s * 0.45f, cy + s * 0.68f)
+                            lineTo(cx + s * 0.8f, cy + s * 0.68f)
+                            close()
+                        }
+                        drawPath(arrow, Color.White)
+                        drawPath(arrow, Color.Black, style = Stroke(width = 2f))
+                    }
                 }
             }
         }

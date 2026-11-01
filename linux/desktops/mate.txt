@@ -1,0 +1,6 @@
+# Mint MATE style: the classic desktop of Linux Mint MATE edition.
+mate-desktop-environment-core
+mate-terminal
+pluma
+eom
+engrampa

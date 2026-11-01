@@ -53,6 +53,7 @@ import com.spiros.app.ai.AiChat
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
 import com.spiros.app.remote.Engine
+import com.spiros.app.ui.common.TaskCard
 import androidx.compose.runtime.produceState
 import com.spiros.app.ui.SpirTopBar
 import kotlinx.coroutines.launch
@@ -73,7 +74,6 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
     val state = status.aiState
     val ram = remember { AiModels.phoneRamGb(context) }
     var selected by remember { mutableStateOf(AiModels.byFileName(status.aiModel) ?: AiModels.recommended(context)) }
-    var downloadProgress by remember { mutableStateOf<Float?>(null) }
     var refresh by remember { mutableIntStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
     var preset by remember { mutableIntStateOf(0) }
@@ -84,6 +84,17 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
         value = Engine.parseStrings(Engine.call(context) { it.downloadedModels() })
     }
     var aiLog by remember { mutableStateOf(emptyList<String>()) }
+    // Runs in the engine in the background: leaving this screen does not stop it.
+    fun download(model: AiModels.Model) {
+        error = null
+        scope.launch {
+            Engine.call(context) {
+                it.clearTask()
+                it.downloadModel(model.url, model.fileName, Engine.callback(onProgress = { _, _ -> }, onDone = { refresh++ }))
+            }
+        }
+    }
+    LaunchedEffect(status.taskActive) { if (!status.taskActive) refresh++ }
     LaunchedEffect(state) {
         if (state == AiServer.State.FAILED) aiLog = Engine.call(context) { it.aiLog() }.orEmpty()
     }
@@ -178,33 +189,26 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
                         }
                     }
 
-                    val progress = downloadProgress
+                    val modelTask = status.task?.takeIf { it.kind == "model" }
+                    if (modelTask != null && !modelTask.active && modelTask.error != null) {
+                        TaskCard(
+                            modelTask,
+                            title = AiModels.byFileName(modelTask.name)?.name ?: modelTask.name,
+                            onRetry = AiModels.byFileName(modelTask.name)?.let { m -> { download(m) } },
+                        )
+                    }
                     when {
-                        progress != null -> {
-                            Text(stringResource(R.string.ai_downloading, (progress * 100).toInt()))
-                            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
-                        }
+                        modelTask != null && modelTask.active -> TaskCard(
+                            modelTask,
+                            title = stringResource(R.string.ai_downloading_model, AiModels.byFileName(modelTask.name)?.name ?: modelTask.name),
+                        )
                         state == AiServer.State.LOADING -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.padding(end = 12.dp))
                             Text(stringResource(R.string.ai_loading))
                         }
-                        selected.fileName !in downloaded -> Button(onClick = {
-                            error = null
-                            downloadProgress = 0f
-                            val model = selected
-                            scope.launch {
-                                Engine.call(context) {
-                                    it.downloadModel(model.url, model.fileName, Engine.callback(
-                                        onProgress = { _, f -> downloadProgress = f },
-                                        onDone = { e ->
-                                            error = e
-                                            downloadProgress = null
-                                            refresh++
-                                        },
-                                    ))
-                                } ?: run { downloadProgress = null }
-                            }
-                        }) { Text(stringResource(R.string.ai_download, selected.name)) }
+                        selected.fileName !in downloaded -> Button(onClick = { download(selected) }) {
+                            Text(stringResource(R.string.ai_download, selected.name))
+                        }
                         else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(onClick = { Engine.startAi(context, selected) }) { Text(stringResource(R.string.ai_start)) }
                             OutlinedButton(onClick = {

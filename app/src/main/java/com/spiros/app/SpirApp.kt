@@ -29,8 +29,10 @@ class SpirApp : Application() {
         if (!SpaceOwner.isProfileOwner(this)) Thread { Engine.connect(this) }.start()
         // Show or remove the control notification as Linux, the AI or the Lab start and stop.
         MainScope().launch {
-            combine(Engine.desktopRunning, Engine.aiState, LabSession.running) { linux, ai, lab ->
-                Triple(linux, ai, lab)
+            // Also follows a background install/download (progress, paused) for the notification.
+            combine(Engine.status, LabSession.running) { engine, lab ->
+                val t = engine.task?.takeIf { it.active }
+                listOf(engine.desktopRunning, engine.aiState, lab, t?.paused, t?.let { (it.fraction * 100).toInt() }, t?.stage)
             }.distinctUntilChanged().collect { SessionService.sync(this@SpirApp) }
         }
     }

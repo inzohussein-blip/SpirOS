@@ -59,12 +59,18 @@ import com.spiros.app.BuildConfig
 import com.spiros.app.R
 import com.spiros.app.remote.Engine
 import com.spiros.app.remote.EngineInstaller
+import com.spiros.app.ui.common.TaskCard
 import androidx.compose.material3.CircularProgressIndicator
 import kotlinx.coroutines.delay
 import com.spiros.app.security.Panic
 import com.spiros.app.perf.Performance
 import com.spiros.app.ui.SpirTopBar
 import com.spiros.app.ui.lab.VmScreen
+import com.spiros.app.ui.lab.Cursor
+import com.spiros.app.ui.lab.Touchpad
+import androidx.compose.material.icons.rounded.Mouse
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.platform.LocalConfiguration
 import com.spiros.app.ui.Pip
 import androidx.compose.runtime.DisposableEffect
 import com.spiros.app.ui.common.BootOverlay
@@ -74,7 +80,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
 
 /**
- * The SpirOS Linux desktop: Debian + Xfce with touch controls. Linux itself runs in the
+ * The SpirOS Linux desktop: Ubuntu in Linux Mint style (Xfce, MATE or Cinnamon) or the
+ * user's own system, with touch controls and an optional touchpad. Linux itself runs in the
  * SpirOS Engine (installed from here on first use); this screen only shows and drives it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +96,9 @@ fun LinuxScreen(onBack: () -> Unit) {
     var log by remember { mutableStateOf(emptyList<String>()) }
     var engineInstalled by remember { mutableStateOf(Engine.isInstalled(context)) }
     val installState by EngineInstaller.state.collectAsState()
-    var progress by remember { mutableStateOf<Pair<String, Float>?>(null) }
+    val linuxTask = status.task?.takeIf { it.kind == "linux" }
+    var changing by remember { mutableStateOf(false) }
+    var lastInstall by remember { mutableStateOf<Triple<String, String?, String?>?>(null) }
     // Connect to the engine (and notice when it has just been installed).
     LaunchedEffect(installState) {
         engineInstalled = Engine.isInstalled(context)
@@ -111,6 +120,8 @@ fun LinuxScreen(onBack: () -> Unit) {
     var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
     var confirmRemove by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
+    var touchpad by remember { mutableStateOf(Performance.touchpad(context)) }
+    val cursor = remember { Cursor() }
 
     // Full-screen desktop while running.
     val client = screen
@@ -143,6 +154,16 @@ fun LinuxScreen(onBack: () -> Unit) {
                     IconButton(onClick = { client.type(input); input = "" }) {
                         Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
                     }
+                    IconButton(onClick = {
+                        touchpad = !touchpad
+                        Performance.setTouchpad(context, touchpad)
+                    }) {
+                        Icon(
+                            Icons.Rounded.Mouse,
+                            contentDescription = stringResource(if (touchpad) R.string.touchpad_hide else R.string.touchpad_show),
+                            tint = if (touchpad) Color(0xFF7CE7C3) else Color.White,
+                        )
+                    }
                     IconButton(onClick = { (context as? Activity)?.let(Pip::enter) }) {
                         Icon(Icons.Rounded.PictureInPicture, contentDescription = stringResource(R.string.linux_pip), tint = Color.White)
                     }
@@ -161,6 +182,18 @@ fun LinuxScreen(onBack: () -> Unit) {
                 }
                 if (firstFrame == null) {
                     BootOverlay(log, stringResource(R.string.boot_linux), Modifier.weight(1f))
+                } else if (touchpad) {
+                    // Landscape: touchpad beside the screen; portrait: below it.
+                    val wide = LocalConfiguration.current.screenWidthDp > LocalConfiguration.current.screenHeightDp
+                    if (wide) {
+                        Row(Modifier.weight(1f)) {
+                            VmScreen(client, Modifier.weight(2.2f), cursor = cursor)
+                            Touchpad(client, cursor, Modifier.weight(1f).fillMaxHeight())
+                        }
+                    } else {
+                        VmScreen(client, Modifier.weight(1.6f), cursor = cursor)
+                        Touchpad(client, cursor, Modifier.weight(1f).fillMaxWidth())
+                    }
                 } else {
                     VmScreen(client, Modifier.weight(1f))
                 }
@@ -197,43 +230,27 @@ fun LinuxScreen(onBack: () -> Unit) {
                 }
                 status.arch.isEmpty() || !status.proot ->
                     Text(stringResource(R.string.linux_unsupported), color = MaterialTheme.colorScheme.error)
-                !installed -> Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.linux_install_desc))
-                        val p = progress
-                        if (p == null) {
-                            Button(onClick = {
-                                error = null
-                                progress = "DOWNLOADING" to 0f
-                                scope.launch {
-                                    Engine.call(context) {
-                                        it.installLinux(Engine.callback(
-                                            onProgress = { stage, f -> progress = stage to f },
-                                            onDone = { e ->
-                                                error = e
-                                                progress = null
-                                                Engine.refresh()
-                                            },
-                                        ))
-                                    } ?: run { progress = null }
-                                }
-                            }) { Text(stringResource(R.string.linux_install)) }
-                        } else {
-                            Text(
-                                stringResource(
-                                    when (p.first) {
-                                        "VERIFYING" -> R.string.linux_stage_verify
-                                        "EXTRACTING" -> R.string.linux_stage_extract
-                                        else -> R.string.linux_stage_download
-                                    },
-                                ) + " ${(p.second * 100).toInt()}%",
-                            )
-                            LinearProgressIndicator(progress = { p.second }, modifier = Modifier.fillMaxWidth())
-                        }
-                    }
-                }
+                linuxTask?.active == true -> Unit // progress card below
+                !installed || changing -> DistroChooser(
+                    current = status.distro,
+                    onInstall = { desktop, url, sha, file ->
+                        error = null
+                        changing = false
+                        lastInstall = Triple(desktop, url, sha).takeIf { file == null }
+                        Engine.installDistro(context, desktop, url, sha, file)
+                    },
+                    onCancel = if (installed) ({ changing = false }) else null,
+                )
                 else -> Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.distro_current, distroName(status.distro)),
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { changing = true }) { Text(stringResource(R.string.distro_change)) }
+                        }
                         Text(stringResource(R.string.linux_resolution), style = MaterialTheme.typography.titleSmall)
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -266,6 +283,17 @@ fun LinuxScreen(onBack: () -> Unit) {
                 }
             }
 
+            linuxTask?.let { task ->
+                if (task.active || task.error != null) {
+                    TaskCard(
+                        task,
+                        title = stringResource(R.string.task_installing, distroName(task.name)),
+                        onRetry = (lastInstall ?: Triple(task.name, null, null).takeIf { task.name != "custom" })?.let { (d, u, h) ->
+                            { Engine.installDistro(context, d, u, h) }
+                        },
+                    )
+                }
+            }
             if (engineInstalled && status.connected && status.version < BuildConfig.VERSION_CODE) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

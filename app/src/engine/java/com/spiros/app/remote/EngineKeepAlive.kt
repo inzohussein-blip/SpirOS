@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.IBinder
 import com.spiros.app.R
 import com.spiros.app.ai.AiServer
+import com.spiros.app.linux.BackgroundTask
 import com.spiros.app.linux.LinuxSession
 
 /**
@@ -41,7 +42,7 @@ class EngineKeepAlive : Service() {
         private const val ID = 9
 
         fun sync(context: Context) {
-            val busy = LinuxSession.running.value ||
+            val busy = LinuxSession.running.value || BackgroundTask.state?.active == true ||
                 AiServer.state.value == AiServer.State.READY || AiServer.state.value == AiServer.State.LOADING
             val intent = Intent(context, EngineKeepAlive::class.java)
             if (busy) runCatching { context.startForegroundService(intent) } else context.stopService(intent)

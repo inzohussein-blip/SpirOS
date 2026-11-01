@@ -8,7 +8,7 @@ import com.spiros.app.remote.IEngineCallback;
 interface IEngine {
     int version();
 
-    /** JSON snapshot: linuxInstalled, desktopRunning, aiState, aiModel, frozen, memoryKb, arch. */
+    /** JSON snapshot: linuxInstalled, distro, desktopRunning, aiState, aiModel, frozen, memoryKb, arch, task. */
     String status();
 
     // ---- Linux system ----
@@ -43,4 +43,16 @@ interface IEngine {
     void freeze();
     void resume();
     void stopAll();
+
+    // ---- Background installs (added in engine v2; keep new methods at the end) ----
+    /**
+     * Installs a Linux system in the background: desktop = xfce | mate | cinnamon, or
+     * custom with an https url or a file (sha256 optional). Progress is in status().task.
+     */
+    void installDistro(String desktop, String url, String sha256, in ParcelFileDescriptor file);
+    void pauseTask();
+    void resumeTask();
+    void cancelTask();
+    /** Forget the last finished task's result. */
+    void clearTask();
 }

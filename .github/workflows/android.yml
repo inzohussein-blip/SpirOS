@@ -152,9 +152,22 @@ jobs:
   linux-device:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
+      # The Linux systems are built by linux-rootfs.yml (often in the same push):
+      # wait until the default one (Mint Xfce, amd64) is published.
+      - name: Wait for the Linux system image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 90); do
+            if gh release view linux-rootfs --json assets --jq '.assets[].name' 2>/dev/null | grep -qx 'ubuntu-xfce-amd64.tar.xz.sha256'; then
+              echo "image published"; exit 0
+            fi
+            sleep 60
+          done
+          echo "image not published in time"; exit 1
       - uses: actions/download-artifact@v4
         with:
           name: SpirOS-Engine-x86_64-apk

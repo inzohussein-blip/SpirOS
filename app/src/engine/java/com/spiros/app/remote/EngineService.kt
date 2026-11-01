@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor
 import com.spiros.app.BuildConfig
 import com.spiros.app.ai.AiModels
 import com.spiros.app.ai.AiServer
+import com.spiros.app.linux.BackgroundTask
 import com.spiros.app.linux.LinuxAccounts
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
@@ -39,19 +40,41 @@ class EngineService : Service() {
             .put("aiModel", AiServer.modelFile ?: "")
             .put("frozen", BackgroundFreezer.frozen)
             .put("memoryKb", AppProcesses.list().sumOf { it.rssKb })
+            .put("distro", LinuxDistro.installed(this@EngineService) ?: "")
+            .apply {
+                BackgroundTask.state?.let { t ->
+                    put("task", JSONObject()
+                        .put("kind", t.kind).put("name", t.name).put("stage", t.stage)
+                        .put("done", t.done).put("total", t.total)
+                        .put("paused", t.paused).put("active", t.active)
+                        .put("error", t.error ?: ""))
+                }
+            }
             .toString()
 
         // ---- Linux system ----
+        /** Default system (Mint Xfce), reporting to [callback] until it ends. */
         override fun installLinux(callback: IEngineCallback) {
-            thread(name = "engine-install") {
-                val result = runCatching {
-                    runBlocking {
-                        LinuxDistro.install(this@EngineService) { stage, f -> runCatching { callback.onProgress(stage.name, f) } }
-                    }
-                }
-                runCatching { callback.onDone(result.exceptionOrNull()?.let { it.message ?: it.toString() }) }
+            installDistro("xfce", null, null, null)
+            follow(callback)
+        }
+
+        override fun installDistro(desktop: String, url: String?, sha256: String?, file: ParcelFileDescriptor?) {
+            val ctx = this@EngineService
+            runTask("linux", desktop) {
+                LinuxSession.stop()
+                AiServer.stop()
+                LinuxDistro.install(ctx, desktop, url, sha256, file)
             }
         }
+
+        override fun pauseTask() = BackgroundTask.pause()
+
+        override fun resumeTask() = BackgroundTask.resume()
+
+        override fun cancelTask() = BackgroundTask.cancel()
+
+        override fun clearTask() = BackgroundTask.clear()
 
         override fun removeLinux() {
             LinuxSession.stop()
@@ -113,11 +136,11 @@ class EngineService : Service() {
         override fun downloadedModels(): String = JSONArray(AiModels.downloaded(this@EngineService)).toString()
 
         override fun downloadModel(url: String, fileName: String, callback: IEngineCallback) {
-            thread(name = "engine-model") {
-                val result = runCatching {
-                    runBlocking { AiModels.download(this@EngineService, url, fileName) { runCatching { callback.onProgress("download", it) } } }
-                }
-                runCatching { callback.onDone(result.exceptionOrNull()?.let { it.message ?: it.toString() }) }
+            val ctx = this@EngineService
+            if (runTask("model", fileName) { AiModels.download(ctx, url, fileName) }) {
+                follow(callback)
+            } else {
+                runCatching { callback.onDone("Another download is running") }
             }
         }
 
@@ -151,6 +174,41 @@ class EngineService : Service() {
             LinuxSession.stop()
             AiServer.stop()
             EngineKeepAlive.sync(this@EngineService)
+        }
+    }
+
+    /** Runs [work] as the engine's background task; false if one is already running. */
+    private fun runTask(kind: String, name: String, work: () -> Unit): Boolean {
+        if (!BackgroundTask.begin(kind, name)) return false
+        EngineKeepAlive.sync(this)
+        thread(name = "engine-$kind") {
+            val error = try {
+                work()
+                null
+            } catch (e: BackgroundTask.Cancelled) {
+                "cancelled"
+            } catch (e: Throwable) {
+                e.message ?: e.toString()
+            }
+            BackgroundTask.end(error)
+            EngineKeepAlive.sync(this)
+        }
+        return true
+    }
+
+    /** Reports the current task's progress to [callback] until it ends. */
+    private fun follow(callback: IEngineCallback) {
+        thread(name = "engine-follow") {
+            while (true) {
+                val t = BackgroundTask.state ?: break
+                if (!t.active) {
+                    runCatching { callback.onDone(t.error) }
+                    return@thread
+                }
+                runCatching { callback.onProgress(t.stage, t.fraction) }
+                Thread.sleep(500)
+            }
+            runCatching { callback.onDone("no task") }
         }
     }
 
