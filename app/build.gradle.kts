@@ -80,6 +80,9 @@ android {
             // Extract native libs to nativeLibraryDir: the bundled QEMU executable must
             // exist as a real file there to be executed.
             useLegacyPackaging = true
+            // QEMU and its libraries arrive already stripped from Termux; don't let the
+            // build rewrite them again.
+            keepDebugSymbols += "**/*.so"
         }
     }
 }

@@ -19,11 +19,22 @@ class QemuRunner(private val context: Context) {
     fun version(): String = runCatching {
         val process = builder(listOf("-version")).start()
         val out = process.inputStream.bufferedReader().readText()
-        process.waitFor()
-        out.lineSequence().firstOrNull { it.isNotBlank() }?.trim() ?: "?"
+        val code = process.waitFor()
+        out.lineSequence().firstOrNull { it.isNotBlank() }?.trim()
+            ?: "QEMU failed to start (${describeExit(code)})"
     }.getOrElse { "error: ${it.message}" }
 
     fun start(args: List<String>): Process = builder(args).start()
+
+    companion object {
+        /** Exit codes above 128 mean the process was killed by signal (code - 128). */
+        fun describeExit(code: Int): String = when (code) {
+            139 -> "crashed: segmentation fault, exit 139"
+            134 -> "aborted, exit 134"
+            137 -> "killed, exit 137"
+            else -> "exit $code"
+        }
+    }
 
     private fun builder(args: List<String>) = ProcessBuilder(listOf(binary.path) + args)
         .redirectErrorStream(true)

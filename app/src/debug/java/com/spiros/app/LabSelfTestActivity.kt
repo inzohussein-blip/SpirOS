@@ -25,7 +25,11 @@ class LabSelfTestActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(TextView(this).apply { text = "SpirOS Lab self-test running…" })
-        log = File(noBackupFilesDir, "lab-selftest.log").apply { delete() }
+        log = File(noBackupFilesDir, "lab-selftest.log")
+        // One run per process, even if the activity is recreated.
+        if (started) return
+        started = true
+        log.delete()
         thread(name = "lab-selftest") {
             val ok = runCatching { runTest() }.getOrElse { e ->
                 write("ERROR ${e.javaClass.simpleName}: ${e.message}")
@@ -71,7 +75,7 @@ class LabSelfTestActivity : Activity() {
                     return true
                 }
                 if (!process.isAlive) {
-                    write("QEMU_EXITED code=${process.exitValue()}")
+                    write("QEMU_EXITED ${QemuRunner.describeExit(process.exitValue())}")
                     return false
                 }
                 Thread.sleep(2000)
@@ -90,6 +94,8 @@ class LabSelfTestActivity : Activity() {
     }
 
     private companion object {
+        @Volatile
+        var started = false
         const val TIMEOUT_MS = 15 * 60 * 1000L
         val BOOT_MARKERS = listOf("login:", "Welcome to Alpine", "recovery shell", "~ #")
     }

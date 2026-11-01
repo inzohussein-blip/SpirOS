@@ -95,7 +95,7 @@ object LabSession {
             }
         }
         val code = runCatching { p.waitFor() }.getOrDefault(-1)
-        _console.value = _console.value + "[QEMU exited with code $code]"
+        _console.value = _console.value + "[QEMU stopped: ${QemuRunner.describeExit(code)}]"
         synchronized(this) {
             if (process === p) {
                 process = null

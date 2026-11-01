@@ -9,13 +9,16 @@ built with the Android NDK against bionic). This script:
   3. extracts the executable and keeps only the shared libraries it really
      loads (transitive DT_NEEDED closure; fails if any is missing),
   4. renames everything to lib*.so (only such files are installed from an APK)
-     and rewrites SONAME / DT_NEEDED with patchelf so they find each other,
+     and rewrites SONAME / DT_NEEDED *in place* so they find each other. The new
+     names are always shorter, so no byte of the ELF layout moves. (patchelf was
+     used before; it relayouts files and Android's loader then crashed QEMU with
+     SIGSEGV before main.)
   5. writes them to app/src/main/jniLibs/arm64-v8a/.
 
 At runtime SpirOS executes libqemu-system-aarch64.so from nativeLibraryDir
 (the only app location Android 10+ allows executing from).
 
-Requires: python3, patchelf.
+Requires: python3 only.
 """
 import argparse
 import hashlib
@@ -23,7 +26,7 @@ import io
 import os
 import re
 import shutil
-import subprocess
+import struct
 import sys
 import tarfile
 import tempfile
@@ -137,16 +140,79 @@ def is_elf(path: str) -> bool:
         return f.read(4) == b"\x7fELF"
 
 
-def patchelf(*args) -> str:
-    return subprocess.run(["patchelf", *args], check=True, capture_output=True, text=True).stdout.strip()
+DT_NEEDED, DT_SONAME, DT_STRTAB, DT_STRSZ = 1, 14, 5, 10
+
+
+def _dynamic(data: bytes):
+    """Yields (tag, file_offset_of_string) for DT_NEEDED/DT_SONAME of a 64-bit LE ELF."""
+    if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
+        raise ValueError("not a 64-bit little-endian ELF")
+    phoff = struct.unpack_from("<Q", data, 0x20)[0]
+    phentsize, phnum = struct.unpack_from("<HH", data, 0x36)
+    loads, dynamic = [], None
+    for i in range(phnum):
+        p_type, _, p_offset, p_vaddr, _, p_filesz, _, _ = struct.unpack_from("<IIQQQQQQ", data, phoff + i * phentsize)
+        if p_type == 1:
+            loads.append((p_vaddr, p_offset, p_filesz))
+        elif p_type == 2:
+            dynamic = (p_offset, p_filesz)
+    if dynamic is None:
+        return []
+
+    def to_offset(vaddr):
+        for va, off, size in loads:
+            if va <= vaddr < va + size:
+                return off + vaddr - va
+        raise ValueError("address not in a PT_LOAD segment")
+
+    strtab, refs = None, []
+    for j in range(dynamic[1] // 16):
+        tag, value = struct.unpack_from("<qQ", data, dynamic[0] + j * 16)
+        if tag == 0:
+            break
+        if tag == DT_STRTAB:
+            strtab = value
+        elif tag in (DT_NEEDED, DT_SONAME):
+            refs.append((tag, value))
+    base = to_offset(strtab)
+    return [(tag, base + value) for tag, value in refs]
+
+
+def _string_at(data: bytes, offset: int) -> str:
+    return data[offset:data.index(b"\0", offset)].decode()
+
+
+def elf_needed(path: str) -> list:
+    data = open(path, "rb").read()
+    return [_string_at(data, off) for tag, off in _dynamic(data) if tag == DT_NEEDED]
+
+
+def elf_soname(path: str):
+    data = open(path, "rb").read()
+    names = [_string_at(data, off) for tag, off in _dynamic(data) if tag == DT_SONAME]
+    return names[0] if names else None
+
+
+def elf_rename(path: str, rename: dict):
+    """Rewrites DT_NEEDED / DT_SONAME strings in place (new names are never longer)."""
+    data = bytearray(open(path, "rb").read())
+    for _, off in _dynamic(data):
+        old = _string_at(data, off)
+        new = rename.get(old)
+        if new is None or new == old:
+            continue
+        if len(new) > len(old):
+            raise ValueError(f"{new} is longer than {old}")
+        data[off:off + len(old)] = new.encode() + b"\0" * (len(old) - len(new))
+    open(path, "wb").write(data)
 
 
 def apk_name(soname: str) -> str:
-    """libfoo.so.1.2 -> libfoo_1_2.so ; libfoo-2.0.so stays."""
+    """libfoo.so.1.2 -> libfoo12.so (always shorter, so it can be patched in place)."""
     if re.fullmatch(r"lib[\w.+-]*\.so", soname):
         return soname
     base, _, version = soname.partition(".so")
-    return f"{base}{version.replace('.', '_')}.so"
+    return f"{base}{version.replace('.', '')}.so"
 
 
 def main():
@@ -183,14 +249,14 @@ def main():
                 path = os.path.join(dirpath, entry)
                 if os.path.islink(path) or ".so" not in entry or not is_elf(path):
                     continue
-                soname = patchelf("--print-soname", path) or entry
+                soname = elf_soname(path) or entry
                 libs.setdefault(soname, path)
 
         # Bundle only what QEMU actually loads: the DT_NEEDED closure of the executable.
         executable = os.path.join(usr, EXECUTABLE)
         closure, missing, queue = set(), set(), [executable]
         while queue:
-            for needed in patchelf("--print-needed", queue.pop()).split():
+            for needed in elf_needed(queue.pop()):
                 if needed in SYSTEM_LIBS or needed in closure:
                     continue
                 if needed not in libs:
@@ -207,21 +273,18 @@ def main():
             shutil.rmtree(args.out)
         os.makedirs(args.out)
 
-        def install(src: str, dest_name: str, soname: str | None):
+        def install(src: str, dest_name: str):
+            # Only DT_NEEDED/DT_SONAME strings change; DT_RUNPATH (Termux's prefix) is
+            # left alone: it does not exist on the phone and LD_LIBRARY_PATH wins.
             dest = os.path.join(args.out, dest_name)
             shutil.copyfile(src, dest)
             os.chmod(dest, 0o755)
-            patchelf("--remove-rpath", dest)
-            if soname is not None:
-                patchelf("--set-soname", dest_name, dest)
-            for needed in patchelf("--print-needed", dest).split():
-                if needed in rename and rename[needed] != needed:
-                    patchelf("--replace-needed", needed, rename[needed], dest)
+            elf_rename(dest, rename)
 
         for soname in sorted(closure):
-            install(libs[soname], rename[soname], soname)
+            install(libs[soname], rename[soname])
             print(f"  = {rename[soname]}")
-        install(executable, OUTPUT_EXECUTABLE, None)
+        install(executable, OUTPUT_EXECUTABLE)
 
         if args.data_out:
             if os.path.isdir(args.data_out):

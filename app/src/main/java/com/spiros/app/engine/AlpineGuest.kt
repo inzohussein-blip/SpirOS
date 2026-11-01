@@ -25,6 +25,10 @@ object AlpineGuest {
         File(dir(context), "vmlinuz-virt").isFile && File(dir(context), "initramfs-virt").isFile
 
     suspend fun ensure(context: Context, onProgress: (Float) -> Unit): Files = withContext(Dispatchers.IO) {
+        synchronized(this@AlpineGuest) { download(context, onProgress) }
+    }
+
+    private fun download(context: Context, onProgress: (Float) -> Unit): Files {
         val dir = dir(context).apply { mkdirs() }
         val names = listOf("vmlinuz-virt", "initramfs-virt")
         names.forEachIndexed { i, name ->
@@ -32,7 +36,7 @@ object AlpineGuest {
             if (!target.isFile) download("$BASE/$name", target) { p -> onProgress((i + p) / names.size) }
         }
         onProgress(1f)
-        Files(File(dir, names[0]), File(dir, names[1]))
+        return Files(File(dir, names[0]), File(dir, names[1]))
     }
 
     /** Kernel command line: serial console, DHCP, and where to fetch the rest of Alpine. */

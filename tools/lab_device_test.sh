@@ -16,8 +16,10 @@ for _ in $(seq 1 170); do
     OUT=$(adb shell run-as "$PKG" cat "$LOG" 2>/dev/null | tr -d '\r')
     if echo "$OUT" | grep -q '^RESULT '; then
         echo "$OUT"
-        echo "$OUT" | grep -q '^RESULT PASS'
-        exit $?
+        if echo "$OUT" | grep -q '^RESULT PASS'; then exit 0; fi
+        echo "== crash details (logcat)"
+        adb logcat -d -b crash,main 2>/dev/null | grep -E -A40 'F DEBUG|CANNOT LINK|libqemu|Fatal signal' | head -n 120
+        exit 1
     fi
 done
 echo "Self-test did not finish in time. Partial log:"
