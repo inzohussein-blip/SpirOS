@@ -53,22 +53,36 @@ chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
 MINT_NOTE="from Ubuntu"
 if [ ! -d "$ROOT/usr/share/themes/Mint-Y" ] && [ ! -d "$ROOT/usr/share/themes/Mint-Y-Dark" ]; then
 MINT_NOTE="from the Mint repository"
-python3 - "$ROOT/tmp" "$MINT_SUITE" <<'PY' || MINT_NOTE="unavailable (see WARNING above)"
+python3 - "$ROOT/tmp" "$MINT_SUITE" <<'PY' || MINT_NOTE="unavailable: $(cat "$ROOT/tmp/mint-error" 2>/dev/null)"
 import gzip, hashlib, sys, urllib.request
 out, suite = sys.argv[1], sys.argv[2]
-base = "https://packages.linuxmint.com/"
-index = gzip.decompress(urllib.request.urlopen(f"{base}dists/{suite}/main/binary-amd64/Packages.gz", timeout=60).read()).decode()
-best = {}
-for block in index.split("\n\n"):
-    f = dict(l.split(": ", 1) for l in block.splitlines() if ": " in l and not l.startswith(" "))
-    if f.get("Package") in ("mint-themes", "mint-y-icons", "mint-x-icons") and f.get("Architecture") == "all":
-        best[f["Package"]] = f  # later entries are newer
-for name in ("mint-themes", "mint-y-icons"):
-    f = best[name]
-    data = urllib.request.urlopen(base + f["Filename"], timeout=120).read()
-    assert hashlib.sha256(data).hexdigest() == f["SHA256"], f"checksum mismatch for {name}"
-    open(f"{out}/{name}.deb", "wb").write(data)
-    print("fetched", name, f["Version"])
+# Some mirrors refuse Python's default user agent; identify like apt does.
+def get(url, timeout=120):
+    req = urllib.request.Request(url, headers={"User-Agent": "Debian APT-HTTP/1.3 (2.7.14)"})
+    return urllib.request.urlopen(req, timeout=timeout).read()
+errors = []
+for base in ("https://packages.linuxmint.com/", "https://mirrors.kernel.org/linuxmint-packages/",
+             "http://packages.linuxmint.com/"):
+    try:
+        index = gzip.decompress(get(f"{base}dists/{suite}/main/binary-amd64/Packages.gz", 60)).decode()
+        best = {}
+        for block in index.split("\n\n"):
+            f = dict(l.split(": ", 1) for l in block.splitlines() if ": " in l and not l.startswith(" "))
+            if f.get("Package") in ("mint-themes", "mint-y-icons") and f.get("Architecture") == "all":
+                best[f["Package"]] = f  # later entries are newer
+        for name in ("mint-themes", "mint-y-icons"):
+            f = best[name]
+            data = get(base + f["Filename"])
+            # The index gives each package's SHA-256: a tampered file is rejected.
+            assert hashlib.sha256(data).hexdigest() == f["SHA256"], f"checksum mismatch for {name}"
+            open(f"{out}/{name}.deb", "wb").write(data)
+            print("fetched", name, f["Version"], "from", base)
+        sys.exit(0)
+    except Exception as e:
+        errors.append(f"{base}: {e!r}")
+        print("WARNING:", errors[-1])
+open(f"{out}/mint-error", "w").write("; ".join(errors)[:400])
+sys.exit(1)
 PY
 if ls "$ROOT"/tmp/mint-*.deb >/dev/null 2>&1; then
     chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
