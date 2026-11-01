@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -67,9 +67,9 @@ fun CompatScreen(onBack: () -> Unit) {
 @Composable
 private fun CheckCard(check: DeviceCompat.Check) {
     val (icon, tint) = when (check.level) {
-        DeviceCompat.Level.OK -> Icons.Outlined.CheckCircle to MaterialTheme.colorScheme.secondary
-        DeviceCompat.Level.WARN -> Icons.Outlined.WarningAmber to Color(0xFFFFB74D)
-        DeviceCompat.Level.INFO -> Icons.Outlined.Info to MaterialTheme.colorScheme.onSurfaceVariant
+        DeviceCompat.Level.OK -> Icons.Rounded.CheckCircle to MaterialTheme.colorScheme.secondary
+        DeviceCompat.Level.WARN -> Icons.Rounded.WarningAmber to Color(0xFFFFB74D)
+        DeviceCompat.Level.INFO -> Icons.Rounded.Info to MaterialTheme.colorScheme.onSurfaceVariant
     }
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {

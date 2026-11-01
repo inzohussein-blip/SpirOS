@@ -23,10 +23,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AcUnit
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.rounded.AcUnit
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -149,14 +149,14 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
             SpirTopBar(stringResource(R.string.section_space), onBack) {
                 if (current is SpaceState.Active) {
                     IconButton(onClick = { send(SpaceOwner.CMD_FREEZE_ALL) }) {
-                        Icon(Icons.Outlined.AcUnit, contentDescription = stringResource(R.string.space_freeze_all))
+                        Icon(Icons.Rounded.AcUnit, contentDescription = stringResource(R.string.space_freeze_all))
                     }
                     IconButton(onClick = { send(SpaceOwner.CMD_UNFREEZE_ALL) }) {
-                        Icon(Icons.Outlined.WbSunny, contentDescription = stringResource(R.string.space_unfreeze_all))
+                        Icon(Icons.Rounded.WbSunny, contentDescription = stringResource(R.string.space_unfreeze_all))
                     }
                     IconButton(onClick = { confirmDelete = true }) {
                         Icon(
-                            Icons.Outlined.DeleteForever,
+                            Icons.Rounded.DeleteForever,
                             contentDescription = stringResource(R.string.space_delete),
                             tint = MaterialTheme.colorScheme.error,
                         )
@@ -168,7 +168,7 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
             if (current is SpaceState.Active && !busy) {
                 ExtendedFloatingActionButton(
                     onClick = { adding = true },
-                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                     text = { Text(stringResource(R.string.space_add_apps)) },
                 )
             }

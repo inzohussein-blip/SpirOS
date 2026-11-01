@@ -2,6 +2,26 @@ package com.spiros.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.spiros.app.R
+import com.spiros.app.linux.LinuxSession
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -88,6 +108,55 @@ private fun Unlocked(vault: Vault) {
         }
     }
 
+    // A shortcut from the launcher icon (Vault, Browser, Linux) opens that screen.
+    val pending by Navigation.pending.collectAsState()
+    LaunchedEffect(pending) {
+        pending?.let { destination ->
+            screen = when (destination) {
+                Navigation.VAULT -> Screen.VaultList
+                Navigation.BROWSER -> Screen.Browser
+                Navigation.LINUX -> Screen.Linux
+                Navigation.SHIELD -> Screen.Shield
+                else -> Screen.Home
+            }
+            Navigation.consume()
+        }
+    }
+
+    val linuxFullScreen by LinuxSession.running.collectAsState()
+    val tabs = listOf(
+        Triple(Screen.Home, Icons.Rounded.Home, R.string.tab_home),
+        Triple(Screen.VaultList, Icons.Rounded.Lock, R.string.section_vault),
+        Triple(Screen.Linux, Icons.Rounded.Computer, R.string.dock_linux),
+        Triple(Screen.Settings, Icons.Rounded.Settings, R.string.settings),
+    )
+    val showBar = tabs.any { it.first == screen } && !(screen == Screen.Linux && linuxFullScreen)
+
+    Scaffold(
+        bottomBar = {
+            AnimatedVisibility(visible = showBar, enter = fadeIn(), exit = fadeOut()) {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                    tabs.forEach { (target, icon, label) ->
+                        NavigationBarItem(
+                            selected = screen == target,
+                            onClick = { screen = target },
+                            icon = { Icon(icon, contentDescription = null) },
+                            label = { Text(stringResource(label)) },
+                        )
+                    }
+                }
+            }
+        },
+        contentWindowInsets = WindowInsets(0),
+    ) { inner ->
+        Box(Modifier.padding(inner).consumeWindowInsets(inner)) {
+            ScreensAnimated(screen, vault) { screen = it }
+        }
+    }
+}
+
+@Composable
+private fun ScreensAnimated(screen: Screen, vault: Vault, navigate: (Screen) -> Unit) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     AnimatedContent(
         targetState = screen,
@@ -99,7 +168,7 @@ private fun Unlocked(vault: Vault) {
                 .togetherWith(slideOutHorizontally(tween(260)) { -it / 4 * sign } + fadeOut(tween(180)))
         },
         label = "screens",
-    ) { current -> ScreenContent(current, vault) { screen = it } }
+    ) { current -> ScreenContent(current, vault, navigate) }
 }
 
 private fun depth(screen: Screen) = when (screen) {

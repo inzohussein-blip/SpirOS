@@ -263,4 +263,18 @@
     <string name="perf_fast_cores_desc">يستخدم %1$d أنوية سريعة من أصل %2$d. الأنوية البطيئة تجعل الذكاء الاصطناعي ينتظرها.</string>
     <string name="perf_context">ذاكرة الذكاء الاصطناعي (السياق، بالرموز)</string>
     <string name="perf_context_desc">أصغر = ذاكرة أقل وبدء أسرع؛ أكبر = يتذكر محادثات أطول.</string>
+    <string name="tab_home">الرئيسية</string>
+    <string name="settings_search">ابحث في الإعدادات</string>
+    <string name="appearance_title">المظهر</string>
+    <string name="appearance_theme">الثيم</string>
+    <string name="appearance_system">حسب النظام</string>
+    <string name="appearance_dark">داكن</string>
+    <string name="appearance_light">فاتح</string>
+    <string name="appearance_colors">الألوان</string>
+    <string name="appearance_spiros">ألوان SpirOS</string>
+    <string name="appearance_material_you">Material You (من الخلفية)</string>
+    <string name="appearance_style">الأسلوب</string>
+    <string name="appearance_elegant">أنيق</string>
+    <string name="appearance_minimal">بسيط</string>
+    <string name="tile_shield">درع SpirOS</string>
 </resources>

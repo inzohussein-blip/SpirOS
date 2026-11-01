@@ -19,9 +19,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -87,7 +87,7 @@ fun LinuxScreen(onBack: () -> Unit) {
             Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_back), tint = Color.White)
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_back), tint = Color.White)
                     }
                     OutlinedTextField(
                         value = input,
@@ -99,10 +99,10 @@ fun LinuxScreen(onBack: () -> Unit) {
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { client.type(input); input = "" }) {
-                        Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
+                        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
                     }
                     IconButton(onClick = LinuxSession::stop) {
-                        Icon(Icons.Outlined.PowerSettingsNew, contentDescription = stringResource(R.string.linux_stop), tint = Color(0xFFFF6B6B))
+                        Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.linux_stop), tint = Color(0xFFFF6B6B))
                     }
                 }
                 VmScreen(client, Modifier.weight(1f))

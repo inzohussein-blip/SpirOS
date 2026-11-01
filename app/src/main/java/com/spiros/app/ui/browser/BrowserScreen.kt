@@ -28,11 +28,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.LocalFireDepartment
-import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -145,7 +145,7 @@ fun BrowserScreen(vault: Vault, onBack: () -> Unit) {
         Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_back))
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.action_back))
                 }
                 OutlinedTextField(
                     value = address,
@@ -163,18 +163,18 @@ fun BrowserScreen(vault: Vault, onBack: () -> Unit) {
                     webView?.loadUrl(HOME)
                     message(context.getString(R.string.browser_burned))
                 }) {
-                    Icon(Icons.Outlined.LocalFireDepartment, contentDescription = stringResource(R.string.browser_burn), tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Rounded.LocalFireDepartment, contentDescription = stringResource(R.string.browser_burn), tint = MaterialTheme.colorScheme.error)
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
                 IconButton(onClick = { webView?.goBack() }, enabled = canGoBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
                 }
                 IconButton(onClick = { webView?.goForward() }, enabled = canGoForward) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = stringResource(R.string.browser_forward))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = stringResource(R.string.browser_forward))
                 }
                 IconButton(onClick = { webView?.reload() }) {
-                    Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.browser_reload))
+                    Icon(Icons.Rounded.Refresh, contentDescription = stringResource(R.string.browser_reload))
                 }
                 Text(
                     stringResource(R.string.browser_blocked, blocked),

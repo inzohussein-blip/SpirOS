@@ -25,8 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Backspace
-import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -100,14 +100,20 @@ fun PinEntry(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Image(
-                painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = null,
-                modifier = Modifier
+            Box(
+                Modifier
                     .size(72.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-            )
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(72.dp),
+                )
+            }
             Spacer(Modifier.height(12.dp))
             Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
             if (subtitle != null) {
@@ -160,7 +166,7 @@ fun PinEntry(
                         DigitKey('0') { press('0') }
                         Box(Modifier.size(KEY_SIZE), contentAlignment = Alignment.Center) {
                             IconButton(onClick = { if (digits.isNotEmpty()) digits.removeAt(digits.lastIndex) }) {
-                                Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = stringResource(R.string.action_backspace))
+                                Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = stringResource(R.string.action_backspace))
                             }
                         }
                     }
@@ -176,7 +182,7 @@ fun PinEntry(
                     enabled = digits.size >= PIN_MIN && !busy,
                     modifier = Modifier.size(56.dp),
                 ) {
-                    Icon(Icons.Outlined.Check, contentDescription = stringResource(R.string.action_confirm))
+                    Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.action_confirm))
                 }
             }
         }

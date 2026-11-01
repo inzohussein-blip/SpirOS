@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -214,7 +214,7 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { submit() }) {
-                        Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = stringResource(R.string.lab_send))
+                        Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send))
                     }
                 }
             }

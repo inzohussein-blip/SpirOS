@@ -1,22 +1,34 @@
 package com.spiros.app.ui.settings
 
 import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.collectAsState
+import com.spiros.app.ui.theme.Appearance
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Calculate
-import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.Fingerprint
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.ManageAccounts
-import androidx.compose.material.icons.outlined.Pin
-import androidx.compose.material.icons.outlined.Screenshot
-import androidx.compose.material.icons.outlined.Speed
-import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.ManageAccounts
+import androidx.compose.material.icons.rounded.Pin
+import androidx.compose.material.icons.rounded.Screenshot
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
@@ -70,6 +82,8 @@ fun SettingsScreen(
     var lockEnabled by remember { mutableStateOf(vault.isLockEnabled) }
     var confirmNoLock by remember { mutableStateOf(false) }
     var screenshots by remember { mutableStateOf(ScreenSecurity.screenshotsAllowed(context)) }
+    var query by remember { mutableStateOf("") }
+    fun match(vararg ids: Int) = query.isBlank() || ids.any { context.getString(it).contains(query.trim(), ignoreCase = true) }
     val bioTitle = stringResource(R.string.biometric_enable_title)
     val cancel = stringResource(R.string.cancel)
 
@@ -110,129 +124,162 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             val itemColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background)
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.perf_title), style = MaterialTheme.typography.titleMedium) },
-                supportingContent = { Text(stringResource(R.string.perf_settings_desc)) },
-                leadingContent = { Icon(Icons.Outlined.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
-                modifier = Modifier.clickable(onClick = onOpenPerformance),
-                colors = itemColors,
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                placeholder = { Text(stringResource(R.string.settings_search)) },
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            GroupTitle(stringResource(R.string.settings_group_unlock))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_require_pin)) },
-                supportingContent = { Text(stringResource(R.string.settings_require_pin_desc)) },
-                leadingContent = { Icon(Icons.Outlined.Pin, contentDescription = null) },
-                trailingContent = {
-                    Switch(checked = lockEnabled, onCheckedChange = { on ->
-                        if (on) {
-                            vault.setLockEnabled(true)
-                            lockEnabled = true
-                        } else {
-                            confirmNoLock = true
-                        }
-                    })
-                },
-                colors = itemColors,
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_biometric)) },
-                leadingContent = { Icon(Icons.Outlined.Fingerprint, contentDescription = null) },
-                supportingContent = {
-                    if (!bioAvailable) Text(stringResource(R.string.compat_biometric_missing))
-                },
-                trailingContent = {
-                    Switch(
-                        checked = bioEnabled,
-                        enabled = bioAvailable,
-                        onCheckedChange = { on ->
-                            if (on) {
-                                val cipher = runCatching { vault.biometricEnrollCipher() }.getOrNull()
-                                if (cipher != null) {
-                                    BiometricGate.authenticate(activity, cipher, bioTitle, cancel, onSuccess = {
-                                        bioEnabled = runCatching { vault.completeBiometricEnroll(it) }.isSuccess
-                                    })
-                                }
-                            } else {
-                                vault.disableBiometric()
-                                bioEnabled = false
-                            }
-                        },
-                    )
-                },
-                colors = itemColors,
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_panic)) },
-                leadingContent = { Icon(Icons.Outlined.Warning, contentDescription = null) },
-                supportingContent = { Text(stringResource(R.string.settings_panic_desc)) },
-                trailingContent = {
-                    if (hasPanic) {
-                        TextButton(onClick = { vault.clearPanicPin(); hasPanic = false }) {
-                            Text(stringResource(R.string.remove))
-                        }
-                    } else {
-                        TextButton(onClick = { settingPanic = true }) { Text(stringResource(R.string.set)) }
-                    }
-                },
-                colors = itemColors,
-            )
-            GroupTitle(stringResource(R.string.settings_group_privacy))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_screenshots)) },
-                supportingContent = { Text(stringResource(R.string.settings_screenshots_desc)) },
-                leadingContent = { Icon(Icons.Outlined.Screenshot, contentDescription = null) },
-                trailingContent = {
-                    Switch(checked = screenshots, onCheckedChange = { on ->
-                        ScreenSecurity.setScreenshotsAllowed(context, on)
-                        screenshots = on
-                    })
-                },
-                colors = itemColors,
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_disguise)) },
-                leadingContent = { Icon(Icons.Outlined.Calculate, contentDescription = null) },
-                supportingContent = { Text(stringResource(R.string.settings_disguise_desc)) },
-                trailingContent = {
-                    Switch(checked = disguised, onCheckedChange = { on ->
-                        Disguise.setEnabled(context, on)
-                        disguised = on
-                    })
-                },
-                colors = itemColors,
-            )
-            if (BuildConfig.FLAVOR == "speed") {
-                GroupTitle(stringResource(R.string.dock_linux))
+            if (match(R.string.perf_title, R.string.perf_settings_desc)) {
                 ListItem(
-                    headlineContent = { Text(stringResource(R.string.accounts_title)) },
-                    supportingContent = { Text(stringResource(R.string.accounts_settings_desc)) },
-                    leadingContent = { Icon(Icons.Outlined.ManageAccounts, contentDescription = null) },
-                    modifier = Modifier.clickable(onClick = onOpenLinuxAccounts),
+                    headlineContent = { Text(stringResource(R.string.perf_title), style = MaterialTheme.typography.titleMedium) },
+                    supportingContent = { Text(stringResource(R.string.perf_settings_desc)) },
+                    leadingContent = { Icon(Icons.Rounded.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                    modifier = Modifier.clickable(onClick = onOpenPerformance),
                     colors = itemColors,
                 )
             }
-            GroupTitle(stringResource(R.string.settings_group_device))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.compat_title)) },
-                leadingContent = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
-                supportingContent = { Text(stringResource(R.string.compat_subtitle)) },
-                modifier = Modifier.clickable(onClick = onOpenCompat),
-                colors = itemColors,
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_lock_now)) },
-                leadingContent = { Icon(Icons.Outlined.Lock, contentDescription = null) },
-                modifier = Modifier.clickable { vault.lock() },
-                colors = itemColors,
-            )
-            GroupTitle(stringResource(R.string.settings_group_danger), danger = true)
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_wipe), color = MaterialTheme.colorScheme.error) },
-                leadingContent = { Icon(Icons.Outlined.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                supportingContent = { Text(stringResource(R.string.settings_wipe_desc)) },
-                modifier = Modifier.clickable { confirmWipe = true },
-                colors = itemColors,
-            )
+            if (match(R.string.appearance_title, R.string.appearance_theme, R.string.appearance_colors, R.string.appearance_style)) {
+                GroupTitle(stringResource(R.string.appearance_title))
+                AppearanceSection()
+            }
+            if (query.isBlank()) GroupTitle(stringResource(R.string.settings_group_unlock))
+            if (match(R.string.settings_require_pin, R.string.settings_require_pin_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_require_pin)) },
+                    supportingContent = { Text(stringResource(R.string.settings_require_pin_desc)) },
+                    leadingContent = { Icon(Icons.Rounded.Pin, contentDescription = null) },
+                    trailingContent = {
+                        Switch(checked = lockEnabled, onCheckedChange = { on ->
+                            if (on) {
+                                vault.setLockEnabled(true)
+                                lockEnabled = true
+                            } else {
+                                confirmNoLock = true
+                            }
+                        })
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (match(R.string.settings_biometric, R.string.compat_biometric_missing)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_biometric)) },
+                    leadingContent = { Icon(Icons.Rounded.Fingerprint, contentDescription = null) },
+                    supportingContent = {
+                        if (!bioAvailable) Text(stringResource(R.string.compat_biometric_missing))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = bioEnabled,
+                            enabled = bioAvailable,
+                            onCheckedChange = { on ->
+                                if (on) {
+                                    val cipher = runCatching { vault.biometricEnrollCipher() }.getOrNull()
+                                    if (cipher != null) {
+                                        BiometricGate.authenticate(activity, cipher, bioTitle, cancel, onSuccess = {
+                                            bioEnabled = runCatching { vault.completeBiometricEnroll(it) }.isSuccess
+                                        })
+                                    }
+                                } else {
+                                    vault.disableBiometric()
+                                    bioEnabled = false
+                                }
+                            },
+                        )
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (match(R.string.settings_panic, R.string.settings_panic_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_panic)) },
+                    leadingContent = { Icon(Icons.Rounded.Warning, contentDescription = null) },
+                    supportingContent = { Text(stringResource(R.string.settings_panic_desc)) },
+                    trailingContent = {
+                        if (hasPanic) {
+                            TextButton(onClick = { vault.clearPanicPin(); hasPanic = false }) {
+                                Text(stringResource(R.string.remove))
+                            }
+                        } else {
+                            TextButton(onClick = { settingPanic = true }) { Text(stringResource(R.string.set)) }
+                        }
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (query.isBlank()) GroupTitle(stringResource(R.string.settings_group_privacy))
+            if (match(R.string.settings_screenshots, R.string.settings_screenshots_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_screenshots)) },
+                    supportingContent = { Text(stringResource(R.string.settings_screenshots_desc)) },
+                    leadingContent = { Icon(Icons.Rounded.Screenshot, contentDescription = null) },
+                    trailingContent = {
+                        Switch(checked = screenshots, onCheckedChange = { on ->
+                            ScreenSecurity.setScreenshotsAllowed(context, on)
+                            screenshots = on
+                        })
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (match(R.string.settings_disguise, R.string.settings_disguise_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_disguise)) },
+                    leadingContent = { Icon(Icons.Rounded.Calculate, contentDescription = null) },
+                    supportingContent = { Text(stringResource(R.string.settings_disguise_desc)) },
+                    trailingContent = {
+                        Switch(checked = disguised, onCheckedChange = { on ->
+                            Disguise.setEnabled(context, on)
+                            disguised = on
+                        })
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (BuildConfig.FLAVOR == "speed") {
+                if (query.isBlank()) GroupTitle(stringResource(R.string.dock_linux))
+                if (match(R.string.accounts_title, R.string.accounts_settings_desc)) {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.accounts_title)) },
+                        supportingContent = { Text(stringResource(R.string.accounts_settings_desc)) },
+                        leadingContent = { Icon(Icons.Rounded.ManageAccounts, contentDescription = null) },
+                        modifier = Modifier.clickable(onClick = onOpenLinuxAccounts),
+                        colors = itemColors,
+                    )
+                }
+            }
+            if (query.isBlank()) GroupTitle(stringResource(R.string.settings_group_device))
+            if (match(R.string.compat_title, R.string.compat_subtitle)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.compat_title)) },
+                    leadingContent = { Icon(Icons.Rounded.PhoneAndroid, contentDescription = null) },
+                    supportingContent = { Text(stringResource(R.string.compat_subtitle)) },
+                    modifier = Modifier.clickable(onClick = onOpenCompat),
+                    colors = itemColors,
+                )
+            }
+            if (match(R.string.settings_lock_now)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_lock_now)) },
+                    leadingContent = { Icon(Icons.Rounded.Lock, contentDescription = null) },
+                    modifier = Modifier.clickable { vault.lock() },
+                    colors = itemColors,
+                )
+            }
+            if (query.isBlank()) GroupTitle(stringResource(R.string.settings_group_danger), danger = true)
+            if (match(R.string.settings_wipe, R.string.settings_wipe_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_wipe), color = MaterialTheme.colorScheme.error) },
+                    leadingContent = { Icon(Icons.Rounded.DeleteForever, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                    supportingContent = { Text(stringResource(R.string.settings_wipe_desc)) },
+                    modifier = Modifier.clickable { confirmWipe = true },
+                    colors = itemColors,
+                )
+            }
         }
     }
 
@@ -275,4 +322,51 @@ private fun GroupTitle(text: String, danger: Boolean = false) {
         color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
     )
+}
+
+/** Theme (system/dark/light), colours (SpirOS/Material You) and style (elegant/minimal), applied live. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppearanceSection() {
+    val context = LocalContext.current
+    val state by Appearance.state.collectAsState()
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(R.string.appearance_theme), style = MaterialTheme.typography.labelLarge)
+        ChoiceRow(
+            listOf(
+                Appearance.Mode.SYSTEM to R.string.appearance_system,
+                Appearance.Mode.DARK to R.string.appearance_dark,
+                Appearance.Mode.LIGHT to R.string.appearance_light,
+            ),
+            state.mode,
+        ) { mode -> Appearance.update(context) { it.copy(mode = mode) } }
+
+        Text(stringResource(R.string.appearance_colors), style = MaterialTheme.typography.labelLarge)
+        ChoiceRow(
+            buildList {
+                add(Appearance.Palette.SPIROS to R.string.appearance_spiros)
+                if (Build.VERSION.SDK_INT >= 31) add(Appearance.Palette.MATERIAL_YOU to R.string.appearance_material_you)
+            },
+            state.palette,
+        ) { palette -> Appearance.update(context) { it.copy(palette = palette) } }
+
+        Text(stringResource(R.string.appearance_style), style = MaterialTheme.typography.labelLarge)
+        ChoiceRow(
+            listOf(
+                Appearance.Style.ELEGANT to R.string.appearance_elegant,
+                Appearance.Style.MINIMAL to R.string.appearance_minimal,
+            ),
+            state.style,
+        ) { style -> Appearance.update(context) { it.copy(style = style) } }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> ChoiceRow(options: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        options.forEach { (value, label) ->
+            FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(stringResource(label)) })
+        }
+    }
 }

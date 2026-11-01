@@ -30,5 +30,12 @@ object Disguise {
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
             PackageManager.DONT_KILL_APP,
         )
+        // Shortcuts and the Quick Settings tile would give the disguise away.
+        pm.setComponentEnabledSetting(
+            ComponentName(context.packageName, "com.spiros.app.shield.ShieldTileService"),
+            if (enabled) PackageManager.COMPONENT_ENABLED_STATE_DISABLED else PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+            PackageManager.DONT_KILL_APP,
+        )
+        Shortcuts.update(context)
     }
 }

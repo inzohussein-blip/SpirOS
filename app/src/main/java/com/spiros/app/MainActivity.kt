@@ -1,6 +1,7 @@
 package com.spiros.app
 
 import android.app.ActivityManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
 import com.spiros.app.ui.AppRoot
 import com.spiros.app.ui.Disguise
+import com.spiros.app.ui.Navigation
 import com.spiros.app.ui.ScreenSecurity
 import com.spiros.app.ui.theme.SpirTheme
 
@@ -24,6 +26,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // No screenshots, screen recording or recents preview unless allowed in Settings.
         ScreenSecurity.apply(this)
+        Navigation.handle(intent)
         enableEdgeToEdge()
         if (Disguise.isEnabled(this)) {
             // The recents screen shows the task label; keep the disguise there too.
@@ -43,6 +46,11 @@ class MainActivity : ComponentActivity() {
                 AppRoot(vault)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Navigation.handle(intent)
     }
 
     override fun onStart() {

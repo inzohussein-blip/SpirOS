@@ -17,9 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,10 +85,10 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
             SpirTopBar(stringResource(R.string.ai_title), onBack) {
                 if (state == AiServer.State.READY || state == AiServer.State.LOADING) {
                     IconButton(onClick = { messages.clear() }) {
-                        Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.ai_clear))
+                        Icon(Icons.Rounded.Delete, contentDescription = stringResource(R.string.ai_clear))
                     }
                     IconButton(onClick = AiServer::stop) {
-                        Icon(Icons.Outlined.PowerSettingsNew, contentDescription = stringResource(R.string.ai_stop))
+                        Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.ai_stop))
                     }
                 }
             }
@@ -259,7 +259,7 @@ private fun Chat(
             )
             IconButton(onClick = onSend, enabled = !answering) {
                 if (answering) CircularProgressIndicator(Modifier.padding(4.dp)) else
-                    Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = stringResource(R.string.lab_send))
+                    Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send))
             }
         }
     }

@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -101,7 +101,7 @@ fun VaultScreen(vault: Vault, onBack: () -> Unit, onOpen: (VaultItem) -> Unit) {
                         vault.holdLock = true
                         picker.launch(arrayOf("*/*"))
                     },
-                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                     text = { Text(stringResource(R.string.vault_import)) },
                 )
             }
@@ -166,7 +166,7 @@ private fun VaultTile(vault: Vault, item: VaultItem, onClick: () -> Unit) {
                 )
             } else {
                 Icon(
-                    if (item.isVideo) Icons.Outlined.Movie else Icons.Outlined.Description,
+                    if (item.isVideo) Icons.Rounded.Movie else Icons.Rounded.Description,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(40.dp),

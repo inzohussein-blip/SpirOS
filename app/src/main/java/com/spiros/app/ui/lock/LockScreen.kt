@@ -2,7 +2,7 @@ package com.spiros.app.ui.lock
 
 import android.app.Activity
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +64,7 @@ fun LockScreen(vault: Vault) {
             {
                 IconButton(onClick = { tryBiometric() }, modifier = Modifier.size(64.dp)) {
                     Icon(
-                        Icons.Outlined.Fingerprint,
+                        Icons.Rounded.Fingerprint,
                         contentDescription = stringResource(R.string.use_fingerprint),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(40.dp),

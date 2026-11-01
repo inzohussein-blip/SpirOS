@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -56,7 +56,7 @@ fun AddAppsScreen(
             if (selected.isNotEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { onConfirm(selected.toList()) },
-                    icon = { Icon(Icons.Outlined.Check, contentDescription = null) },
+                    icon = { Icon(Icons.Rounded.Check, contentDescription = null) },
                     text = { Text(stringResource(R.string.space_clone_selected, selected.size)) },
                 )
             }

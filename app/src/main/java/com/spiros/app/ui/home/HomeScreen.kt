@@ -32,15 +32,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -81,7 +82,7 @@ import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.shield.ShieldVpnService
 import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
-import com.spiros.app.ui.theme.SpirNight
+import com.spiros.app.ui.theme.LocalElegant
 import com.spiros.app.ui.theme.ToolColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -137,14 +138,14 @@ fun HomeScreen(
     val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
 
     val tools = listOf(
-        Tool(Icons.Outlined.Lock, R.string.section_vault, ToolColors.Vault, onOpenVault),
-        Tool(Icons.Outlined.Public, R.string.dock_browser, ToolColors.Browser, onOpenBrowser),
-        Tool(Icons.Outlined.Shield, R.string.section_shield, ToolColors.Shield, onOpenShield),
-        Tool(Icons.Outlined.Apps, R.string.dock_space, ToolColors.Space, onOpenSpace),
-        Tool(Icons.Outlined.Computer, R.string.dock_linux, ToolColors.Linux, onOpenLinux),
-        Tool(Icons.Outlined.AutoAwesome, R.string.dock_ai, ToolColors.Ai, onOpenAi),
-        Tool(Icons.Outlined.Memory, R.string.dock_lab, ToolColors.Lab, onOpenLab),
-        Tool(Icons.Outlined.Settings, R.string.settings, ToolColors.Settings, onOpenSettings),
+        Tool(Icons.Rounded.Lock, R.string.section_vault, ToolColors.Vault, onOpenVault),
+        Tool(Icons.Rounded.Public, R.string.dock_browser, ToolColors.Browser, onOpenBrowser),
+        Tool(Icons.Rounded.Shield, R.string.section_shield, ToolColors.Shield, onOpenShield),
+        Tool(Icons.Rounded.Apps, R.string.dock_space, ToolColors.Space, onOpenSpace),
+        Tool(Icons.Rounded.Computer, R.string.dock_linux, ToolColors.Linux, onOpenLinux),
+        Tool(Icons.Rounded.AutoAwesome, R.string.dock_ai, ToolColors.Ai, onOpenAi),
+        Tool(Icons.Rounded.Memory, R.string.dock_lab, ToolColors.Lab, onOpenLab),
+        Tool(Icons.Rounded.Settings, R.string.settings, ToolColors.Settings, onOpenSettings),
     )
 
     fun launch(app: SpaceManager.App, user: UserHandle) {
@@ -153,11 +154,20 @@ fun HomeScreen(
         }
     }
 
+    val elegant = LocalElegant.current
+    val scheme = MaterialTheme.colorScheme
     Surface(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF1B1440), SpirNight, SpirNight))),
+            .background(
+                if (elegant) {
+                    Brush.verticalGradient(listOf(scheme.primaryContainer.copy(alpha = 0.55f), scheme.background, scheme.background))
+                } else {
+                    Brush.verticalGradient(listOf(scheme.background, scheme.background))
+                },
+            ),
         color = Color.Transparent,
+        contentColor = scheme.onBackground,
     ) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -173,15 +183,14 @@ fun HomeScreen(
                             DateFormat.getTimeFormat(context).format(now),
                             fontSize = 52.sp,
                             fontWeight = FontWeight.Light,
-                            color = Color.White,
                         )
                         Text(
                             DateFormat.format("EEEE, d MMMM", now).toString(),
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         )
                     }
-                    RoundIcon(Icons.Outlined.Lock, stringResource(R.string.settings_lock_now), onLock)
+                    RoundIcon(Icons.Rounded.Lock, stringResource(R.string.settings_lock_now), onLock)
                 }
             }
 
@@ -239,7 +248,7 @@ fun HomeScreen(
                 d.apps.isEmpty() -> fullWidth {
                     Text(
                         stringResource(R.string.home_space_empty),
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenSpace).padding(24.dp),
                     )
@@ -250,12 +259,12 @@ fun HomeScreen(
                             value = query,
                             onValueChange = { query = it },
                             singleLine = true,
-                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                             placeholder = { Text(stringResource(R.string.home_search)) },
                             shape = RoundedCornerShape(28.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
-                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f),
+                                focusedContainerColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
                                 unfocusedBorderColor = Color.Transparent,
                             ),
                             modifier = Modifier.fillMaxWidth(),
@@ -277,7 +286,7 @@ private fun SectionTitle(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,
-        color = Color.White.copy(alpha = 0.6f),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
         modifier = Modifier.padding(top = 8.dp),
     )
 }
@@ -289,9 +298,9 @@ private fun RoundIcon(icon: ImageVector, description: String, onClick: () -> Uni
         modifier = Modifier
             .padding(top = 8.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.08f)),
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f)),
     ) {
-        Icon(icon, contentDescription = description, tint = Color.White)
+        Icon(icon, contentDescription = description)
     }
 }
 
@@ -301,7 +310,7 @@ private fun StatusChip(label: String, value: String, color: Color, active: Boole
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(if (active) color.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f))
+            .background(if (active) color.copy(alpha = 0.18f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
@@ -309,10 +318,10 @@ private fun StatusChip(label: String, value: String, color: Color, active: Boole
             Modifier
                 .size(8.dp)
                 .clip(CircleShape)
-                .background(if (active) color else Color.White.copy(alpha = 0.3f)),
+                .background(if (active) color else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f)),
         )
         Spacer(Modifier.width(8.dp))
-        Text("$label · $value", style = MaterialTheme.typography.labelMedium, color = Color.White)
+        Text("$label · $value", style = MaterialTheme.typography.labelMedium)
     }
 }
 
@@ -325,19 +334,25 @@ private fun ToolTile(tool: Tool) {
             .clickable(onClick = tool.onClick)
             .padding(vertical = 4.dp),
     ) {
+        val elegant = LocalElegant.current
         Box(
             Modifier
                 .fillMaxWidth(0.8f)
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(18.dp))
-                .background(ToolColors.gradient(tool.color)),
+                .then(if (elegant) Modifier.shadow(8.dp, RoundedCornerShape(20.dp), spotColor = tool.color) else Modifier)
+                .clip(RoundedCornerShape(20.dp))
+                .background(if (elegant) ToolColors.gradient(tool.color) else Brush.linearGradient(listOf(tool.color.copy(alpha = 0.16f), tool.color.copy(alpha = 0.16f)))),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(tool.icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            Icon(
+                tool.icon,
+                contentDescription = null,
+                tint = if (elegant) Color.White else tool.color,
+                modifier = Modifier.size(28.dp),
+            )
         }
         Text(
             stringResource(tool.label),
-            color = Color.White,
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -360,7 +375,6 @@ private fun AppIcon(app: SpaceManager.App, onClick: () -> Unit) {
         Image(image, contentDescription = null, modifier = Modifier.size(54.dp))
         Text(
             app.label,
-            color = Color.White,
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -379,9 +393,9 @@ private fun NoSpaceCard(onOpenSpace: () -> Unit) {
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Outlined.Apps, contentDescription = null, tint = ToolColors.Space, modifier = Modifier.size(40.dp))
+        Icon(Icons.Rounded.Apps, contentDescription = null, tint = ToolColors.Space, modifier = Modifier.size(40.dp))
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.home_no_space), textAlign = TextAlign.Center, color = Color.White)
+        Text(stringResource(R.string.home_no_space), textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
         Button(onClick = onOpenSpace) { Text(stringResource(R.string.space_create)) }
     }

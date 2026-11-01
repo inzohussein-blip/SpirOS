@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shield with an inner ring: the "second space" mark. -->
+<!-- SpirOS mark: a shield with a keyhole (even-odd fill cuts the keyhole out).
+     Kept inside the 66dp adaptive-icon safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="@color/spir_accent"
-        android:pathData="M54,28 L76,36 L76,54 C76,67 66,77 54,81 C42,77 32,67 32,54 L32,36 Z" />
-    <path
-        android:strokeColor="@color/spir_night"
-        android:strokeWidth="4"
-        android:pathData="M54,46 A8,8 0 1,1 53.99,46 Z" />
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M54,27 C60.5,30.5 67.5,32.6 75,33.4 L75,52 C75,65.5 66.5,75.8 54,81 C41.5,75.8 33,65.5 33,52 L33,33.4 C40.5,32.6 47.5,30.5 54,27 Z M54,42 A7,7 0 0,0 50.6,55.1 L48.8,66 L59.2,66 L57.4,55.1 A7,7 0 0,0 54,42 Z" />
 </vector>

@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -115,11 +115,11 @@ fun ViewerScreen(vault: Vault, item: VaultItem, onBack: () -> Unit) {
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Icon(Icons.Outlined.FileDownload, contentDescription = null)
+                    Icon(Icons.Rounded.FileDownload, contentDescription = null)
                     Text(stringResource(R.string.vault_export), modifier = Modifier.padding(start = 8.dp))
                 }
                 OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null)
+                    Icon(Icons.Rounded.Delete, contentDescription = null)
                     Text(stringResource(R.string.delete), modifier = Modifier.padding(start = 8.dp))
                 }
             }
