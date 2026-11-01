@@ -97,14 +97,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete dev-latest --yes --cleanup-tag || true
-          gh release create dev-latest SpirOS.apk \
-            SpirOS-Engine.apk SpirOS-Engine.apk.sha256 \
-            SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256 \
-            --prerelease \
-            --target "${{ github.sha }}" \
-            --title "SpirOS – آخر نسخة تجريبية" \
-            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. ثبّت SpirOS.apk فقط. محرك لينكس والذكاء الاصطناعي (SpirOS-Engine) يثبّته SpirOS بنفسه من داخل التطبيق عند أول استخدام بعد التحقق من بصمته وتوقيعه."
+          FILES="SpirOS.apk SpirOS-Engine.apk SpirOS-Engine.apk.sha256 SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256"
+          NOTES="نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. ثبّت SpirOS.apk فقط. محرك لينكس والذكاء الاصطناعي (SpirOS-Engine) يثبّته SpirOS بنفسه من داخل التطبيق عند أول استخدام بعد التحقق من بصمته وتوقيعه."
+          # Update the release in place (the download links never disappear), with
+          # retries for GitHub's occasional refusals.
+          for attempt in 1 2 3 4 5; do
+            if gh release view dev-latest >/dev/null 2>&1; then
+              gh release upload dev-latest $FILES --clobber &&
+                gh release edit dev-latest --prerelease --notes "$NOTES" && exit 0
+            else
+              gh release create dev-latest $FILES --prerelease --target "${{ github.sha }}" \
+                --title "SpirOS – آخر نسخة تجريبية" --notes "$NOTES" && exit 0
+            fi
+            echo "publish attempt $attempt failed; retrying"
+            sleep $((attempt * 20))
+          done
+          exit 1
 
   # Fast check of the guest itself (Alpine URLs, kernel arguments, devices) with the
   # distribution's QEMU, using the same script as the in-app definition.
