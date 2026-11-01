@@ -90,6 +90,13 @@ class LinuxSelfTestActivity : Activity() {
                 for (y in 0 until bitmap.height step 16) for (x in 0 until bitmap.width step 16) colours += bitmap.getPixel(x, y)
                 if (colours.size > 20) {
                     write("DESKTOP_OK ${bitmap.width}x${bitmap.height} colours=${colours.size} after ${(SystemClock.elapsedRealtime() - t) / 1000}s (via engine socket)")
+                    // Screenshots for review: the desktop once settled, then the app grid
+                    // (right-click on the desktop opens it in SpirOS Linux).
+                    Thread.sleep(8000)
+                    snapshot(client, "linux-desktop.png")
+                    client.rightClick(bitmap.width / 2, bitmap.height / 3)
+                    Thread.sleep(5000)
+                    snapshot(client, "linux-apps.png")
                     return true
                 }
             }
@@ -100,6 +107,14 @@ class LinuxSelfTestActivity : Activity() {
         }
         write("DESKTOP_TIMEOUT")
         return false
+    }
+
+    private fun snapshot(client: com.spiros.app.engine.VncClient, name: String) {
+        val b = client.bitmap.value ?: return
+        runCatching {
+            File(noBackupFilesDir, name).outputStream().use { b.copy(android.graphics.Bitmap.Config.ARGB_8888, false).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            write("SNAPSHOT $name")
+        }
     }
 
     @Synchronized
