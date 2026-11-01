@@ -204,6 +204,13 @@ echo "$DESKTOP" > "$ROOT/etc/spiros-desktop"
 rm -rf "$ROOT/var/lib/apt/lists/"* "$ROOT/var/cache/apt/"*.bin "$ROOT/tmp/"* "$ROOT/usr/share/doc/"*
 date -u +%Y-%m-%dT%H:%MZ > "$ROOT/etc/spiros-build"
 
+# Summary at the end of the CI log: what this image really contains.
+echo "== SpirOS image: $DESKTOP $ARCH"
+for b in Xvnc xfce4-session mate-session cinnamon-session llama-server; do
+    if chroot "$ROOT" sh -c "command -v $b" >/dev/null 2>&1; then echo "   has $b"; else echo "   (no $b)"; fi
+done
+echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}"
+
 # Hard links become separate files so the Android extractor only handles symlinks.
 tar --numeric-owner --hard-dereference -C "$ROOT" -cf - . | xz -T0 -6 > "$OUT"
 du -h "$OUT"

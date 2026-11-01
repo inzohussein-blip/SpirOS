@@ -41,9 +41,9 @@ import com.spiros.app.ai.AiModels
 private data class Choice(val id: String, val title: Int, val desc: Int, val sizeGb: String, val minRamGb: Int)
 
 private val CHOICES = listOf(
-    Choice("xfce", R.string.distro_xfce, R.string.distro_xfce_desc, "0.6", 3),
-    Choice("mate", R.string.distro_mate, R.string.distro_mate_desc, "0.7", 4),
-    Choice("cinnamon", R.string.distro_cinnamon, R.string.distro_cinnamon_desc, "0.9", 8),
+    Choice("xfce", R.string.distro_xfce, R.string.distro_xfce_desc, "0.22", 3),
+    Choice("mate", R.string.distro_mate, R.string.distro_mate_desc, "0.3", 4),
+    Choice("cinnamon", R.string.distro_cinnamon, R.string.distro_cinnamon_desc, "0.3", 8),
     Choice("custom", R.string.distro_custom, R.string.distro_custom_desc, "", 0),
 )
 
