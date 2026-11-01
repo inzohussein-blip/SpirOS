@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # publish the APK as a downloadable pre-release
 
 jobs:
   build:
@@ -30,6 +30,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends patchelf
           python3 tools/fetch_qemu.py
 
+      - name: Check API levels (lint NewApi)
+        run: ./gradlew --no-daemon lintDebug
+
       - name: Build debug APK
         run: ./gradlew --no-daemon assembleDebug
 
@@ -38,3 +41,18 @@ jobs:
           name: SpirOS-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # A direct .apk link that opens on a phone (Actions artifacts are always zipped):
+      # https://github.com/<owner>/<repo>/releases/download/dev-latest/SpirOS.apk
+      - name: Publish APK to the dev-latest pre-release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk SpirOS.apk
+          gh release delete dev-latest --yes --cleanup-tag || true
+          gh release create dev-latest SpirOS.apk \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "SpirOS – آخر نسخة تجريبية" \
+            --notes "نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. للتثبيت: نزّل SpirOS.apk وافتحه."

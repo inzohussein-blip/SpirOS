@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.spiros.app"
-        minSdk = 34
+        minSdk = 30
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
@@ -63,6 +63,11 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    lint {
+        // CI runs lintDebug only to catch calls to APIs newer than minSdk.
+        checkOnly += "NewApi"
+        abortOnError = true
     }
     packaging {
         jniLibs {

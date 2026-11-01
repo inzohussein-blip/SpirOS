@@ -1,5 +1,6 @@
 package com.spiros.app.vault.crypto
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
@@ -45,7 +46,12 @@ internal object KeystoreKeys {
         val key = deviceKey()
         val info = SecretKeyFactory.getInstance(key.algorithm, PROVIDER)
             .getKeySpec(key, KeyInfo::class.java) as KeyInfo
-        return info.securityLevel
+        return if (Build.VERSION.SDK_INT >= 31) {
+            info.securityLevel
+        } else {
+            @Suppress("DEPRECATION")
+            if (info.isInsideSecureHardware) KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT else KeyProperties.SECURITY_LEVEL_SOFTWARE
+        }
     }
 
     private fun generate(alias: String, biometric: Boolean): SecretKey {

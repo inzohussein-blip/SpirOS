@@ -1,6 +1,7 @@
 package com.spiros.app
 
 import android.app.ActivityManager
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -24,7 +25,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (Disguise.isEnabled(this)) {
             // The recents screen shows the task label; keep the disguise there too.
-            setTaskDescription(ActivityManager.TaskDescription.Builder().setLabel(getString(R.string.disguise_label)).build())
+            val label = getString(R.string.disguise_label)
+            setTaskDescription(
+                if (Build.VERSION.SDK_INT >= 33) {
+                    ActivityManager.TaskDescription.Builder().setLabel(label).build()
+                } else {
+                    @Suppress("DEPRECATION")
+                    ActivityManager.TaskDescription(label)
+                },
+            )
         }
         vault.onDestroyed = { runOnUiThread(::destroySpace) }
         setContent {

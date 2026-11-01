@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
+import androidx.core.content.IntentCompat
 
 /** Android 12+ asks the admin app which provisioning mode it wants: always a work profile. */
 class ProvisioningModeActivity : Activity() {
@@ -31,4 +32,4 @@ class PolicyComplianceActivity : Activity() {
 }
 
 private fun Activity.adminExtras(): PersistableBundle? =
-    intent.getParcelableExtra(DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, PersistableBundle::class.java)
+    IntentCompat.getParcelableExtra(intent, DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, PersistableBundle::class.java)

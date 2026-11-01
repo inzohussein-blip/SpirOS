@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.PersistableBundle
 import android.os.UserManager
 import com.spiros.app.shield.ShieldSettings
@@ -153,7 +154,8 @@ object SpaceOwner {
             context,
             pkg.hashCode(),
             Intent(context, UninstallResultReceiver::class.java).putExtra(UninstallResultReceiver.EXTRA_PACKAGE, pkg),
-            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            // The installer fills in the result extras, so the PendingIntent must be mutable.
+            (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0) or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         context.packageManager.packageInstaller.uninstall(pkg, callback.intentSender)
     }
