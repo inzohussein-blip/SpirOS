@@ -179,4 +179,24 @@
     <string name="linux_remove_confirm">سيُحذف نظام لينكس وكل الملفات بداخله.</string>
     <string name="linux_android_limits">أندرويد 12 وما بعده قد يغلق برامج لينكس عند كثرتها في الخلفية. إذا توقف سطح المكتب وحده، افتح الإعدادات ← خيارات المطور وفعّل \"Disable child process restrictions\" (تعطيل قيود العمليات الفرعية).</string>
     <string name="linux_last_log">آخر الرسائل</string>
+    <string name="dock_ai">الذكاء</string>
+    <string name="ai_title">ذكاء اصطناعي خاص</string>
+    <string name="ai_intro">نموذج ذكاء اصطناعي يعمل بالكامل على هاتفك داخل نظام لينكس. لا يخرج أي شيء تكتبه من الهاتف، ويعمل بدون إنترنت بعد تنزيل النموذج.</string>
+    <string name="ai_ram">ذاكرة هاتفك حوالي %1$d غيغابايت. النموذج المقترح: %2$s</string>
+    <string name="ai_model_info">%1$d ميغابايت · يحتاج %2$d غيغابايت رام</string>
+    <string name="ai_model_too_big">أكبر من قدرة هذا الهاتف</string>
+    <string name="ai_ready">تم التنزيل</string>
+    <string name="ai_not_downloaded">غير منزّل</string>
+    <string name="ai_download">تنزيل %1$s</string>
+    <string name="ai_downloading">جارٍ تنزيل النموذج… %1$d%%</string>
+    <string name="ai_start">تشغيل</string>
+    <string name="ai_stop">إيقاف الذكاء الاصطناعي</string>
+    <string name="ai_clear">مسح المحادثة</string>
+    <string name="ai_loading">جارٍ تحميل النموذج في الذاكرة…</string>
+    <string name="ai_failed">توقف خادم الذكاء الاصطناعي. آخر رسائله:</string>
+    <string name="ai_needs_linux">الذكاء الاصطناعي الخاص يعمل داخل نظام لينكس في تطبيق SpirOS Linux. ثبّت SpirOS Linux ونظام لينكس أولًا.</string>
+    <string name="ai_input_hint">اسأل أي شيء…</string>
+    <string name="ai_preset_general">عام</string>
+    <string name="ai_preset_trading">تداول</string>
+    <string name="ai_preset_code">بايثون / MQL5</string>
 </resources>

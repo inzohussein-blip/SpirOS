@@ -16,6 +16,7 @@ import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
 import com.spiros.app.ui.linux.LinuxScreen
+import com.spiros.app.ui.ai.AiScreen
 import com.spiros.app.ui.settings.SettingsScreen
 import com.spiros.app.ui.shield.ShieldScreen
 import com.spiros.app.ui.space.SpaceScreen
@@ -31,6 +32,7 @@ private sealed interface Screen {
     data object Space : Screen
     data object Lab : Screen
     data object Linux : Screen
+    data object Ai : Screen
     data object Shield : Screen
     data object Browser : Screen
     data object Settings : Screen
@@ -66,6 +68,7 @@ private fun Unlocked(vault: Vault) {
             onOpenSpace = { screen = Screen.Space },
             onOpenLab = { screen = Screen.Lab },
             onOpenLinux = { screen = Screen.Linux },
+            onOpenAi = { screen = Screen.Ai },
             onOpenShield = { screen = Screen.Shield },
             onOpenBrowser = { screen = Screen.Browser },
             onOpenSettings = { screen = Screen.Settings },
@@ -75,6 +78,7 @@ private fun Unlocked(vault: Vault) {
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { screen = Screen.VaultList })
         Screen.Space -> SpaceScreen(vault, onBack = { screen = Screen.Home })
         Screen.Linux -> LinuxScreen(onBack = { screen = Screen.Home })
+        Screen.Ai -> AiScreen(onBack = { screen = Screen.Home }, onOpenLinux = { screen = Screen.Linux })
         Screen.Lab -> LabScreen(vault, onBack = { screen = Screen.Home })
         Screen.Shield -> ShieldScreen(vault, onBack = { screen = Screen.Home })
         Screen.Browser -> BrowserScreen(vault, onBack = { screen = Screen.Home })

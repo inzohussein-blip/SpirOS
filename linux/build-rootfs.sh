@@ -6,6 +6,7 @@ set -eu
 ARCH="$1"
 OUT="$2"
 SUITE=trixie
+LLAMA_TAG=b6000
 MIRROR=http://deb.debian.org/debian
 ROOT=$(mktemp -d)/rootfs
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -30,6 +31,23 @@ chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
     apt-get install -y --no-install-recommends $PACKAGES
     apt-get clean
     sed -i 's/^# *\(ar_SA.UTF-8\|en_US.UTF-8\)/\1/' /etc/locale.gen && locale-gen"
+
+# Local AI (phase L4): llama.cpp's server and CLI, built from a pinned release for a
+# generic CPU of this architecture (works on older phone cores without dotprod).
+chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
+    set -e
+    apt-get install -y --no-install-recommends build-essential cmake
+    git clone --depth 1 --branch $LLAMA_TAG https://github.com/ggml-org/llama.cpp /tmp/llama
+    cmake -S /tmp/llama -B /tmp/llama/build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
+        -DLLAMA_CURL=OFF -DBUILD_SHARED_LIBS=OFF -DLLAMA_BUILD_TESTS=OFF
+    cmake --build /tmp/llama/build -j\$(nproc) --target llama-server llama-cli
+    install -m 755 /tmp/llama/build/bin/llama-server /tmp/llama/build/bin/llama-cli /usr/local/bin/
+    rm -rf /tmp/llama
+    apt-get purge -y build-essential cmake
+    apt-get autoremove -y
+    apt-get clean
+    mkdir -p /root/models
+    llama-server --version"
 umount "$ROOT/proc" "$ROOT/dev"
 trap - EXIT
 

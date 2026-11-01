@@ -11,5 +11,9 @@
             android:name=".LinuxSelfTestActivity"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+        <activity
+            android:name=".AiSelfTestActivity"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 </manifest>

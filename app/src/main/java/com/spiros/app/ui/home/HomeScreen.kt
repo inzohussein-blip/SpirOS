@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Memory
@@ -92,6 +93,7 @@ fun HomeScreen(
     onOpenSpace: () -> Unit,
     onOpenLab: () -> Unit,
     onOpenLinux: () -> Unit,
+    onOpenAi: () -> Unit,
     onOpenShield: () -> Unit,
     onOpenBrowser: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -128,6 +130,7 @@ fun HomeScreen(
         Tool(Icons.Outlined.Shield, R.string.section_shield, onOpenShield),
         Tool(Icons.Outlined.Apps, R.string.dock_space, onOpenSpace),
         Tool(Icons.Outlined.Computer, R.string.dock_linux, onOpenLinux),
+        Tool(Icons.Outlined.AutoAwesome, R.string.dock_ai, onOpenAi),
         Tool(Icons.Outlined.Memory, R.string.dock_lab, onOpenLab),
     )
 
@@ -240,7 +243,7 @@ fun HomeScreen(
                         modifier = Modifier.clickable(onClick = tool.onClick).padding(4.dp),
                     ) {
                         Box(
-                            Modifier.size(46.dp).clip(CircleShape).background(SpirAccent.copy(alpha = 0.25f)),
+                            Modifier.size(40.dp).clip(CircleShape).background(SpirAccent.copy(alpha = 0.25f)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(tool.icon, contentDescription = null, tint = Color.White)

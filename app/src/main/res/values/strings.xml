@@ -179,4 +179,24 @@
     <string name="linux_remove_confirm">The Linux system and every file inside it will be deleted.</string>
     <string name="linux_android_limits">Android 12+ may close Linux programs when there are many running in the background. If the desktop stops by itself, open Settings › Developer options and turn on \"Disable child process restrictions\".</string>
     <string name="linux_last_log">Last messages</string>
+    <string name="dock_ai">AI</string>
+    <string name="ai_title">Private AI</string>
+    <string name="ai_intro">An AI model that runs entirely on your phone, inside the Linux system. Nothing you type leaves the phone, and it works without internet once the model is downloaded.</string>
+    <string name="ai_ram">Your phone has about %1$d GB of RAM. Recommended model: %2$s</string>
+    <string name="ai_model_info">%1$d MB · needs %2$d GB RAM</string>
+    <string name="ai_model_too_big">too large for this phone</string>
+    <string name="ai_ready">Downloaded</string>
+    <string name="ai_not_downloaded">Not downloaded</string>
+    <string name="ai_download">Download %1$s</string>
+    <string name="ai_downloading">Downloading the model… %1$d%%</string>
+    <string name="ai_start">Start</string>
+    <string name="ai_stop">Stop the AI</string>
+    <string name="ai_clear">Clear chat</string>
+    <string name="ai_loading">Loading the model into memory…</string>
+    <string name="ai_failed">The AI server stopped. Its last messages:</string>
+    <string name="ai_needs_linux">The private AI runs inside the Linux system of SpirOS Linux. Install SpirOS Linux and its Linux system first.</string>
+    <string name="ai_input_hint">Ask anything…</string>
+    <string name="ai_preset_general">General</string>
+    <string name="ai_preset_trading">Trading</string>
+    <string name="ai_preset_code">Python / MQL5</string>
 </resources>
