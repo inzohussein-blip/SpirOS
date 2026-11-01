@@ -1,6 +1,7 @@
 package com.spiros.app.engine
 
 import android.content.Context
+import com.spiros.app.shield.ShieldSettings
 import java.io.File
 
 /**
@@ -23,6 +24,17 @@ object LabVm {
 
     fun vncSocket(context: Context) = File(context.cacheDir, "lab.vnc")
 
+    /**
+     * Upstream DNS for the guest's user-mode network. The bundled libslirp was patched
+     * (tools/fetch_qemu.py) to read /data/data/com.spiros.app/files/resolv.conf, which
+     * is filesDir for the phone's main user. Uses the Shield's resolver choice.
+     */
+    fun writeResolvConf(context: Context) {
+        val primary = ShieldSettings.upstream(context).address
+        val servers = (listOf(primary) + ShieldSettings.Upstream.entries.map { it.address }).distinct()
+        File(context.filesDir, "resolv.conf").writeText(servers.joinToString("") { "nameserver $it\n" })
+    }
+
     fun args(
         context: Context,
         guest: AlpineGuest.Files,
@@ -30,6 +42,7 @@ object LabVm {
         ramMb: Int,
         graphics: Boolean,
     ): List<String> {
+        writeResolvConf(context)
         val display = if (graphics) {
             listOf(
                 "-device", "virtio-gpu-device",

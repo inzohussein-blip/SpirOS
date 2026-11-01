@@ -32,6 +32,13 @@ import tarfile
 import tempfile
 import urllib.request
 
+# Termux's libslirp (QEMU's user-mode network) reads its upstream DNS servers from
+# Termux's prefix, which does not exist in SpirOS. Point it, in place and with a
+# path of equal or shorter length, at a file SpirOS writes before starting QEMU
+# (LabVm.writeResolvConf). Without this the guest has no DNS at all.
+TERMUX_RESOLV = b"/data/data/com.termux/files/usr/etc/resolv.conf"
+SPIROS_RESOLV = b"/data/data/com.spiros.app/files/resolv.conf"
+
 # Official repository first, then public mirrors (same signed index and SHA-256 sums).
 MIRRORS = [
     "https://packages.termux.dev/apt/termux-main",
@@ -193,6 +200,16 @@ def elf_soname(path: str):
     return names[0] if names else None
 
 
+def redirect_resolv_conf(path: str) -> int:
+    data = open(path, "rb").read()
+    count = data.count(TERMUX_RESOLV + b"\0")
+    if count:
+        replacement = SPIROS_RESOLV + b"\0" * (len(TERMUX_RESOLV) - len(SPIROS_RESOLV) + 1)
+        data = data.replace(TERMUX_RESOLV + b"\0", replacement)
+        open(path, "wb").write(data)
+    return count
+
+
 def elf_rename(path: str, rename: dict):
     """Rewrites DT_NEEDED / DT_SONAME strings in place (new names are never longer)."""
     data = bytearray(open(path, "rb").read())
@@ -280,11 +297,16 @@ def main():
             shutil.copyfile(src, dest)
             os.chmod(dest, 0o755)
             elf_rename(dest, rename)
+            return redirect_resolv_conf(dest)
 
+        redirected = 0
         for soname in sorted(closure):
-            install(libs[soname], rename[soname])
+            redirected += install(libs[soname], rename[soname])
             print(f"  = {rename[soname]}")
-        install(executable, OUTPUT_EXECUTABLE)
+        redirected += install(executable, OUTPUT_EXECUTABLE)
+        print(f"resolv.conf path redirected in {redirected} place(s)")
+        if redirected == 0:
+            print("  ! WARNING: Termux resolv.conf path not found; the guest may have no DNS")
 
         if args.data_out:
             if os.path.isdir(args.data_out):

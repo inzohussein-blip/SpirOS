@@ -69,6 +69,10 @@ class LabSelfTestActivity : Activity() {
                     write("VNC_OK ${bmp?.width}x${bmp?.height}")
                     vncReported = true
                 }
+                if (output.contains("recovery shell")) {
+                    write("BOOT_RECOVERY_SHELL: the guest could not finish booting (network/DNS?)")
+                    return false
+                }
                 if (BOOT_MARKERS.any { output.contains(it) }) {
                     write("BOOT_OK after ${(SystemClock.elapsedRealtime() - started) / 1000}s")
                     if (!vncReported) write("VNC_NO_FRAME")
@@ -97,6 +101,6 @@ class LabSelfTestActivity : Activity() {
         @Volatile
         var started = false
         const val TIMEOUT_MS = 15 * 60 * 1000L
-        val BOOT_MARKERS = listOf("login:", "Welcome to Alpine", "recovery shell", "~ #")
+        val BOOT_MARKERS = listOf("login:", "Welcome to Alpine")
     }
 }

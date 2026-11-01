@@ -29,7 +29,13 @@ PID=$!
 
 i=0
 while [ "$i" -lt "$LIMIT" ]; do
-    if grep -qE 'login:|Welcome to Alpine|recovery shell|~ #' boot.log; then
+    if grep -q 'recovery shell' boot.log; then
+        echo "BOOT_RECOVERY_SHELL after ${i}s (guest could not finish booting)"
+        kill "$PID" 2>/dev/null
+        cat boot.log
+        exit 1
+    fi
+    if grep -qE 'login:|Welcome to Alpine' boot.log; then
         echo "BOOT_OK after ${i}s"
         kill "$PID" 2>/dev/null
         cat boot.log
