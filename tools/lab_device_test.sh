@@ -12,6 +12,13 @@ LOGNAME="${4:-lab-selftest.log}"
 MINUTES="${5:-17}"
 LOG=/data/user/0/$PKG/no_backup/$LOGNAME
 
+# The emulator's network sometimes comes up late; wait for it (up to 2 minutes).
+for _ in $(seq 1 24); do
+    adb shell ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 && break
+    sleep 5
+done
+adb shell ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || echo "WARNING: emulator has no network"
+
 adb install -r "$APK" || exit 1
 echo "device ABI: $(adb shell getprop ro.product.cpu.abi | tr -d '\r'), Android $(adb shell getprop ro.build.version.release | tr -d '\r')"
 adb shell am start -W -n "$PKG/com.spiros.app${ACTIVITY}" || exit 1
