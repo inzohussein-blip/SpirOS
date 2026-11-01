@@ -1,7 +1,6 @@
 package com.spiros.app.perf
 
 import android.os.Process
-import java.io.File
 
 /**
  * Freezes SpirOS's Linux programs (desktop, AI, Lab VM) while SpirOS is in the
@@ -39,18 +38,5 @@ object BackgroundFreezer {
     }
 
     /** (pid, command line) of every process of this app except the app itself. */
-    private fun childProcesses(): List<Pair<Int, String>> {
-        val me = Process.myPid()
-        val uid = Process.myUid()
-        return File("/proc").listFiles().orEmpty().mapNotNull { dir ->
-            val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
-            if (pid == me) return@mapNotNull null
-            val owner = runCatching {
-                File(dir, "status").readLines().first { it.startsWith("Uid:") }.split(Regex("\\s+"))[1].toInt()
-            }.getOrNull()
-            if (owner != uid) return@mapNotNull null
-            val cmd = runCatching { File(dir, "cmdline").readText().replace('\u0000', ' ') }.getOrDefault("")
-            pid to cmd
-        }
-    }
+    private fun childProcesses(): List<Pair<Int, String>> = AppProcesses.list().map { it.pid to it.command }
 }

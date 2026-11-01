@@ -2,7 +2,16 @@ package com.spiros.app.ui.lock
 
 import android.app.Activity
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import com.spiros.app.ui.theme.Appearance
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +50,34 @@ fun LockScreen(vault: Vault) {
 
     LaunchedEffect(Unit) { if (biometric) tryBiometric() }
 
+    // Stealth lock: only a fingerprint mark on black; the keypad appears on a tap.
+    val stealth = Appearance.state.collectAsState().value.stealthLock
+    var keypad by remember { mutableStateOf(!stealth) }
+    if (!keypad) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { if (biometric) tryBiometric() else keypad = true },
+                        onLongPress = { keypad = true },
+                    )
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.Fingerprint,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.55f),
+                modifier = Modifier.size(64.dp),
+            )
+        }
+        return
+    }
+
     PinEntry(
+        stealth = stealth,
         title = stringResource(R.string.lock_title),
         error = error,
         busy = busy,

@@ -32,7 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.spiros.app.ui.Disguise
 import com.spiros.app.vault.Vault
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.MathContext
@@ -45,8 +47,9 @@ private val PIN_PATTERN = Regex("^\\d{$PIN_MIN,$PIN_MAX}$")
  * hints at the vault (no fingerprint button, no error messages).
  */
 @Composable
-fun CalculatorScreen(vault: Vault) {
+fun CalculatorScreen(vault: Vault, onSecretCode: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var display by remember { mutableStateOf("0") }
     var fresh by remember { mutableStateOf(true) }
 
@@ -56,6 +59,12 @@ fun CalculatorScreen(vault: Vault) {
             "⌫" -> display = display.dropLast(1).ifEmpty { "0" }
             "=" -> {
                 val entry = display
+                if (Disguise.matchesSecretCode(context, entry)) {
+                    display = "0"
+                    fresh = true
+                    onSecretCode()
+                    return
+                }
                 if (PIN_PATTERN.matches(entry)) {
                     scope.launch { vault.unlock(entry.toCharArray()) }
                 }

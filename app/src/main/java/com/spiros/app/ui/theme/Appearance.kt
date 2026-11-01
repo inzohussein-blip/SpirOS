@@ -8,10 +8,11 @@ import kotlinx.coroutines.flow.asStateFlow
 /** Appearance choices from Settings; changes apply live to the whole app. */
 object Appearance {
     enum class Mode { SYSTEM, DARK, LIGHT }
-    enum class Palette { SPIROS, MATERIAL_YOU }
+    /** CYBER_*: pure AMOLED black with a neon accent (always dark). */
+    enum class Palette { SPIROS, MATERIAL_YOU, CYBER_GREEN, CYBER_CYAN }
     enum class Style { ELEGANT, MINIMAL }
 
-    data class State(val mode: Mode, val palette: Palette, val style: Style)
+    data class State(val mode: Mode, val palette: Palette, val style: Style, val stealthLock: Boolean = false)
 
     private const val PREFS = "appearance"
     private val _state = MutableStateFlow(State(Mode.DARK, Palette.SPIROS, Style.ELEGANT))
@@ -23,6 +24,7 @@ object Appearance {
             mode = enumOr(p.getString("mode", null), Mode.DARK),
             palette = enumOr(p.getString("palette", null), Palette.SPIROS),
             style = enumOr(p.getString("style", null), Style.ELEGANT),
+            stealthLock = p.getBoolean("stealth_lock", false),
         )
     }
 
@@ -33,6 +35,7 @@ object Appearance {
             .putString("mode", next.mode.name)
             .putString("palette", next.palette.name)
             .putString("style", next.style.name)
+            .putBoolean("stealth_lock", next.stealthLock)
             .apply()
     }
 

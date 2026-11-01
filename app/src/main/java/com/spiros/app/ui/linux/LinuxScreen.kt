@@ -1,5 +1,6 @@
 package com.spiros.app.ui.linux
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -21,7 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.PowerSettingsNew
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -56,9 +59,16 @@ import com.spiros.app.BuildConfig
 import com.spiros.app.R
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
+import com.spiros.app.security.Panic
 import com.spiros.app.perf.Performance
 import com.spiros.app.ui.SpirTopBar
 import com.spiros.app.ui.lab.VmScreen
+import com.spiros.app.ui.Pip
+import androidx.compose.runtime.DisposableEffect
+import com.spiros.app.ui.common.BootOverlay
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
 
 private const val LINUX_EDITION_URL = "https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/SpirOS-Linux.apk"
@@ -82,7 +92,17 @@ fun LinuxScreen(onBack: () -> Unit) {
 
     // Full-screen desktop while running.
     val client = screen
+    val inPip by Pip.active.collectAsState()
+    if (running && client != null && inPip) {
+        // Picture-in-picture: just the live desktop, no controls.
+        VmScreen(client, Modifier.fillMaxSize().background(Color.Black), controls = false)
+        return
+    }
     if (running && client != null) {
+        DisposableEffect(Unit) {
+            Pip.desktopVisible = true
+            onDispose { Pip.desktopVisible = false }
+        }
         Surface(Modifier.fillMaxSize(), color = Color.Black) {
             Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -101,11 +121,27 @@ fun LinuxScreen(onBack: () -> Unit) {
                     IconButton(onClick = { client.type(input); input = "" }) {
                         Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = stringResource(R.string.lab_send), tint = Color.White)
                     }
+                    IconButton(onClick = { (context as? Activity)?.let(Pip::enter) }) {
+                        Icon(Icons.Rounded.PictureInPicture, contentDescription = stringResource(R.string.linux_pip), tint = Color.White)
+                    }
+                    IconButton(onClick = { Panic.trigger(context) }) {
+                        Icon(Icons.Rounded.Warning, contentDescription = stringResource(R.string.panic), tint = Color(0xFFFF6B6B))
+                    }
                     IconButton(onClick = LinuxSession::stop) {
                         Icon(Icons.Rounded.PowerSettingsNew, contentDescription = stringResource(R.string.linux_stop), tint = Color(0xFFFF6B6B))
                     }
                 }
-                VmScreen(client, Modifier.weight(1f))
+                // Digital-rain boot screen with the real log until the desktop draws.
+                val firstFrame by client.bitmap.collectAsState()
+                val haptics = LocalHapticFeedback.current
+                LaunchedEffect(firstFrame != null) {
+                    if (firstFrame != null) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
+                if (firstFrame == null) {
+                    BootOverlay(log, stringResource(R.string.boot_linux), Modifier.weight(1f))
+                } else {
+                    VmScreen(client, Modifier.weight(1f))
+                }
             }
         }
         return

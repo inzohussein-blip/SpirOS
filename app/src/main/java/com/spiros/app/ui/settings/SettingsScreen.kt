@@ -25,6 +25,8 @@ import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.ManageAccounts
 import androidx.compose.material.icons.rounded.Pin
+import androidx.compose.material.icons.rounded.Password
+import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.material.icons.rounded.Screenshot
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.PhoneAndroid
@@ -52,6 +54,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
 import com.spiros.app.BuildConfig
+import com.spiros.app.security.FlipToPanic
 import com.spiros.app.ui.Disguise
 import com.spiros.app.ui.ScreenSecurity
 import com.spiros.app.ui.SpirTopBar
@@ -82,6 +85,9 @@ fun SettingsScreen(
     var lockEnabled by remember { mutableStateOf(vault.isLockEnabled) }
     var confirmNoLock by remember { mutableStateOf(false) }
     var screenshots by remember { mutableStateOf(ScreenSecurity.screenshotsAllowed(context)) }
+    var flipPanic by remember { mutableStateOf(FlipToPanic.enabled(context)) }
+    var hasSecretCode by remember { mutableStateOf(Disguise.hasSecretCode(context)) }
+    var editingCode by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     fun match(vararg ids: Int) = query.isBlank() || ids.any { context.getString(it).contains(query.trim(), ignoreCase = true) }
     val bioTitle = stringResource(R.string.biometric_enable_title)
@@ -226,6 +232,37 @@ fun SettingsScreen(
                     colors = itemColors,
                 )
             }
+            if (disguised && match(R.string.settings_secret_code, R.string.settings_secret_code_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_secret_code)) },
+                    supportingContent = { Text(stringResource(R.string.settings_secret_code_desc)) },
+                    leadingContent = { Icon(Icons.Rounded.Password, contentDescription = null) },
+                    trailingContent = {
+                        if (hasSecretCode) {
+                            TextButton(onClick = { Disguise.setSecretCode(context, null); hasSecretCode = false }) {
+                                Text(stringResource(R.string.remove))
+                            }
+                        } else {
+                            TextButton(onClick = { editingCode = true }) { Text(stringResource(R.string.set)) }
+                        }
+                    },
+                    colors = itemColors,
+                )
+            }
+            if (match(R.string.settings_flip_panic, R.string.settings_flip_panic_desc)) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_flip_panic)) },
+                    supportingContent = { Text(stringResource(R.string.settings_flip_panic_desc)) },
+                    leadingContent = { Icon(Icons.Rounded.ScreenRotation, contentDescription = null) },
+                    trailingContent = {
+                        Switch(checked = flipPanic, onCheckedChange = { on ->
+                            FlipToPanic.setEnabled(context, on)
+                            flipPanic = on
+                        })
+                    },
+                    colors = itemColors,
+                )
+            }
             if (match(R.string.settings_disguise, R.string.settings_disguise_desc)) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_disguise)) },
@@ -281,6 +318,35 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    if (editingCode) {
+        var code by remember { mutableStateOf("") }
+        val normalized = Disguise.normalizeCode(code)
+        AlertDialog(
+            onDismissRequest = { editingCode = false },
+            title = { Text(stringResource(R.string.settings_secret_code)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.settings_secret_code_help))
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = { code = it },
+                        singleLine = true,
+                        placeholder = { Text("1995×7") },
+                        supportingText = { Text(normalized.ifEmpty { "—" }) },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = Disguise.isValidCode(normalized), onClick = {
+                    Disguise.setSecretCode(context, normalized)
+                    hasSecretCode = true
+                    editingCode = false
+                }) { Text(stringResource(R.string.set)) }
+            },
+            dismissButton = { TextButton(onClick = { editingCode = false }) { Text(cancel) } },
+        )
     }
 
     if (confirmNoLock) {
@@ -346,6 +412,8 @@ private fun AppearanceSection() {
             buildList {
                 add(Appearance.Palette.SPIROS to R.string.appearance_spiros)
                 if (Build.VERSION.SDK_INT >= 31) add(Appearance.Palette.MATERIAL_YOU to R.string.appearance_material_you)
+                add(Appearance.Palette.CYBER_GREEN to R.string.appearance_cyber_green)
+                add(Appearance.Palette.CYBER_CYAN to R.string.appearance_cyber_cyan)
             },
             state.palette,
         ) { palette -> Appearance.update(context) { it.copy(palette = palette) } }
@@ -358,6 +426,12 @@ private fun AppearanceSection() {
             ),
             state.style,
         ) { style -> Appearance.update(context) { it.copy(style = style) } }
+
+        Text(stringResource(R.string.appearance_lock_screen), style = MaterialTheme.typography.labelLarge)
+        ChoiceRow(
+            listOf(false to R.string.appearance_lock_normal, true to R.string.appearance_lock_stealth),
+            state.stealthLock,
+        ) { stealth -> Appearance.update(context) { it.copy(stealthLock = stealth) } }
     }
 }
 

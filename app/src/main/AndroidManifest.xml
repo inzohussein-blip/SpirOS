@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Fallback path when the space cannot uninstall an app silently. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- Control notification while Linux / AI / Lab run (keeps them alive in the background). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Package visibility: list launchable apps in the main profile and in the space. -->
     <queries>
@@ -40,6 +44,8 @@
             android:name=".MainActivity"
             android:exported="false"
             android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- Launcher entry as an alias so the copy inside the space can hide its icon. -->
@@ -122,6 +128,26 @@
         <receiver
             android:name=".space.UninstallResultReceiver"
             android:exported="false" />
+
+        <!-- ===== Security: control notification and Panic tile ===== -->
+        <service
+            android:name=".security.SessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the user's local Linux desktop, on-device AI model or virtual machine running while SpirOS is in the background, with Freeze/Stop/Panic controls." />
+        </service>
+        <service
+            android:name=".security.PanicTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_panic"
+            android:label="@string/tile_panic"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- ===== Shield: local DNS-only VPN ===== -->
         <service

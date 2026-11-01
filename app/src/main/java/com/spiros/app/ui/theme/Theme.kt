@@ -100,6 +100,38 @@ private val SpirLight = lightColorScheme(
     error = Color(0xFFD32F2F),
 )
 
+/** AMOLED black (pixels off on OLED screens) with one neon accent. */
+private fun cyberScheme(neon: Color) = darkColorScheme(
+    primary = neon,
+    onPrimary = Color.Black,
+    primaryContainer = neon.copy(alpha = 0.18f),
+    onPrimaryContainer = neon,
+    secondary = neon,
+    onSecondary = Color.Black,
+    secondaryContainer = neon.copy(alpha = 0.14f),
+    onSecondaryContainer = neon,
+    tertiary = Color(0xFFFF2BD6),
+    background = Color.Black,
+    onBackground = Color(0xFFD7FFE9),
+    surface = Color(0xFF050807),
+    onSurface = Color(0xFFD7FFE9),
+    surfaceVariant = Color(0xFF0B1210),
+    onSurfaceVariant = neon.copy(alpha = 0.7f),
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color(0xFF030504),
+    surfaceContainer = Color(0xFF060A08),
+    surfaceContainerHigh = Color(0xFF0A100D),
+    surfaceContainerHighest = Color(0xFF0E1612),
+    surfaceBright = Color(0xFF121C17),
+    surfaceDim = Color.Black,
+    outline = neon.copy(alpha = 0.45f),
+    outlineVariant = neon.copy(alpha = 0.2f),
+    error = Color(0xFFFF3B5C),
+)
+
+val CyberGreen = Color(0xFF39FF88)
+val CyberCyan = Color(0xFF00E5FF)
+
 private val SpirShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
     small = RoundedCornerShape(12.dp),
@@ -111,13 +143,16 @@ private val SpirShapes = Shapes(
 @Composable
 fun SpirTheme(content: @Composable () -> Unit) {
     val state by Appearance.state.collectAsState()
-    val dark = when (state.mode) {
+    val cyber = state.palette == Appearance.Palette.CYBER_GREEN || state.palette == Appearance.Palette.CYBER_CYAN
+    val dark = cyber || when (state.mode) {
         Appearance.Mode.SYSTEM -> isSystemInDarkTheme()
         Appearance.Mode.DARK -> true
         Appearance.Mode.LIGHT -> false
     }
     val context = LocalContext.current
     val scheme: ColorScheme = when {
+        state.palette == Appearance.Palette.CYBER_GREEN -> cyberScheme(CyberGreen)
+        state.palette == Appearance.Palette.CYBER_CYAN -> cyberScheme(CyberCyan)
         state.palette == Appearance.Palette.MATERIAL_YOU && Build.VERSION.SDK_INT >= 31 ->
             if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         dark -> SpirDark

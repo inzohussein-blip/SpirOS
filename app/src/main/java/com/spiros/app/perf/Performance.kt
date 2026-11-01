@@ -37,6 +37,9 @@ object Performance {
     fun singleApp(c: Context) = prefs(c).getString("single_app", SINGLE_APPS.first())!!
     fun setSingleApp(c: Context, v: String) = prefs(c).edit().putString("single_app", v).apply()
 
+    fun pip(c: Context) = prefs(c).getBoolean("pip", true)
+    fun setPip(c: Context, v: Boolean) = prefs(c).edit().putBoolean("pip", v).apply()
+
     // ---- AI ----
     fun aiFastCores(c: Context) = prefs(c).getBoolean("ai_fast_cores", true)
     fun setAiFastCores(c: Context, v: Boolean) = prefs(c).edit().putBoolean("ai_fast_cores", v).apply()

@@ -45,7 +45,7 @@ private class Fit(var scale: Float = 1f, var left: Float = 0f, var top: Float = 
 
 /** The guest's graphical display with touch-as-mouse and a row of special keys. */
 @Composable
-fun VmScreen(client: VncClient, modifier: Modifier = Modifier) {
+fun VmScreen(client: VncClient, modifier: Modifier = Modifier, controls: Boolean = true) {
     val bitmap by client.bitmap.collectAsState()
     val frame by client.frame.collectAsState()
     val fit = remember { Fit() }
@@ -113,7 +113,7 @@ fun VmScreen(client: VncClient, modifier: Modifier = Modifier) {
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+        if (controls) Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
             listOf(
                 "⇞" to SCROLL_UP,
                 "⇟" to SCROLL_DOWN,

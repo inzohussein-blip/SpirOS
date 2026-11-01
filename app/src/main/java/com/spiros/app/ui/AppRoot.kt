@@ -82,14 +82,24 @@ fun AppRoot(vault: Vault) {
     when (status) {
         Vault.Status.NEW -> SetupScreen(vault)
         Vault.Status.LOCKED -> when {
-            // PIN lock turned off in Settings: open straight away.
+            // Disguised: the calculator first. Its secret code reveals SpirOS (opening it
+            // directly when the PIN lock is off); typing the PIN and "=" also unlocks.
+            Disguise.isEnabled(LocalContext.current) -> {
+                var revealed by remember { mutableStateOf(false) }
+                if (revealed) {
+                    LockScreen(vault)
+                } else {
+                    CalculatorScreen(vault, onSecretCode = {
+                        if (vault.isLockEnabled || !vault.openWithoutPin()) revealed = true
+                    })
+                }
+            }
             !vault.isLockEnabled -> {
                 // PIN lock turned off in Settings: open straight away (PIN screen if that fails).
                 var failed by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) { failed = !withContext(Dispatchers.IO) { vault.openWithoutPin() } }
                 if (failed) LockScreen(vault)
             }
-            Disguise.isEnabled(LocalContext.current) -> CalculatorScreen(vault)
             else -> LockScreen(vault)
         }
         Vault.Status.UNLOCKED -> Unlocked(vault)

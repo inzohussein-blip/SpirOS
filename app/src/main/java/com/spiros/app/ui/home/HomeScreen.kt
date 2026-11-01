@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
@@ -66,7 +67,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,6 +80,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.spiros.app.R
 import com.spiros.app.ai.AiServer
+import com.spiros.app.security.Panic
 import com.spiros.app.linux.LinuxSession
 import com.spiros.app.shield.ShieldSettings
 import com.spiros.app.shield.ShieldVpnService
@@ -190,6 +194,8 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         )
                     }
+                    PanicButton()
+                    Spacer(Modifier.width(8.dp))
                     RoundIcon(Icons.Rounded.Lock, stringResource(R.string.settings_lock_now), onLock)
                 }
             }
@@ -237,6 +243,8 @@ fun HomeScreen(
                 }
             }
 
+            fullWidth { Dashboard() }
+
             fullWidth { SectionTitle(stringResource(R.string.home_tools)) }
             items(tools, key = { it.label }) { ToolTile(it) }
 
@@ -280,6 +288,29 @@ fun HomeScreen(
 
 private fun LazyGridScope.fullWidth(content: @Composable () -> Unit) =
     item(span = { GridItemSpan(maxLineSpan) }) { content() }
+
+/** Red Panic button: stop everything, forget the key, leave SpirOS instantly. */
+@Composable
+private fun PanicButton() {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.error)
+            .clickable {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                Panic.trigger(context)
+            }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Icon(Icons.Rounded.PowerSettingsNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.panic), color = Color.White, style = MaterialTheme.typography.labelLarge)
+    }
+}
 
 @Composable
 private fun SectionTitle(text: String) {

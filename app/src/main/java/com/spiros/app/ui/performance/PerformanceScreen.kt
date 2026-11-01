@@ -64,6 +64,7 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
     var fps by remember { mutableIntStateOf(Performance.linuxFps(context)) }
     var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
     var freeze by remember { mutableStateOf(Performance.freezeInBackground(context)) }
+    var pip by remember { mutableStateOf(Performance.pip(context)) }
     var session by remember { mutableStateOf(Performance.linuxSession(context)) }
     var singleApp by remember { mutableStateOf(Performance.singleApp(context)) }
     var fastCores by remember { mutableStateOf(Performance.aiFastCores(context)) }
@@ -133,6 +134,10 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
                     Toggle(stringResource(R.string.perf_light), stringResource(R.string.perf_light_desc), light) {
                         light = it
                         Performance.setLinuxLight(context, it)
+                    }
+                    Toggle(stringResource(R.string.perf_pip), stringResource(R.string.perf_pip_desc), pip) {
+                        pip = it
+                        Performance.setPip(context, it)
                     }
                     Toggle(stringResource(R.string.perf_freeze), stringResource(R.string.perf_freeze_desc), freeze) {
                         freeze = it

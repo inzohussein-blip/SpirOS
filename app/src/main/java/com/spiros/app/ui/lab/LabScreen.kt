@@ -59,6 +59,9 @@ import com.spiros.app.vault.Vault
 import com.spiros.app.engine.AlpineGuest
 import com.spiros.app.engine.LabSession
 import com.spiros.app.engine.LabVm
+import com.spiros.app.ui.common.BootOverlay
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.spiros.app.engine.QemuRunner
 import com.spiros.app.ui.SpirTopBar
 import kotlinx.coroutines.Dispatchers
@@ -191,10 +194,15 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
                     FilterChip(selected = !showScreen, onClick = { showScreen = false }, label = { Text(stringResource(R.string.lab_tab_terminal)) })
                 }
             }
-            if (running && client != null && showScreen) {
-                VmScreen(client, Modifier.weight(1f))
-            } else {
-                Console(console, Modifier.weight(1f))
+            val haptics = LocalHapticFeedback.current
+            LaunchedEffect(bootSeconds != null) {
+                if (bootSeconds != null) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            when {
+                running && bootSeconds == null && (client == null || !showScreen || client.bitmap.collectAsState().value == null) ->
+                    BootOverlay(console, stringResource(R.string.boot_lab), Modifier.weight(1f))
+                running && client != null && showScreen -> VmScreen(client, Modifier.weight(1f))
+                else -> Console(console, Modifier.weight(1f))
             }
 
             if (running) {

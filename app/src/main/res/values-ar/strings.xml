@@ -277,4 +277,31 @@
     <string name="appearance_elegant">أنيق</string>
     <string name="appearance_minimal">بسيط</string>
     <string name="tile_shield">درع SpirOS</string>
+    <string name="panic">ذعر</string>
+    <string name="tile_panic">ذعر SpirOS</string>
+    <string name="notif_channel">تشغيل لينكس / الذكاء / المختبر</string>
+    <string name="notif_running">SpirOS يعمل</string>
+    <string name="notif_frozen">SpirOS مجمّد (لا يستهلك المعالج)</string>
+    <string name="notif_freeze">تجميد</string>
+    <string name="notif_resume">استئناف</string>
+    <string name="notif_stop">إيقاف الكل</string>
+    <string name="settings_flip_panic">الذعر عند قلب الهاتف على وجهه</string>
+    <string name="settings_flip_panic_desc">أثناء فتح SpirOS، وضع الهاتف وشاشته للأسفل على طاولة لثانية واحدة يفعّل الذعر.</string>
+    <string name="appearance_cyber_green">أخضر سايبر (AMOLED)</string>
+    <string name="appearance_cyber_cyan">سماوي سايبر (AMOLED)</string>
+    <string name="appearance_lock_screen">شاشة القفل</string>
+    <string name="appearance_lock_normal">عادية</string>
+    <string name="appearance_lock_stealth">خفية (سوداء، بصمة فقط)</string>
+    <string name="gauge_ram">رام الهاتف</string>
+    <string name="gauge_spiros">لينكس · الذكاء</string>
+    <string name="gauge_vault">الخزنة</string>
+    <string name="gauge_security">الأمان</string>
+    <string name="boot_linux">جارٍ تشغيل SpirOS Linux…</string>
+    <string name="boot_lab">جارٍ إقلاع النظام الوهمي…</string>
+    <string name="linux_pip">صورة داخل صورة</string>
+    <string name="perf_pip">صورة داخل صورة</string>
+    <string name="perf_pip_desc">عند الضغط على زر الرئيسية وسطح مكتب لينكس مفتوح، يبقى يعمل في نافذة صغيرة في زاوية الشاشة.</string>
+    <string name="settings_secret_code">الرمز السري للآلة الحاسبة</string>
+    <string name="settings_secret_code_desc">اكتبه في الآلة الحاسبة ثم اضغط = ليظهر SpirOS.</string>
+    <string name="settings_secret_code_help">استخدم الأرقام وعلامات الآلة الحاسبة + − × ÷ . (4 على الأقل). تُحفظ بصمة الرمز فقط وليس الرمز نفسه.</string>
 </resources>

@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -66,6 +67,8 @@ fun PinEntry(
     onSubmit: (CharArray) -> Unit,
     extraKey: (@Composable () -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
+    /** Stealth lock: pure black, no logo, title or error text (only the shake). */
+    stealth: Boolean = false,
 ) {
     val digits = remember { mutableStateListOf<Char>() }
     val haptics = LocalHapticFeedback.current
@@ -92,7 +95,7 @@ fun PinEntry(
         onSubmit(pin)
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = if (stealth) Color.Black else MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier
                 .windowInsetsPadding(WindowInsets.safeDrawing)
@@ -100,30 +103,32 @@ fun PinEntry(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(72.dp),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-            if (subtitle != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
+            if (!stealth) {
+                Box(
+                    Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(72.dp),
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                if (subtitle != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
             Spacer(Modifier.height(24.dp))
             Row(
@@ -148,7 +153,7 @@ fun PinEntry(
             Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
                 when {
                     busy -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    error != null -> Text(error, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                    error != null && !stealth -> Text(error, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
             }
             Spacer(Modifier.height(24.dp))

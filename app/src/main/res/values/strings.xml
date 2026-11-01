@@ -277,4 +277,31 @@
     <string name="appearance_elegant">Elegant</string>
     <string name="appearance_minimal">Minimal</string>
     <string name="tile_shield">SpirOS Shield</string>
+    <string name="panic">Panic</string>
+    <string name="tile_panic">SpirOS Panic</string>
+    <string name="notif_channel">Running Linux / AI / Lab</string>
+    <string name="notif_running">SpirOS is running</string>
+    <string name="notif_frozen">SpirOS is frozen (no CPU use)</string>
+    <string name="notif_freeze">Freeze</string>
+    <string name="notif_resume">Resume</string>
+    <string name="notif_stop">Stop all</string>
+    <string name="settings_flip_panic">Panic when placed face down</string>
+    <string name="settings_flip_panic_desc">While SpirOS is open, putting the phone screen-down on a table for a second triggers Panic.</string>
+    <string name="appearance_cyber_green">Cyber green (AMOLED)</string>
+    <string name="appearance_cyber_cyan">Cyber cyan (AMOLED)</string>
+    <string name="appearance_lock_screen">Lock screen</string>
+    <string name="appearance_lock_normal">Normal</string>
+    <string name="appearance_lock_stealth">Stealth (black, fingerprint only)</string>
+    <string name="gauge_ram">Phone RAM</string>
+    <string name="gauge_spiros">Linux · AI</string>
+    <string name="gauge_vault">Vault</string>
+    <string name="gauge_security">Security</string>
+    <string name="boot_linux">Starting SpirOS Linux…</string>
+    <string name="boot_lab">Booting the virtual machine…</string>
+    <string name="linux_pip">Picture-in-picture</string>
+    <string name="perf_pip">Picture-in-picture</string>
+    <string name="perf_pip_desc">Pressing Home while the Linux desktop is open keeps it live in a small corner window.</string>
+    <string name="settings_secret_code">Calculator secret code</string>
+    <string name="settings_secret_code_desc">Type it on the calculator and press = to reveal SpirOS.</string>
+    <string name="settings_secret_code_help">Use digits and the calculator signs + − × ÷ . (at least 4). Only a fingerprint of the code is stored.</string>
 </resources>

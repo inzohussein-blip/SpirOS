@@ -264,7 +264,7 @@ fun BrowserScreen(vault: Vault, onBack: () -> Unit) {
 }
 
 /** Erase every trace the browser can leave. */
-private fun burn(context: Context, view: WebView?) {
+internal fun burn(context: Context, view: WebView?) {
     view?.apply {
         stopLoading()
         clearHistory()
