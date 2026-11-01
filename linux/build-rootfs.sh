@@ -84,10 +84,14 @@ for base in ("https://packages.linuxmint.com/", "https://mirrors.kernel.org/linu
 open(f"{out}/mint-error", "w").write("; ".join(errors)[:400])
 sys.exit(1)
 PY
-if ls "$ROOT"/tmp/mint-*.deb >/dev/null 2>&1; then
-    chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
-        apt-get install -y --no-install-recommends /tmp/mint-themes.deb /tmp/mint-y-icons.deb && apt-get clean" \
-        || MINT_NOTE="Mint repository packages failed to install"
+# Themes are plain files (no setup scripts): unpack them instead of going through apt,
+# whose Mint-specific dependencies Ubuntu may not satisfy.
+if [ -f "$ROOT/tmp/mint-themes.deb" ]; then
+    dpkg-deb -x "$ROOT/tmp/mint-themes.deb" "$ROOT" || MINT_NOTE="could not unpack mint-themes"
+fi
+if [ ! -d "$ROOT/usr/share/icons/Mint-Y" ] && [ -f "$ROOT/tmp/mint-y-icons.deb" ]; then
+    dpkg-deb -x "$ROOT/tmp/mint-y-icons.deb" "$ROOT" || true
+    chroot "$ROOT" gtk-update-icon-cache -f /usr/share/icons/Mint-Y 2>/dev/null || true
 fi
 fi
 pick() { # first existing name among the arguments, in a directory
