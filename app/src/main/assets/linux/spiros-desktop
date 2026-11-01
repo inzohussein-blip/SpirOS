@@ -5,6 +5,10 @@
 # app/src/main/assets/linux/spiros-desktop).
 #   SPIROS_GEOMETRY  screen size, e.g. 1280x720
 #   SPIROS_DPI       font DPI (larger = bigger UI for touch)
+#   SPIROS_LIGHT     1 = light mode: no compositing effects, wireframe window
+#                    moves, no power manager / screensaver / accessibility bus
+#   SPIROS_SESSION   "desktop" (full Xfce) or "app" (one program, no desktop)
+#   SPIROS_APP       the program for app mode (e.g. xfce4-terminal)
 export DISPLAY=:1
 export HOME="${HOME:-/root}"
 export USER="${USER:-$(id -un)}"
@@ -17,6 +21,33 @@ chmod 1777 /tmp/.X11-unix 2>/dev/null
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 /tmp/spiros-vnc
 cd "$HOME" || cd /
 
+# ---- light mode (Settings > Performance & battery) ----
+CONF="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+mkdir -p "$CONF" "$HOME/.config/autostart"
+if [ "${SPIROS_LIGHT:-1}" = 1 ]; then ON=false; else ON=true; fi
+if [ -f "$CONF/xfwm4.xml" ] && grep -q use_compositing "$CONF/xfwm4.xml"; then
+    sed -i "s/\(name=\"use_compositing\" type=\"bool\" value=\"\)[a-z]*/\1$ON/" "$CONF/xfwm4.xml"
+elif [ ! -f "$CONF/xfwm4.xml" ]; then
+    cat > "$CONF/xfwm4.xml" <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="use_compositing" type="bool" value="$ON"/>
+    <property name="box_move" type="bool" value="true"/>
+    <property name="box_resize" type="bool" value="true"/>
+  </property>
+</channel>
+XML
+fi
+for a in xfce4-power-manager xscreensaver xfce4-screensaver light-locker at-spi-dbus-bus xiccd blueman nm-applet; do
+    if [ "${SPIROS_LIGHT:-1}" = 1 ]; then
+        printf '[Desktop Entry]\nType=Application\nName=%s\nHidden=true\n' "$a" > "$HOME/.config/autostart/$a.desktop"
+    else
+        rm -f "$HOME/.config/autostart/$a.desktop"
+    fi
+done
+[ "${SPIROS_LIGHT:-1}" = 1 ] && export GTK_A11Y=none
+
 Xvnc :1 \
     -geometry "${SPIROS_GEOMETRY:-1280x720}" -depth 24 -dpi "${SPIROS_DPI:-120}" \
     -rfbport -1 -rfbunixpath /tmp/spiros-vnc -rfbunixmode 0600 \
@@ -25,5 +56,10 @@ Xvnc :1 \
 # Wait for the X server before starting the session.
 i=0
 while [ ! -S /tmp/.X11-unix/X1 ] && [ $i -lt 50 ]; do sleep 0.2; i=$((i + 1)); done
+
+# ---- single-app mode: one program and a window manager, no desktop ----
+if [ "${SPIROS_SESSION:-desktop}" = app ]; then
+    exec dbus-launch --exit-with-session sh -c "xfwm4 & exec ${SPIROS_APP:-xfce4-terminal}"
+fi
 
 exec dbus-launch --exit-with-session xfce4-session

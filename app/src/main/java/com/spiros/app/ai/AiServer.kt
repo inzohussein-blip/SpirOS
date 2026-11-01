@@ -3,6 +3,7 @@ package com.spiros.app.ai
 import android.content.Context
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
+import com.spiros.app.perf.Performance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +45,7 @@ object AiServer {
         apiKey = ByteArray(24).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }
         _log.value = emptyList()
         _state.value = State.LOADING
-        val threads = Runtime.getRuntime().availableProcessors().coerceIn(1, 8)
+        val threads = Performance.aiThreads(context)
         val p = LinuxSession.command(
             context,
             LinuxDistro.root(context),
@@ -54,7 +55,7 @@ object AiServer {
                 "--host", "127.0.0.1",
                 "--port", "$PORT",
                 "--api-key", apiKey,
-                "-c", "4096",
+                "-c", "${Performance.aiContext(context)}",
                 "-t", "$threads",
             ),
         ).start()

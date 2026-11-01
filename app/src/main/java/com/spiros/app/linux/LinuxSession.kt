@@ -2,6 +2,7 @@ package com.spiros.app.linux
 
 import android.content.Context
 import com.spiros.app.engine.VncClient
+import com.spiros.app.perf.Performance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,15 +37,20 @@ object LinuxSession {
         val root = LinuxDistro.root(context)
         installLauncher(context, root)
         val socket = File(root, "tmp/spiros-vnc").apply { delete() }
+        val singleApp = Performance.linuxSession(context) == Performance.Session.SINGLE_APP
         val p = command(context, root, user = LinuxAccounts.desktopUser(context), envAndCommand = listOf(
             "SPIROS_GEOMETRY=$geometry",
             "SPIROS_DPI=$dpi",
+            "SPIROS_LIGHT=${if (Performance.linuxLight(context)) 1 else 0}",
+            "SPIROS_SESSION=${if (singleApp) "app" else "desktop"}",
+            "SPIROS_APP=${Performance.singleApp(context)}",
             "/usr/local/bin/spiros-desktop",
         )).start()
         process = p
         _running.value = true
         thread(name = "linux-log", isDaemon = true) { pump(p) }
-        _screen.value = VncClient(socket.path, connectTimeoutMs = 90_000).also { it.start() }
+        _screen.value = VncClient(socket.path, connectTimeoutMs = 90_000, maxFps = Performance.linuxFps(context))
+            .also { it.start() }
     }
 
     @Synchronized

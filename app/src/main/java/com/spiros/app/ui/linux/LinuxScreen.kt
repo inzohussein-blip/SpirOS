@@ -3,6 +3,7 @@ package com.spiros.app.ui.linux
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,13 +56,13 @@ import com.spiros.app.BuildConfig
 import com.spiros.app.R
 import com.spiros.app.linux.LinuxDistro
 import com.spiros.app.linux.LinuxSession
+import com.spiros.app.perf.Performance
 import com.spiros.app.ui.SpirTopBar
 import com.spiros.app.ui.lab.VmScreen
 import kotlinx.coroutines.launch
 
 private const val LINUX_EDITION_URL = "https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/SpirOS-Linux.apk"
 
-private val RESOLUTIONS = listOf("1280x720", "1600x900", "1920x1080")
 
 /** The SpirOS Linux desktop: Debian + Xfce with touch controls (speed edition). */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +76,7 @@ fun LinuxScreen(onBack: () -> Unit) {
     var installed by remember { mutableStateOf(LinuxDistro.isInstalled(context)) }
     var progress by remember { mutableStateOf<Pair<LinuxDistro.Stage, Float>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    var resolution by remember { mutableIntStateOf(0) }
+    var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
     var confirmRemove by remember { mutableStateOf(false) }
     var input by remember { mutableStateOf("") }
 
@@ -170,13 +171,23 @@ fun LinuxScreen(onBack: () -> Unit) {
                 else -> Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.linux_resolution), style = MaterialTheme.typography.titleSmall)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            RESOLUTIONS.forEachIndexed { i, r ->
-                                FilterChip(selected = resolution == i, onClick = { resolution = i }, label = { Text(r) })
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        ) {
+                            Performance.RESOLUTIONS.forEach { r ->
+                                FilterChip(
+                                    selected = resolution == r,
+                                    onClick = {
+                                        resolution = r
+                                        Performance.setLinuxResolution(context, r)
+                                    },
+                                    label = { Text(r) },
+                                )
                             }
                         }
                         Button(
-                            onClick = { LinuxSession.start(context, RESOLUTIONS[resolution], dpi = 120) },
+                            onClick = { LinuxSession.start(context, resolution, dpi = 120) },
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text(stringResource(R.string.linux_start)) }
                         Text(

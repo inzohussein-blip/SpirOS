@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.ManageAccounts
 import androidx.compose.material.icons.outlined.Pin
 import androidx.compose.material.icons.outlined.Screenshot
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
@@ -48,7 +49,13 @@ import com.spiros.app.vault.Vault
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit, onOpenLinuxAccounts: () -> Unit) {
+fun SettingsScreen(
+    vault: Vault,
+    onBack: () -> Unit,
+    onOpenCompat: () -> Unit,
+    onOpenLinuxAccounts: () -> Unit,
+    onOpenPerformance: () -> Unit,
+) {
     val context = LocalContext.current
     val activity = context as Activity
     val scope = rememberCoroutineScope()
@@ -103,6 +110,13 @@ fun SettingsScreen(vault: Vault, onBack: () -> Unit, onOpenCompat: () -> Unit, o
                 .verticalScroll(rememberScrollState()),
         ) {
             val itemColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.perf_title), style = MaterialTheme.typography.titleMedium) },
+                supportingContent = { Text(stringResource(R.string.perf_settings_desc)) },
+                leadingContent = { Icon(Icons.Outlined.Speed, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) },
+                modifier = Modifier.clickable(onClick = onOpenPerformance),
+                colors = itemColors,
+            )
             GroupTitle(stringResource(R.string.settings_group_unlock))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_require_pin)) },

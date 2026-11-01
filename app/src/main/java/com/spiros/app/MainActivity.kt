@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.spiros.app.engine.LabSession
+import com.spiros.app.perf.BackgroundFreezer
+import com.spiros.app.perf.Performance
 import com.spiros.app.space.SpaceManager
 import com.spiros.app.space.SpaceOwner
 import com.spiros.app.ui.AppRoot
@@ -43,6 +45,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Linux programs were frozen while SpirOS was in the background: wake them.
+        Thread { BackgroundFreezer.resume() }.start()
+    }
+
     override fun onResume() {
         super.onResume()
         // Back from a picker or the space: normal auto-lock applies again.
@@ -51,6 +59,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
+        if (!isChangingConfigurations && !vault.holdLock && Performance.freezeInBackground(this)) {
+            Thread { BackgroundFreezer.freeze() }.start()
+        }
         // Leaving SpirOS locks it, except while a system screen we opened is in front.
         // With the PIN lock turned off in Settings the session simply stays open.
         if (!isChangingConfigurations && !vault.holdLock && vault.isLockEnabled) {

@@ -240,4 +240,27 @@
     <string name="accounts_saved">تم الحفظ</string>
     <string name="accounts_deleted">تم حذف الحساب</string>
     <string name="accounts_failed">فشل: %1$s</string>
+    <string name="perf_title">الأداء وتوفير البطارية</string>
+    <string name="perf_settings_desc">اجعل SpirOS أخف وأسرع على هذا الهاتف</string>
+    <string name="perf_intro">خيارات تقلل استهلاك الذاكرة والمعالج والبطارية. القيم الافتراضية مضبوطة مسبقًا للهواتف المتوسطة.</string>
+    <string name="perf_space">المساحة المعزولة</string>
+    <string name="perf_no_space">لا توجد مساحة معزولة بعد.</string>
+    <string name="perf_google_desc">خدمات Google Play تأخذ 300 إلى 500 ميغابايت من الذاكرة في المساحة وتعمل دائمًا. هذا أكبر توفير.</string>
+    <string name="perf_pause_space">إيقاف المساحة مؤقتًا</string>
+    <string name="perf_pause_desc">يوقف كل تطبيقات المساحة حتى تستأنفها.</string>
+    <string name="perf_linux_edition_only">متاح في نسخة SpirOS Linux.</string>
+    <string name="perf_light">الوضع الخفيف</string>
+    <string name="perf_light_desc">بلا شفافية ولا ظلال، وتحريك النوافذ بإطار فقط، وبلا مدير طاقة ولا شاشة توقف.</string>
+    <string name="perf_freeze">تجميد لينكس في الخلفية</string>
+    <string name="perf_freeze_desc">لينكس والذكاء الاصطناعي والمختبر لا تستهلك المعالج عند إغلاق SpirOS، وتكمل فورًا عند عودتك. أوقفه لإبقاء MT5 أو المهام الطويلة تعمل.</string>
+    <string name="perf_fps">تحديثات الشاشة في الثانية</string>
+    <string name="perf_session">ما الذي يعمل</string>
+    <string name="perf_session_desktop">سطح مكتب كامل</string>
+    <string name="perf_session_app">برنامج واحد</string>
+    <string name="perf_session_app_desc">يشغّل هذا البرنامج فقط مع مدير نوافذ، بدون سطح مكتب وشريط مهام. أخف بكثير.</string>
+    <string name="perf_restart_hint">تُطبَّق التغييرات في المرة القادمة التي يبدأ فيها سطح المكتب.</string>
+    <string name="perf_fast_cores">الأنوية السريعة فقط</string>
+    <string name="perf_fast_cores_desc">يستخدم %1$d أنوية سريعة من أصل %2$d. الأنوية البطيئة تجعل الذكاء الاصطناعي ينتظرها.</string>
+    <string name="perf_context">ذاكرة الذكاء الاصطناعي (السياق، بالرموز)</string>
+    <string name="perf_context_desc">أصغر = ذاكرة أقل وبدء أسرع؛ أكبر = يتذكر محادثات أطول.</string>
 </resources>

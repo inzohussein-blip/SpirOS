@@ -240,4 +240,27 @@
     <string name="accounts_saved">Saved</string>
     <string name="accounts_deleted">Account deleted</string>
     <string name="accounts_failed">Failed: %1$s</string>
+    <string name="perf_title">Performance &amp; battery</string>
+    <string name="perf_settings_desc">Make SpirOS lighter and faster on this phone</string>
+    <string name="perf_intro">Options that reduce memory, CPU and battery use. Defaults are already tuned for mid-range phones.</string>
+    <string name="perf_space">Isolated space</string>
+    <string name="perf_no_space">No isolated space yet.</string>
+    <string name="perf_google_desc">Google Play services take 300–500 MB of memory in the space and run all the time. Biggest saving.</string>
+    <string name="perf_pause_space">Pause the space</string>
+    <string name="perf_pause_desc">Stops every app in the space until you resume it.</string>
+    <string name="perf_linux_edition_only">Available in the SpirOS Linux edition.</string>
+    <string name="perf_light">Light mode</string>
+    <string name="perf_light_desc">No transparency or shadows, outline-only window moves, no power manager or screensaver.</string>
+    <string name="perf_freeze">Freeze Linux in the background</string>
+    <string name="perf_freeze_desc">Linux, the AI and the Lab use no CPU while SpirOS is closed, and continue instantly when you return. Turn off to keep MT5 or long jobs running.</string>
+    <string name="perf_fps">Screen updates per second</string>
+    <string name="perf_session">What starts</string>
+    <string name="perf_session_desktop">Full desktop</string>
+    <string name="perf_session_app">One program</string>
+    <string name="perf_session_app_desc">Starts only this program with a window manager, without the desktop and panel. Much lighter.</string>
+    <string name="perf_restart_hint">Changes apply the next time the desktop starts.</string>
+    <string name="perf_fast_cores">Fast cores only</string>
+    <string name="perf_fast_cores_desc">Uses the %1$d fast cores out of %2$d. The slow cores make the AI wait.</string>
+    <string name="perf_context">AI memory (context, tokens)</string>
+    <string name="perf_context_desc">Smaller = less RAM and faster start; larger = remembers longer conversations.</string>
 </resources>

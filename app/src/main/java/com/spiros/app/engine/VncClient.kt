@@ -18,7 +18,12 @@ import kotlin.concurrent.thread
  * Raw encoding only (it is a local socket, bandwidth is not an issue) plus the
  * DesktopSize pseudo-encoding so the guest can change resolution.
  */
-class VncClient(private val socketPath: String, private val connectTimeoutMs: Long = 20_000) {
+class VncClient(
+    private val socketPath: String,
+    private val connectTimeoutMs: Long = 20_000,
+    /** Upper bound on screen updates per second (Settings > Performance & battery). */
+    private val maxFps: Int = 30,
+) {
 
     private val _bitmap = MutableStateFlow<Bitmap?>(null)
     val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
@@ -170,11 +175,17 @@ class VncClient(private val socketPath: String, private val connectTimeoutMs: Lo
         requestUpdate(incremental = false)
 
         var raw = ByteArray(0)
+        var lastFrame = 0L
+        val minInterval = 1000L / maxFps.coerceIn(1, 120)
         while (running) {
             when (input.readUnsignedByte()) {
                 0 -> { // FramebufferUpdate
                     input.skipBytes(1)
                     val rects = input.readUnsignedShort()
+                    var dx0 = Int.MAX_VALUE
+                    var dy0 = Int.MAX_VALUE
+                    var dx1 = 0
+                    var dy1 = 0
                     repeat(rects) {
                         val x = input.readUnsignedShort()
                         val y = input.readUnsignedShort()
@@ -186,13 +197,27 @@ class VncClient(private val socketPath: String, private val connectTimeoutMs: Lo
                                 if (raw.size < size) raw = ByteArray(size)
                                 input.readFully(raw, 0, size)
                                 blit(raw, x, y, w, h)
+                                dx0 = minOf(dx0, x); dy0 = minOf(dy0, y)
+                                dx1 = maxOf(dx1, x + w); dy1 = maxOf(dy1, y + h)
                             }
-                            -223 -> resize(w, h)
+                            -223 -> {
+                                resize(w, h)
+                                dx0 = 0; dy0 = 0; dx1 = w; dy1 = h
+                            }
                             else -> error("unsupported encoding")
                         }
                     }
-                    _bitmap.value?.setPixels(pixels, 0, width, 0, 0, width, height)
-                    _frame.value += 1
+                    // Copy only the area that changed into the on-screen bitmap.
+                    dx1 = minOf(dx1, width); dy1 = minOf(dy1, height)
+                    if (dx1 > dx0 && dy1 > dy0) {
+                        _bitmap.value?.setPixels(pixels, dy0 * width + dx0, width, dx0, dy0, dx1 - dx0, dy1 - dy0)
+                        _frame.value += 1
+                    }
+                    // Ask for the next update no sooner than the frame-rate cap allows:
+                    // less work for both the Linux side and the phone.
+                    val wait = minInterval - (System.currentTimeMillis() - lastFrame)
+                    if (wait > 0) Thread.sleep(wait)
+                    lastFrame = System.currentTimeMillis()
                     requestUpdate(incremental = true)
                 }
                 1 -> { // SetColourMapEntries (unused with true colour)

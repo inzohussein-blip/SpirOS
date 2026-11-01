@@ -28,6 +28,7 @@ import com.spiros.app.ui.lock.LockScreen
 import com.spiros.app.ui.lock.SetupScreen
 import com.spiros.app.ui.lab.LabScreen
 import com.spiros.app.ui.linux.LinuxAccountsScreen
+import com.spiros.app.ui.performance.PerformanceScreen
 import com.spiros.app.ui.linux.LinuxScreen
 import com.spiros.app.ui.ai.AiScreen
 import com.spiros.app.ui.settings.SettingsScreen
@@ -47,6 +48,7 @@ private sealed interface Screen {
     data object Linux : Screen
     data object Ai : Screen
     data object LinuxAccounts : Screen
+    data object Performance : Screen
     data object Shield : Screen
     data object Browser : Screen
     data object Settings : Screen
@@ -81,7 +83,7 @@ private fun Unlocked(vault: Vault) {
     BackHandler(enabled = screen != Screen.Home) {
         screen = when (screen) {
             is Screen.Viewer -> Screen.VaultList
-            Screen.Compat, Screen.LinuxAccounts -> Screen.Settings
+            Screen.Compat, Screen.LinuxAccounts, Screen.Performance -> Screen.Settings
             else -> Screen.Home
         }
     }
@@ -102,7 +104,7 @@ private fun Unlocked(vault: Vault) {
 
 private fun depth(screen: Screen) = when (screen) {
     Screen.Home -> 0
-    is Screen.Viewer, Screen.Compat, Screen.LinuxAccounts -> 2
+    is Screen.Viewer, Screen.Compat, Screen.LinuxAccounts, Screen.Performance -> 2
     else -> 1
 }
 
@@ -133,8 +135,10 @@ private fun ScreenContent(current: Screen, vault: Vault, navigate: (Screen) -> U
             onBack = { navigate(Screen.Home) },
             onOpenCompat = { navigate(Screen.Compat) },
             onOpenLinuxAccounts = { navigate(Screen.LinuxAccounts) },
+            onOpenPerformance = { navigate(Screen.Performance) },
         )
         Screen.LinuxAccounts -> LinuxAccountsScreen(onBack = { navigate(Screen.Settings) })
+        Screen.Performance -> PerformanceScreen(vault, onBack = { navigate(Screen.Settings) })
         Screen.Compat -> CompatScreen(onBack = { navigate(Screen.Settings) })
     }
 }
