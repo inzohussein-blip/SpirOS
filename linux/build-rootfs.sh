@@ -47,9 +47,13 @@ chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
     apt-get clean
     locale-gen ar_SA.UTF-8 en_US.UTF-8"
 
-# ---- Linux Mint look: Mint-Y themes and icons from the official Mint repository ----
-# (architecture-independent packages; their dependencies come from Ubuntu).
-python3 - "$ROOT/tmp" "$MINT_SUITE" <<'PY' || echo "WARNING: Mint themes unavailable, using the desktop's default look"
+# ---- Linux Mint look: Mint-Y themes and icons ----
+# Normally installed above from Ubuntu (packages.txt). If this release lacks them, take
+# them from the official Mint repository (architecture-independent packages).
+MINT_NOTE="from Ubuntu"
+if [ ! -d "$ROOT/usr/share/themes/Mint-Y" ] && [ ! -d "$ROOT/usr/share/themes/Mint-Y-Dark" ]; then
+MINT_NOTE="from the Mint repository"
+python3 - "$ROOT/tmp" "$MINT_SUITE" <<'PY' || MINT_NOTE="unavailable (see WARNING above)"
 import gzip, hashlib, sys, urllib.request
 out, suite = sys.argv[1], sys.argv[2]
 base = "https://packages.linuxmint.com/"
@@ -69,7 +73,8 @@ PY
 if ls "$ROOT"/tmp/mint-*.deb >/dev/null 2>&1; then
     chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
         apt-get install -y --no-install-recommends /tmp/mint-themes.deb /tmp/mint-y-icons.deb && apt-get clean" \
-        || echo "WARNING: Mint themes could not be installed"
+        || MINT_NOTE="Mint repository packages failed to install"
+fi
 fi
 pick() { # first existing name among the arguments, in a directory
     dir="$1"; shift
@@ -209,7 +214,7 @@ echo "== SpirOS image: $DESKTOP $ARCH"
 for b in Xvnc xfce4-session mate-session cinnamon-session llama-server; do
     if chroot "$ROOT" sh -c "command -v $b" >/dev/null 2>&1; then echo "   has $b"; else echo "   (no $b)"; fi
 done
-echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}"
+echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}  (Mint look $MINT_NOTE)"
 
 # Hard links become separate files so the Android extractor only handles symlinks.
 tar --numeric-owner --hard-dereference -C "$ROOT" -cf - . | xz -T0 -6 > "$OUT"

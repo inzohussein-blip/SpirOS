@@ -90,7 +90,11 @@ fun AiScreen(onBack: () -> Unit, onOpenLinux: () -> Unit) {
         scope.launch {
             Engine.call(context) {
                 it.clearTask()
-                it.downloadModel(model.url, model.fileName, Engine.callback(onProgress = { _, _ -> }, onDone = { refresh++ }))
+                it.downloadModel(model.url, model.fileName, Engine.callback(onProgress = { _, _ -> }, onDone = { e ->
+                    // "busy": a Linux install is running; other errors show in the task card.
+                    if (e == "busy") error = context.getString(R.string.task_busy)
+                    refresh++
+                }))
             }
         }
     }

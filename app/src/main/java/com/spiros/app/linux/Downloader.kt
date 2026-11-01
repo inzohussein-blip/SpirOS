@@ -33,15 +33,19 @@ object Downloader {
         }
     }
 
-    /** Downloads [url] to [target] (resuming a previous partial download of the same URL). */
-    fun download(url: String, target: File) {
+    /**
+     * Downloads [url] to [target], resuming a previous partial download of the same
+     * file. [stamp] identifies the content (e.g. URL + expected checksum), so a part
+     * of an older build behind the same URL is never continued.
+     */
+    fun download(url: String, target: File, stamp: String = url) {
         require(url.startsWith("https://")) { "Only https:// downloads are allowed" }
         target.parentFile?.mkdirs()
         val part = File(target.path + ".part")
         val source = File(target.path + ".url")
-        if (!source.isFile || source.readText() != url) {
+        if (!source.isFile || source.readText() != stamp) {
             part.delete()
-            source.writeText(url)
+            source.writeText(stamp)
         }
         var attempt = 0
         while (true) {

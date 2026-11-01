@@ -57,6 +57,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.spiros.app.BuildConfig
 import com.spiros.app.R
+import com.spiros.app.SpirApp
 import com.spiros.app.remote.Engine
 import com.spiros.app.remote.EngineInstaller
 import com.spiros.app.ui.common.TaskCard
@@ -356,6 +357,8 @@ private fun EngineInstallButton(state: EngineInstaller.State, update: Boolean = 
                 Text(stringResource(R.string.engine_failed, state.message), color = MaterialTheme.colorScheme.error)
             }
             Button(onClick = {
+                // Android's settings / install screens must not lock SpirOS behind them.
+                (context.applicationContext as SpirApp).vault.holdLock = true
                 if (!EngineInstaller.canInstall(context)) {
                     runCatching { context.startActivity(EngineInstaller.allowInstallsIntent(context)) }
                 } else {

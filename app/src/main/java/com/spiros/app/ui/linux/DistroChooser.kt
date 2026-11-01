@@ -35,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.spiros.app.R
+import com.spiros.app.SpirApp
 import com.spiros.app.ai.AiModels
 
 /** A system the user can install. */
@@ -125,7 +126,11 @@ fun DistroChooser(
                     FilterChip(selected = fromFile, onClick = { fromFile = true }, label = { Text(stringResource(R.string.distro_from_file)) })
                 }
                 if (fromFile) {
-                    OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) {
+                    OutlinedButton(onClick = {
+                        // The system picker must not lock SpirOS (that would lose the result).
+                        (context.applicationContext as SpirApp).vault.holdLock = true
+                        picker.launch(arrayOf("*/*"))
+                    }) {
                         Icon(Icons.Rounded.FolderOpen, null)
                         Text(
                             file?.lastPathSegment?.substringAfterLast('/') ?: stringResource(R.string.distro_pick_file),

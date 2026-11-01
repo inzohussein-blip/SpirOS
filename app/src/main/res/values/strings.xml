@@ -362,4 +362,5 @@
     <string name="space_command_refused">The space did not accept the command (its pairing key does not match, often after reinstalling SpirOS). Delete the space from system settings and create it again.</string>
     <string name="space_delete_manual">You can always delete the space yourself: system Settings → Accounts (or Passwords &amp; accounts / Users &amp; accounts) → Work → Remove work profile.</string>
     <string name="space_creating">Creating the isolated space…\nThe phone finishes setting it up in a few seconds.</string>
+    <string name="task_busy">Another download or install is running. Wait for it to finish (see Linux).</string>
 </resources>

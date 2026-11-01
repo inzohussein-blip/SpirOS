@@ -50,7 +50,7 @@ object LinuxDistro {
     }
 
     fun remove(context: Context) {
-        File(context.filesDir, "linux").deleteRecursively()
+        deleteTree(File(context.filesDir, "linux"))
     }
 
     private fun downloads(context: Context) = File(context.filesDir, "linux-download").apply { mkdirs() }
@@ -71,7 +71,7 @@ object LinuxDistro {
                 BackgroundTask.stage(Stage.DOWNLOADING.name)
                 expected = Downloader.text("$BASE/$name.sha256").trim().substringBefore(' ').lowercase()
                 archive = File(dir, name)
-                Downloader.download("$BASE/$name", archive)
+                Downloader.download("$BASE/$name", archive, stamp = "$name#$expected")
             }
             desktop == CUSTOM && file != null -> {
                 archive = File(dir, "custom-rootfs")
@@ -93,8 +93,8 @@ object LinuxDistro {
             // Keep downloaded AI models across a system change.
             val models = File(root, "root/models")
             val keep = File(context.filesDir, "linux-models")
-            if (models.isDirectory) { keep.deleteRecursively(); models.renameTo(keep) }
-            root.deleteRecursively()
+            if (models.isDirectory) { deleteTree(keep); models.renameTo(keep) }
+            deleteTree(root)
             root.mkdirs()
             BackgroundTask.stage(Stage.EXTRACTING.name, archive.length())
             extract(archive, root)
@@ -104,7 +104,7 @@ object LinuxDistro {
             if (keep.isDirectory) { File(root, "root").mkdirs(); keep.renameTo(File(root, "root/models")) }
             File(root, MARKER).writeText("$desktop\n${expected.orEmpty()}\n")
         } catch (e: Exception) {
-            if (e is BackgroundTask.Cancelled) root(context).deleteRecursively()
+            if (e is BackgroundTask.Cancelled) deleteTree(root(context))
             throw e
         } finally {
             // A cancelled *download* keeps its .part file and continues next time.
@@ -170,6 +170,11 @@ object LinuxDistro {
 
     private fun extract(archive: File, root: File) {
         val total = archive.length()
+        val rootPath = root.canonicalPath + File.separator
+        // Never write through a symlink that leads out of the root (a malicious archive
+        // could ship "etc -> /data/..." and then "etc/x"): the real parent must be inside.
+        fun inside(f: File) = runCatching { (f.parentFile ?: root).canonicalPath + File.separator }
+            .getOrDefault("").startsWith(rootPath)
         val counting = CountingStream(archive.inputStream().buffered(1 shl 16))
         var entries = 0
         tarStream(counting).use { tar ->
@@ -184,6 +189,7 @@ object LinuxDistro {
                 // targets may be absolute: they are resolved inside proot, not here.
                 if (name.startsWith("/") || name.split('/').any { it == ".." }) continue
                 val out = File(root, name)
+                if (!inside(out)) continue
                 when {
                     entry.isDirectory -> {
                         out.mkdirs()
@@ -197,7 +203,7 @@ object LinuxDistro {
                     entry.isLink -> { // hard link: copy the file it points to
                         out.parentFile?.mkdirs()
                         val from = File(root, entry.linkName.removePrefix("./").removePrefix("/"))
-                        runCatching { from.copyTo(out, overwrite = true); chmod(out, entry.mode or 0b110_000_000) }
+                        if (runCatching { from.canonicalPath.startsWith(rootPath) }.getOrDefault(false)) runCatching { from.copyTo(out, overwrite = true); chmod(out, entry.mode or 0b110_000_000) }
                     }
                     entry.isFile -> {
                         out.parentFile?.mkdirs()
@@ -214,6 +220,21 @@ object LinuxDistro {
         }
         check(entries > 10) { "This file is not a Linux root filesystem (tar archive)" }
         BackgroundTask.progress(total, total)
+    }
+
+    /**
+     * Deletes a directory tree without following symbolic links (a Linux system has
+     * links to absolute paths; following them would reach files outside it).
+     */
+    fun deleteTree(file: File) {
+        val path = file.toPath()
+        if (!java.nio.file.Files.exists(path, java.nio.file.LinkOption.NOFOLLOW_LINKS)) return
+        if (java.nio.file.Files.isDirectory(path, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+            // Make sure we may list and delete inside (archives can ship read-only dirs).
+            runCatching { Os.chmod(file.path, 0b111_000_000 or (Os.lstat(file.path).st_mode and 0b111_111)) }
+            file.listFiles()?.forEach { deleteTree(it) }
+        }
+        runCatching { java.nio.file.Files.delete(path) }
     }
 
     private fun chmod(file: File, mode: Int) {

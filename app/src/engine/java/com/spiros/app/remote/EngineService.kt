@@ -77,6 +77,8 @@ class EngineService : Service() {
         override fun clearTask() = BackgroundTask.clear()
 
         override fun removeLinux() {
+            // Never delete the system under a running install.
+            if (BackgroundTask.state?.let { it.active && it.kind == "linux" } == true) return
             LinuxSession.stop()
             AiServer.stop()
             LinuxDistro.remove(this@EngineService)
@@ -140,7 +142,7 @@ class EngineService : Service() {
             if (runTask("model", fileName) { AiModels.download(ctx, url, fileName) }) {
                 follow(callback)
             } else {
-                runCatching { callback.onDone("Another download is running") }
+                runCatching { callback.onDone(BUSY) }
             }
         }
 
@@ -213,4 +215,9 @@ class EngineService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
+
+    companion object {
+        /** onDone() error when another background job is already running. */
+        const val BUSY = "busy"
+    }
 }

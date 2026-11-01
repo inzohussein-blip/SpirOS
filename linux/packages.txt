@@ -8,6 +8,9 @@ onboard
 fonts-dejavu-core
 fonts-noto-core
 fonts-noto-ui-core
+# Linux Mint look (Mint-Y theme and icons, packaged by Ubuntu/Debian)
+mint-themes
+mint-y-icons
 # Base tools
 sudo
 locales
