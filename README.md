@@ -5,7 +5,7 @@
 *Your second, isolated space on Android: sandboxed apps, an encrypted vault, tracker-free browsing and an experimental VM engine. No root required.*
 
 - 🗺️ خريطة الطريق: [`docs/ROADMAP.md`](docs/ROADMAP.md)
-- 📦 تحميل آخر نسخة مباشرة: [SpirOS.apk](https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/SpirOS.apk) (أندرويد 11 وما بعده، والأفضل 14+)
+- 📦 تحميل آخر نسخة مباشرة: [SpirOS.apk](https://github.com/inzohussein-blip/SpirOS/releases/latest/download/SpirOS.apk) (أندرويد 11 وما بعده، والأفضل 14+)
 
 ## البناء
 

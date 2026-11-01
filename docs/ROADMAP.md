@@ -272,7 +272,7 @@ app/src/main/
 ## كيف تجرّب كل نسخة (من الهاتف فقط)
 
 **الأسهل:** رابط مباشر لآخر نسخة، بدون فك ضغط:
-https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/SpirOS.apk
+https://github.com/inzohussein-blip/SpirOS/releases/latest/download/SpirOS.apk
 
 أو من صفحة Actions:
 

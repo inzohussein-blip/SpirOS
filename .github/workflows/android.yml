@@ -92,27 +92,27 @@ jobs:
 
       # A direct .apk link that opens on a phone (Actions artifacts are always zipped):
       # https://github.com/<owner>/<repo>/releases/download/dev-latest/SpirOS.apk
-      - name: Publish APK to the dev-latest pre-release
+      - name: Publish APK as the latest release
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           FILES="SpirOS.apk SpirOS-Engine.apk SpirOS-Engine.apk.sha256 SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256"
           NOTES="نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. ثبّت SpirOS.apk فقط. محرك لينكس والذكاء الاصطناعي (SpirOS-Engine) يثبّته SpirOS بنفسه من داخل التطبيق عند أول استخدام بعد التحقق من بصمته وتوقيعه."
-          # Update the release in place (the download links never disappear), with
-          # retries for GitHub's occasional refusals.
-          for attempt in 1 2 3 4 5; do
-            if gh release view dev-latest >/dev/null 2>&1; then
-              gh release upload dev-latest $FILES --clobber &&
-                gh release edit dev-latest --prerelease --notes "$NOTES" && exit 0
-            else
-              gh release create dev-latest $FILES --prerelease --target "${{ github.sha }}" \
-                --title "SpirOS – آخر نسخة تجريبية" --notes "$NOTES" && exit 0
-            fi
-            echo "publish attempt $attempt failed; retrying"
+          # Each build is a new release marked "latest" (published releases may be
+          # immutable, so a tag is never reused). Stable links for people and the app:
+          # https://github.com/<owner>/<repo>/releases/latest/download/SpirOS.apk
+          TAG="build-${{ github.run_number }}-${{ github.run_attempt }}"
+          for attempt in 1 2 3; do
+            gh release create "$TAG" $FILES --latest --target "${{ github.sha }}" \
+              --title "SpirOS – build ${{ github.run_number }}" --notes "$NOTES" && break
+            [ $attempt = 3 ] && exit 1
             sleep $((attempt * 20))
           done
-          exit 1
+          # Keep the 3 newest builds.
+          gh release list --limit 100 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("build-"))] | sort_by(.createdAt) | reverse | .[3:] | .[].tagName' |
+            while read -r old; do gh release delete "$old" --yes || true; done
 
   # Fast check of the guest itself (Alpine URLs, kernel arguments, devices) with the
   # distribution's QEMU, using the same script as the in-app definition.

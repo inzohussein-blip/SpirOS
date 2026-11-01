@@ -26,7 +26,7 @@ import java.security.MessageDigest
  * (so a tampered or foreign APK is never installed, whatever the download path).
  */
 object EngineInstaller {
-    private const val BASE = "https://github.com/inzohussein-blip/SpirOS/releases/download/dev-latest/"
+    private const val BASE = "https://github.com/inzohussein-blip/SpirOS/releases/latest/download/"
 
     sealed interface State {
         data object Idle : State
