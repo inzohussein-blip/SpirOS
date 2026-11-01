@@ -26,7 +26,8 @@ cd "$HOME" || cd /
 # ---- which desktop ----
 DESKTOP=$(cat /etc/spiros-desktop 2>/dev/null)
 if [ -z "$DESKTOP" ]; then
-    if command -v cinnamon-session >/dev/null; then DESKTOP=cinnamon
+    if command -v tint2 >/dev/null && command -v openbox >/dev/null; then DESKTOP=spiros
+    elif command -v cinnamon-session >/dev/null; then DESKTOP=cinnamon
     elif command -v mate-session >/dev/null; then DESKTOP=mate
     elif command -v xfce4-session >/dev/null; then DESKTOP=xfce
     fi
@@ -79,6 +80,9 @@ for a in xfce4-power-manager xscreensaver xfce4-screensaver light-locker at-spi-
 done
 [ "${SPIROS_LIGHT:-1}" = 1 ] && export GTK_A11Y=none
 
+# SpirOS Linux is drawn for touch: slightly larger text than a desktop.
+if [ "$DESKTOP" = spiros ] && [ "${SPIROS_DPI:-120}" -lt 140 ]; then SPIROS_DPI=140; fi
+
 # Cinnamon needs OpenGL: on a phone it is drawn by the CPU (Mesa llvmpipe).
 if [ "$DESKTOP" = cinnamon ]; then
     export LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
@@ -97,13 +101,14 @@ while [ ! -S /tmp/.X11-unix/X1 ] && [ $i -lt 50 ]; do sleep 0.2; i=$((i + 1)); d
 # ---- single-app mode: one program and a window manager, no desktop ----
 if [ "${SPIROS_SESSION:-desktop}" = app ]; then
     WM=""
-    for w in xfwm4 marco metacity; do command -v $w >/dev/null && WM=$w && break; done
+    for w in openbox xfwm4 marco metacity; do command -v $w >/dev/null && WM=$w && break; done
     APP="${SPIROS_APP:-x-terminal-emulator}"
     command -v "${APP%% *}" >/dev/null || APP=x-terminal-emulator
     exec dbus-launch --exit-with-session sh -c "${WM:+$WM &} exec $APP"
 fi
 
 case "$DESKTOP" in
+    spiros) exec dbus-launch --exit-with-session openbox-session ;;
     mate) exec dbus-launch --exit-with-session mate-session ;;
     cinnamon) exec dbus-launch --exit-with-session cinnamon-session --session cinnamon ;;
     *) exec dbus-launch --exit-with-session xfce4-session ;;

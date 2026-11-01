@@ -1,0 +1,3 @@
+#!/bin/sh
+# The app grid (like a phone's app drawer).
+exec rofi -show drun -theme /usr/share/spiros/apps.rasi -show-icons -drun-display-format "{name}"

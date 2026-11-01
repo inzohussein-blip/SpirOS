@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MetaTrader 5
+Name[ar]=ميتاتريدر 5
+Comment=Trading platform (Windows) through Wine
+Exec=lxterminal -t "MetaTrader 5" -e spiros-mt5
+Icon=/usr/share/spiros/mt5.png
+Categories=Office;Finance;

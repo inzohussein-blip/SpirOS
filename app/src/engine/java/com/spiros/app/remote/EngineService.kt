@@ -53,9 +53,9 @@ class EngineService : Service() {
             .toString()
 
         // ---- Linux system ----
-        /** Default system (Mint Xfce), reporting to [callback] until it ends. */
+        /** Default system (SpirOS Linux), reporting to [callback] until it ends. */
         override fun installLinux(callback: IEngineCallback) {
-            installDistro("xfce", null, null, null)
+            installDistro("spiros", null, null, null)
             follow(callback)
         }
 

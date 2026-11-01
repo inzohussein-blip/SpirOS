@@ -1,0 +1,108 @@
+# SpirOS Linux bottom bar: Apps · running apps · keyboard · clock · close.
+# Backgrounds: 1 = bar glass, 2 = idle task, 3 = active task, 4 = round button
+rounded = 0
+border_width = 0
+background_color = #0d0e16 92
+border_color = #2b2a48 100
+background_color_hover = #0d0e16 92
+background_color_pressed = #0d0e16 92
+
+rounded = 16
+border_width = 0
+background_color = #1a1b2b 0
+border_color = #000000 0
+background_color_hover = #1a1b2b 100
+background_color_pressed = #2a2b44 100
+
+rounded = 16
+border_width = 1
+background_color = #7c5cff 45
+border_color = #7c5cff 100
+background_color_hover = #7c5cff 60
+background_color_pressed = #7c5cff 75
+
+rounded = 18
+border_width = 0
+background_color = #1a1b2b 100
+border_color = #000000 0
+background_color_hover = #2a2b44 100
+background_color_pressed = #7c5cff 70
+
+panel_items = BTBCB
+panel_size = 100% 72
+panel_margin = 0 0
+panel_padding = 12 8 10
+panel_background_id = 1
+panel_position = bottom center horizontal
+panel_layer = top
+panel_monitor = all
+autohide = 0
+strut_policy = follow_size
+wm_menu = 0
+panel_dock = 0
+disable_transparency = 0
+mouse_effects = 1
+font_shadow = 0
+
+# Apps (the app grid)
+button = new
+button_icon = /usr/share/spiros/apps.png
+button_padding = 10 8
+button_background_id = 4
+button_lclick_command = spiros-apps
+button_max_icon_size = 34
+button_tooltip = Apps
+
+taskbar_mode = single_desktop
+taskbar_padding = 10 0 10
+taskbar_background_id = 0
+taskbar_active_background_id = 0
+taskbar_name = 0
+task_icon = 1
+task_text = 0
+task_centered = 1
+task_maximum_size = 64 56
+task_padding = 10 6 4
+task_background_id = 2
+task_active_background_id = 3
+task_urgent_background_id = 3
+task_iconified_background_id = 2
+task_icon_asb = 100 0 0
+task_active_icon_asb = 100 0 0
+mouse_left = toggle_iconify
+mouse_middle = close
+mouse_right = close
+mouse_scroll_up = prev_task
+mouse_scroll_down = next_task
+
+# Keyboard
+button = new
+button_icon = /usr/share/spiros/keyboard.png
+button_padding = 10 8
+button_background_id = 4
+button_lclick_command = spiros-keyboard
+button_max_icon_size = 30
+button_tooltip = Keyboard
+
+time1_format = %H:%M
+time2_format = %a %d %b
+time1_font = Noto Sans Bold 13
+time2_font = Noto Sans 9
+clock_font_color = #e9e7f5 100
+clock_padding = 14 0
+clock_background_id = 0
+
+# Close the app on screen
+button = new
+button_icon = /usr/share/spiros/close.png
+button_padding = 10 8
+button_background_id = 4
+button_lclick_command = wmctrl -c :ACTIVE:
+button_max_icon_size = 30
+button_tooltip = Close app
+
+tooltip_show_timeout = 0.6
+tooltip_hide_timeout = 0.1
+tooltip_padding = 8 6
+tooltip_background_id = 4
+tooltip_font_color = #e9e7f5 100

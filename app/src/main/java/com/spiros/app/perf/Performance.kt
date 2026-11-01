@@ -10,7 +10,7 @@ object Performance {
     enum class Session { DESKTOP, SINGLE_APP }
 
     /** Programs offered for single-app mode (command inside Linux). */
-    val SINGLE_APPS = listOf("x-terminal-emulator", "thunar", "caja", "nemo", "mousepad", "pluma")
+    val SINGLE_APPS = listOf("x-terminal-emulator", "pcmanfm", "thunar", "caja", "nemo", "mousepad", "pluma", "spiros-mt5")
 
     val RESOLUTIONS = listOf("960x540", "1280x720", "1600x900", "1920x1080")
     val FPS_OPTIONS = listOf(15, 30, 60)

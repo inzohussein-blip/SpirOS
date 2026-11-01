@@ -1,0 +1,52 @@
+/* SpirOS Linux app grid: large rounded tiles on a dark glass sheet. */
+* {
+    bg:       #0d0e16ee;
+    card:     #1a1b2bdd;
+    fg:       #e9e7f5;
+    muted:    #9a98b8;
+    accent:   #7c5cff;
+    glow:     #3ddc97;
+    font:     "Noto Sans 13";
+    background-color: transparent;
+    text-color: @fg;
+}
+window {
+    width: 92%;
+    height: 82%;
+    location: center;
+    anchor: center;
+    border-radius: 28px;
+    background-color: @bg;
+    border: 1px;
+    border-color: #2b2a48;
+    padding: 28px;
+}
+mainbox { spacing: 22px; children: [ inputbar, listview ]; }
+inputbar {
+    background-color: @card;
+    border-radius: 18px;
+    padding: 14px 18px;
+    spacing: 12px;
+    children: [ prompt, entry ];
+}
+prompt { text-color: @accent; }
+entry { placeholder: "Search apps"; placeholder-color: @muted; }
+listview {
+    columns: 4;
+    lines: 4;
+    spacing: 14px;
+    fixed-columns: true;
+    cycle: false;
+    dynamic: true;
+    layout: vertical;
+}
+element {
+    orientation: vertical;
+    padding: 16px 8px;
+    spacing: 10px;
+    border-radius: 22px;
+    background-color: @card;
+}
+element selected { background-color: #7c5cff55; border: 1px; border-color: @accent; }
+element-icon { size: 64px; horizontal-align: 0.5; }
+element-text { horizontal-align: 0.5; vertical-align: 0.5; text-color: inherit; }

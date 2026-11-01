@@ -432,4 +432,6 @@
     <string name="space_repair_desc">Your phone did not let SpirOS finish setting up inside the space, so commands cannot reach it. Repair opens SpirOS inside the space for a second to complete it; then approve the connection that appears here.</string>
     <string name="space_repair">Repair the space</string>
     <string name="space_repair_failed">SpirOS could not be started inside the space. Delete the space from system settings (Accounts → Work → Remove) and create it again with this version.</string>
+    <string name="distro_spiros">SpirOS Linux</string>
+    <string name="distro_spiros_desc">Our own light system made for the phone: every app full screen, a big bottom bar, an app grid with large icons, and the essentials (files, terminal, editor, images, PDF, archives, Python, AI). MetaTrader 5 opens from the app grid.</string>
 </resources>

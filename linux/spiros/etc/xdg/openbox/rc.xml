@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SpirOS Linux: every app opens full screen without a title bar, like a phone app.
+     Switch apps from the bottom bar; close one with its ✕ button. -->
+<openbox_config xmlns="http://openbox.org/3.4/rc">
+  <resistance><strength>10</strength><screen_edge_strength>20</screen_edge_strength></resistance>
+  <focus><focusNew>yes</focusNew><followMouse>no</followMouse></focus>
+  <placement><policy>Smart</policy><center>yes</center></placement>
+  <theme>
+    <name>Clearlooks</name>
+    <titleLayout>NLC</titleLayout>
+    <keepBorder>no</keepBorder>
+    <animateIconify>no</animateIconify>
+    <font place="ActiveWindow"><name>Noto Sans</name><size>11</size><weight>Bold</weight></font>
+  </theme>
+  <desktops><number>1</number></desktops>
+  <margins><top>0</top><bottom>0</bottom><left>0</left><right>0</right></margins>
+  <keyboard>
+    <keybind key="W-space"><action name="Execute"><command>spiros-apps</command></action></keybind>
+    <keybind key="A-F4"><action name="Close"/></keybind>
+    <keybind key="A-Tab"><action name="NextWindow"><finalactions><action name="Focus"/><action name="Raise"/></finalactions></action></keybind>
+  </keyboard>
+  <mouse>
+    <context name="Root">
+      <mousebind button="Right" action="Press"><action name="Execute"><command>spiros-apps</command></action></mousebind>
+    </context>
+  </mouse>
+  <applications>
+    <application class="*" type="normal"><decor>no</decor><maximized>yes</maximized></application>
+    <application class="Onboard"><decor>no</decor><maximized>no</maximized><layer>above</layer><focus>no</focus></application>
+    <application type="dialog"><decor>yes</decor><maximized>no</maximized></application>
+  </applications>
+</openbox_config>

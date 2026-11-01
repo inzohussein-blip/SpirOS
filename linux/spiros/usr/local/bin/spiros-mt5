@@ -1,0 +1,46 @@
+#!/bin/sh
+# MetaTrader 5 on SpirOS Linux. The first run downloads Wine (once, ~80 MB) and the
+# official MT5 installer from MetaQuotes; later runs open MT5 directly.
+# ARM phones run the Windows (x86-64) program through Box64; x86-64 phones run Wine
+# directly.
+set -u
+WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz"
+MT5_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+BASE="$HOME/.local/share/spiros"
+WINEDIR="$BASE/wine"
+export WINEPREFIX="$BASE/mt5"
+export WINEDEBUG=-all WINEARCH=win64
+export BOX64_LOG=0 BOX64_NOBANNER=1 BOX64_DYNAREC_BIGBLOCK=1
+mkdir -p "$BASE"
+
+RUN=""
+if [ "$(uname -m)" = aarch64 ]; then
+    if ! command -v box64 >/dev/null; then
+        echo "Box64 is missing in this system: MT5 needs SpirOS Linux for ARM."; read -r _; exit 1
+    fi
+    RUN=box64
+fi
+
+if [ ! -x "$WINEDIR/bin/wine" ]; then
+    echo "== Downloading Wine (one time) =="
+    mkdir -p "$WINEDIR.part"
+    if ! curl -fL --progress-bar "$WINE_URL" | tar -xJ -C "$WINEDIR.part" --strip-components=1; then
+        echo "Download failed. Check the connection and open MetaTrader 5 again."; rm -rf "$WINEDIR.part"; read -r _; exit 1
+    fi
+    rm -rf "$WINEDIR"; mv "$WINEDIR.part" "$WINEDIR"
+fi
+WINE="$WINEDIR/bin/wine"
+
+TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
+if [ -z "$TERMINAL" ]; then
+    echo "== Preparing the Windows environment (one time, a few minutes) =="
+    $RUN "$WINE" wineboot -u
+    echo "== Downloading the MetaTrader 5 installer =="
+    curl -fL --progress-bar -o "$BASE/mt5setup.exe" "$MT5_URL" || { echo "Download failed."; read -r _; exit 1; }
+    echo "== Installing MetaTrader 5: follow the installer window =="
+    $RUN "$WINE" "$BASE/mt5setup.exe"
+    TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
+    [ -n "$TERMINAL" ] || { echo "MT5 was not installed."; read -r _; exit 1; }
+fi
+echo "== Starting MetaTrader 5 =="
+exec $RUN "$WINE" "$TERMINAL"

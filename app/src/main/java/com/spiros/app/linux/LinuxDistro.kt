@@ -25,7 +25,7 @@ object LinuxDistro {
     private const val MARKER = ".spiros-installed"
 
     /** Desktops built by SpirOS, plus [CUSTOM] for the user's own system. */
-    val DESKTOPS = listOf("xfce", "mate", "cinnamon")
+    val DESKTOPS = listOf("spiros", "xfce", "mate", "cinnamon")
     const val CUSTOM = "custom"
 
     enum class Stage { DOWNLOADING, COPYING, VERIFYING, EXTRACTING, FINISHING }

@@ -170,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # The Linux systems are built by linux-rootfs.yml (often in the same push):
-      # wait until the default one (Mint Xfce, amd64) is published.
+      # wait until the default one (SpirOS Linux, amd64) is published.
       - name: Wait for the Linux system image
         env:
           GH_TOKEN: ${{ github.token }}
@@ -180,7 +180,7 @@ jobs:
             # downloads one while it is being replaced.
             busy=$(gh run list -R "$GITHUB_REPOSITORY" --workflow linux-rootfs.yml --branch "$GITHUB_REF_NAME" \
               --json status --jq '[.[] | select(.status != "completed")] | length' 2>/dev/null || echo 0)
-            if [ "$busy" = 0 ] && gh release view linux-rootfs -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx 'ubuntu-xfce-amd64.tar.xz.sha256'; then
+            if [ "$busy" = 0 ] && gh release view linux-rootfs -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null | grep -qx 'ubuntu-spiros-amd64.tar.xz.sha256'; then
               echo "image published"; exit 0
             fi
             sleep 60

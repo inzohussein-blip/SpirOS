@@ -432,4 +432,6 @@
     <string name="space_repair_desc">هاتفك لم يسمح لـ SpirOS بإكمال إعداده داخل المساحة، لذلك لا تصلها الأوامر. زر الإصلاح يفتح SpirOS داخل المساحة لثانية ليكمل الإعداد؛ ثم وافق على الربط الذي سيظهر هنا.</string>
     <string name="space_repair">إصلاح المساحة</string>
     <string name="space_repair_failed">تعذّر تشغيل SpirOS داخل المساحة. احذف المساحة من إعدادات النظام (الحسابات ← العمل ← إزالة) ثم أنشئها من جديد بهذه النسخة.</string>
+    <string name="distro_spiros">SpirOS Linux</string>
+    <string name="distro_spiros_desc">نظامنا الخفيف المصمم للهاتف: كل تطبيق بملء الشاشة، وشريط سفلي كبير، وشبكة تطبيقات بأيقونات كبيرة، مع الأساسيات (ملفات، طرفية، محرر، صور، PDF، أرشيف، بايثون، ذكاء اصطناعي). ويُفتح MetaTrader 5 من شبكة التطبيقات.</string>
 </resources>

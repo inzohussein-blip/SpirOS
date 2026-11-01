@@ -9,6 +9,7 @@ DESKTOP="$2"
 OUT="$3"
 SUITE=noble
 LLAMA_TAG=b6000
+BOX64_TAG=v0.3.4
 MINT_SUITE=wilma
 if [ "$ARCH" = amd64 ]; then MIRROR=http://archive.ubuntu.com/ubuntu; SECURITY=http://security.ubuntu.com/ubuntu
 else MIRROR=http://ports.ubuntu.com/ubuntu-ports; SECURITY=$MIRROR; fi
@@ -181,6 +182,43 @@ default-layout='linuxmint'
 OV
     chroot "$ROOT" glib-compile-schemas /usr/share/glib-2.0/schemas
     ;;
+spiros)
+    # SpirOS Linux shell: Openbox + tint2 + rofi with our own look.
+    cp -a "$HERE/spiros/." "$ROOT/"
+    mkdir -p "$ROOT/usr/share/backgrounds"
+    python3 "$HERE/spiros/usr/share/spiros/make-wallpaper.py" "$ROOT/usr/share/backgrounds/spiros.png"
+    rm -f "$ROOT/usr/share/spiros/make-wallpaper.py"
+    for icon in apps keyboard close mt5; do
+        rsvg-convert -w 128 -h 128 "$ROOT/usr/share/spiros/$icon.svg" -o "$ROOT/usr/share/spiros/$icon.png"
+    done
+    mkdir -p "$ROOT/etc/gtk-3.0" "$ROOT/etc/xdg/lxterminal"
+    cat > "$ROOT/etc/gtk-3.0/settings.ini" <<INI
+[Settings]
+gtk-theme-name=${GTK:-Adwaita-dark}
+gtk-icon-theme-name=${ICONS:-Adwaita}
+gtk-font-name=Noto Sans 11
+gtk-application-prefer-dark-theme=1
+gtk-cursor-theme-size=32
+INI
+    printf 'gtk-theme-name="%s"\ngtk-icon-theme-name="%s"\ngtk-font-name="Noto Sans 11"\n' "${GTK:-Adwaita}" "${ICONS:-Adwaita}" > "$ROOT/etc/gtk-2.0/gtkrc" 2>/dev/null || true
+    cat > "$ROOT/etc/xdg/lxterminal/lxterminal.conf" <<'CONF'
+[general]
+fontname=Monospace 12
+bgcolor=rgb(13,14,22)
+fgcolor=rgb(233,231,245)
+palette_color_4=rgb(124,92,255)
+palette_color_2=rgb(61,220,151)
+scrollback=4000
+hidescrollbar=true
+hidemenubar=true
+hideclosebutton=true
+CONF
+    # Keep the app grid to the apps people use.
+    mkdir -p "$ROOT/usr/local/share/applications"
+    for d in tint2 tint2conf openbox obconf onboard-settings rofi rofi-theme-selector python3.12 lxterminal-preferences pcmanfm-desktop-pref gnome-icon-theme yelp; do
+        printf '[Desktop Entry]\nType=Application\nName=%s\nNoDisplay=true\n' "$d" > "$ROOT/usr/local/share/applications/$d.desktop"
+    done
+    ;;
 cinnamon)
     cat > "$ROOT/usr/share/glib-2.0/schemas/99_spiros.gschema.override" <<OV
 [org.cinnamon.desktop.interface]
@@ -196,6 +234,19 @@ OV
     chroot "$ROOT" glib-compile-schemas /usr/share/glib-2.0/schemas
     ;;
 esac
+
+# MetaTrader 5 on ARM phones: Box64 runs Windows x86-64 programs (Wine) on ARM64.
+if [ "$DESKTOP" = spiros ] && [ "$ARCH" = arm64 ]; then
+    chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
+        set -e
+        apt-get install -y --no-install-recommends build-essential cmake python3
+        git clone --depth 1 --branch $BOX64_TAG https://github.com/ptitSeb/box64 /tmp/box64
+        cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        cmake --build /tmp/box64/build -j\$(nproc)
+        cmake --install /tmp/box64/build
+        rm -rf /tmp/box64
+        box64 --version"
+fi
 
 # Local AI: llama.cpp's server and CLI, built from a pinned release for a generic CPU
 # of this architecture (works on older phone cores without dotprod).
@@ -229,7 +280,7 @@ date -u +%Y-%m-%dT%H:%MZ > "$ROOT/etc/spiros-build"
 
 # Summary at the end of the CI log: what this image really contains.
 echo "== SpirOS image: $DESKTOP $ARCH"
-for b in Xvnc xfce4-session mate-session cinnamon-session llama-server; do
+for b in Xvnc xfce4-session mate-session cinnamon-session openbox tint2 rofi box64 llama-server; do
     if chroot "$ROOT" sh -c "command -v $b" >/dev/null 2>&1; then echo "   has $b"; else echo "   (no $b)"; fi
 done
 echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}  (Mint look $MINT_NOTE)"

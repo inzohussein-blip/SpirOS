@@ -1,0 +1,31 @@
+# SpirOS Linux: a light shell made for a phone screen (touch, big icons, one app
+# full screen at a time), built on Openbox + tint2 + rofi.
+openbox
+tint2
+rofi
+feh
+wmctrl
+xdotool
+# Essential apps
+pcmanfm
+lxterminal
+mousepad
+gpicview
+zathura
+xarchiver
+p7zip-full
+unrar
+# MetaTrader 5 support (Wine runs through Box64 on ARM phones)
+cabextract
+libfreetype6
+libfontconfig1
+libgnutls30t64
+libxrandr2
+libxinerama1
+libxcursor1
+libxcomposite1
+libxi6
+libgl1
+# Desktop integration
+gnome-icon-theme
+adwaita-icon-theme

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Show or hide the on-screen keyboard.
+if pgrep -x onboard >/dev/null; then pkill -x onboard; else onboard --size=900x260 >/dev/null 2>&1 & fi

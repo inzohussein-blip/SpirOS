@@ -42,6 +42,7 @@ import com.spiros.app.ai.AiModels
 private data class Choice(val id: String, val title: Int, val desc: Int, val sizeGb: String, val minRamGb: Int)
 
 private val CHOICES = listOf(
+    Choice("spiros", R.string.distro_spiros, R.string.distro_spiros_desc, "0.2", 3),
     Choice("xfce", R.string.distro_xfce, R.string.distro_xfce_desc, "0.22", 3),
     Choice("mate", R.string.distro_mate, R.string.distro_mate_desc, "0.3", 4),
     Choice("cinnamon", R.string.distro_cinnamon, R.string.distro_cinnamon_desc, "0.3", 8),
@@ -51,6 +52,7 @@ private val CHOICES = listOf(
 /** Human name of an installed system id. */
 @Composable
 fun distroName(id: String) = when (id) {
+    "spiros" -> stringResource(R.string.distro_spiros)
     "xfce" -> stringResource(R.string.distro_xfce)
     "mate" -> stringResource(R.string.distro_mate)
     "cinnamon" -> stringResource(R.string.distro_cinnamon)
@@ -70,7 +72,7 @@ fun DistroChooser(
 ) {
     val context = LocalContext.current
     val ram = remember { AiModels.phoneRamGb(context) }
-    var selected by remember { mutableStateOf("xfce") }
+    var selected by remember { mutableStateOf("spiros") }
     var fromFile by remember { mutableStateOf(false) }
     var url by remember { mutableStateOf("") }
     var sha by remember { mutableStateOf("") }
@@ -93,7 +95,7 @@ fun DistroChooser(
                         RadioButton(selected = selected == c.id, onClick = { selected = c.id })
                         Column(Modifier.weight(1f)) {
                             Text(
-                                stringResource(c.title) + if (c.id == "xfce") "  · " + stringResource(R.string.distro_recommended) else "",
+                                stringResource(c.title) + if (c.id == "spiros") "  · " + stringResource(R.string.distro_recommended) else "",
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Text(stringResource(c.desc), style = MaterialTheme.typography.bodySmall)

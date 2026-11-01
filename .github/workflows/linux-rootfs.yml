@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        desktop: [xfce, mate, cinnamon]
+        desktop: [spiros, xfce, mate, cinnamon]
         arch: [arm64, amd64]
         include:
           - arch: arm64
@@ -49,7 +49,7 @@ jobs:
       - name: Build rootfs (${{ matrix.desktop }}, ${{ matrix.arch }})
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends debootstrap xz-utils ubuntu-keyring
+          sudo apt-get install -y --no-install-recommends debootstrap xz-utils ubuntu-keyring librsvg2-bin
           sudo sh linux/build-rootfs.sh ${{ matrix.arch }} ${{ matrix.desktop }} "$PWD/$NAME"
           sha256sum "$NAME" | tee "$NAME.sha256"
           # Size shown in SpirOS before downloading.
