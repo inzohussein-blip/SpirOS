@@ -4,6 +4,7 @@ openbox
 tint2
 rofi
 feh
+conky-std
 wmctrl
 python3-xdg
 xdotool

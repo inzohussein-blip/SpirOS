@@ -1,3 +1,4 @@
 # SpirOS Linux session: wallpaper, then the bottom bar.
 feh --no-fehbg --bg-fill /usr/share/backgrounds/spiros.png &
 tint2 -c /etc/xdg/tint2/tint2rc &
+conky -c /etc/xdg/conky/spiros.conf &

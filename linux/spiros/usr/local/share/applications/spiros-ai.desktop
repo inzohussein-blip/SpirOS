@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AI Chat
+Name[ar]=الذكاء الاصطناعي
+Exec=lxterminal -t 'AI Chat' -e spiros-ai
+Icon=/usr/share/spiros/ai.png
+Categories=Utility;

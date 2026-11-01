@@ -20,6 +20,9 @@ window {
     border: 1px;
     border-color: #2b2a48;
     padding: 28px;
+    /* No compositor in a phone session: blend with a snapshot of the desktop so the
+       rounded corners and the glass sheet look right. */
+    transparency: "screenshot";
 }
 mainbox { spacing: 22px; children: [ inputbar, listview ]; }
 inputbar {
@@ -27,9 +30,9 @@ inputbar {
     border-radius: 18px;
     padding: 14px 18px;
     spacing: 12px;
-    children: [ prompt, entry ];
+    children: [ icon-search, entry ];
 }
-prompt { text-color: @accent; }
+icon-search { expand: false; filename: "system-search"; size: 22px; vertical-align: 0.5; }
 entry { placeholder: "Search apps"; placeholder-color: @muted; }
 listview {
     columns: 4;
@@ -39,6 +42,7 @@ listview {
     cycle: false;
     dynamic: true;
     layout: vertical;
+    flow: horizontal;
 }
 element {
     orientation: vertical;

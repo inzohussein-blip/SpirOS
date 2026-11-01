@@ -28,7 +28,7 @@ border_color = #000000 0
 background_color_hover = #2a2b44 100
 background_color_pressed = #7c5cff 70
 
-panel_items = BTBCB
+panel_items = PLTPCP
 panel_size = 100% 72
 panel_margin = 0 0
 panel_padding = 12 8 10
@@ -52,6 +52,19 @@ button_background_id = 4
 button_lclick_command = spiros-apps
 button_max_icon_size = 34
 button_tooltip = Apps
+
+# Pinned apps (like a phone dock)
+launcher_padding = 6 4 8
+launcher_background_id = 0
+launcher_icon_background_id = 4
+launcher_icon_size = 44
+launcher_icon_theme = Mint-Y-Aqua
+launcher_icon_theme_override = 0
+launcher_tooltip = 1
+launcher_item_app = /usr/local/share/applications/pcmanfm.desktop
+launcher_item_app = /usr/local/share/applications/lxterminal.desktop
+launcher_item_app = /usr/share/applications/spiros-mt5.desktop
+launcher_item_app = /usr/local/share/applications/spiros-ai.desktop
 
 taskbar_mode = single_desktop
 taskbar_padding = 10 0 10

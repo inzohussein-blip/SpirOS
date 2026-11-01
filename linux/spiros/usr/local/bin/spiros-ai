@@ -1,0 +1,7 @@
+#!/bin/sh
+# Chat with a downloaded model in the terminal (models are managed from SpirOS > AI).
+MODEL=$(ls /root/models/*.gguf "$HOME"/models/*.gguf 2>/dev/null | head -n 1)
+if [ -z "$MODEL" ]; then
+    echo "No AI model yet. Download one in SpirOS > AI, then open this again."; read -r _; exit 0
+fi
+exec llama-cli -m "$MODEL" -cnv -t "$(nproc)" --color

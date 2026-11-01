@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+Name[ar]=الملفات
+Exec=pcmanfm %U
+Icon=system-file-manager
+Categories=System;FileManager;

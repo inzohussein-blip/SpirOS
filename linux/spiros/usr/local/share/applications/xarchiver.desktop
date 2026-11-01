@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Archives
+Name[ar]=الأرشيف
+Exec=xarchiver %f
+Icon=package-x-generic
+Categories=Utility;Archiving;

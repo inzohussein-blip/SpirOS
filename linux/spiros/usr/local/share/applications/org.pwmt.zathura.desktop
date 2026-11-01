@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=PDF Reader
+Name[ar]=قارئ PDF
+Exec=zathura %f
+Icon=/usr/share/spiros/pdf.png
+Categories=Office;Viewer;

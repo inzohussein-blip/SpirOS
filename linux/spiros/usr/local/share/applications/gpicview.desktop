@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Images
+Name[ar]=الصور
+Exec=gpicview %f
+Icon=image-viewer
+Categories=Graphics;Viewer;

@@ -188,7 +188,7 @@ spiros)
     mkdir -p "$ROOT/usr/share/backgrounds"
     python3 "$HERE/spiros/usr/share/spiros/make-wallpaper.py" "$ROOT/usr/share/backgrounds/spiros.png"
     rm -f "$ROOT/usr/share/spiros/make-wallpaper.py"
-    for icon in apps keyboard close mt5; do
+    for icon in apps keyboard close mt5 pdf ai; do
         rsvg-convert -w 128 -h 128 "$ROOT/usr/share/spiros/$icon.svg" -o "$ROOT/usr/share/spiros/$icon.png"
     done
     mkdir -p "$ROOT/etc/gtk-3.0" "$ROOT/etc/xdg/lxterminal"
@@ -215,7 +215,7 @@ hideclosebutton=true
 CONF
     # Keep the app grid to the apps people use.
     mkdir -p "$ROOT/usr/local/share/applications"
-    for d in tint2 tint2conf openbox obconf onboard-settings rofi rofi-theme-selector python3.12 lxterminal-preferences pcmanfm-desktop-pref gnome-icon-theme yelp; do
+    for d in tint2 tint2conf openbox obconf onboard onboard-settings rofi rofi-theme-selector python3.12 lxterminal-preferences pcmanfm-desktop-pref gnome-icon-theme yelp org.xfce.mousepad-settings conky debian-uxterm debian-xterm; do
         printf '[Desktop Entry]\nType=Application\nName=%s\nNoDisplay=true\n' "$d" > "$ROOT/usr/local/share/applications/$d.desktop"
     done
     ;;
