@@ -143,4 +143,19 @@
     <string name="lab_graphics">Graphical display</string>
     <string name="lab_tab_screen">Screen</string>
     <string name="lab_tab_terminal">Terminal</string>
+    <string name="other_explainer">Android allows only one work profile, and only the app that created it (or you, in system Settings) can delete or manage it. SpirOS cannot take it over, but it can show what it is, open its apps, and take you to where it is removed. Once it is gone, come back here and the Create button will appear.</string>
+    <string name="other_type_work">Existing work profile</string>
+    <string name="other_type_clone">App twins / clone profile</string>
+    <string name="other_type_private">Private space</string>
+    <string name="other_type_unknown">Existing profile</string>
+    <string name="other_owner">Managed by: %1$s</string>
+    <string name="other_owner_old_spiros">Created by an earlier SpirOS install. Its pairing key was lost when SpirOS was reinstalled, so it must be removed and created again.</string>
+    <string name="other_owner_unknown">Its managing app could not be identified (it may be a company or system profile).</string>
+    <string name="other_apps">Apps inside (%1$d), tap to open:</string>
+    <string name="other_remove_steps_work">To remove it: Settings › Accounts (or Passwords &amp; accounts) › Work › Remove work profile. On some phones: Settings › Users &amp; accounts › Work profile.</string>
+    <string name="other_remove_steps_clone">To remove it: Settings › Apps › App twin (or Dual apps / Clone apps) and turn the clones off.</string>
+    <string name="other_remove_steps_private">To remove it: Settings › Security &amp; privacy › Private space › Delete private space.</string>
+    <string name="other_open_settings">Open system Settings</string>
+    <string name="other_open_owner">Open %1$s (remove it from there)</string>
+    <string name="other_pause">Pause this profile</string>
 </resources>

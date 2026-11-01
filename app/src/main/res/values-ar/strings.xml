@@ -143,4 +143,19 @@
     <string name="lab_graphics">العرض الرسومي</string>
     <string name="lab_tab_screen">الشاشة</string>
     <string name="lab_tab_terminal">الطرفية</string>
+    <string name="other_explainer">يسمح أندرويد بملف عمل واحد فقط، ولا يستطيع حذفه أو إدارته إلا التطبيق الذي أنشأه، أو أنت من إعدادات النظام. لا يستطيع SpirOS الاستيلاء عليه، لكنه يعرّفك به ويفتح تطبيقاته ويأخذك إلى مكان حذفه. بعد حذفه ارجع إلى هنا وسيظهر زر الإنشاء.</string>
+    <string name="other_type_work">ملف عمل موجود</string>
+    <string name="other_type_clone">نسخ التطبيقات المزدوجة (App Twin)</string>
+    <string name="other_type_private">المساحة الخاصة</string>
+    <string name="other_type_unknown">ملف موجود</string>
+    <string name="other_owner">يديره: %1$s</string>
+    <string name="other_owner_old_spiros">أنشأته نسخة سابقة من SpirOS. ضاع مفتاح الربط عند إعادة تثبيت التطبيق، لذلك يجب حذفه ثم إنشاؤه من جديد.</string>
+    <string name="other_owner_unknown">لم يُعرف التطبيق الذي يديره (قد يكون ملف شركة أو ملفًا من النظام).</string>
+    <string name="other_apps">التطبيقات بداخله (%1$d)، اضغط لفتحها:</string>
+    <string name="other_remove_steps_work">لحذفه: الإعدادات ← الحسابات (أو كلمات المرور والحسابات) ← العمل ← إزالة ملف العمل. في بعض الهواتف: الإعدادات ← المستخدمون والحسابات ← ملف العمل.</string>
+    <string name="other_remove_steps_clone">لحذفه: الإعدادات ← التطبيقات ← التطبيق المزدوج (App Twin أو Dual apps) ثم أوقف النسخ.</string>
+    <string name="other_remove_steps_private">لحذفها: الإعدادات ← الأمان والخصوصية ← المساحة الخاصة ← حذف المساحة الخاصة.</string>
+    <string name="other_open_settings">فتح إعدادات النظام</string>
+    <string name="other_open_owner">فتح %1$s (واحذفه من داخله)</string>
+    <string name="other_pause">إيقاف هذا الملف مؤقتًا</string>
 </resources>

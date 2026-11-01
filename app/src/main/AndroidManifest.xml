@@ -9,6 +9,15 @@
 
     <!-- Package visibility: list launchable apps in the main profile and in the space. -->
     <queries>
+        <!-- Recognise the admin app of an existing work profile. -->
+        <package android:name="net.typeblog.shelter" />
+        <package android:name="com.oasisfeng.island" />
+        <package android:name="com.oasisfeng.island.fdroid" />
+        <package android:name="com.google.android.apps.work.clouddpc" />
+        <package android:name="com.microsoft.windowsintune.companyportal" />
+        <package android:name="com.airwatch.androidagent" />
+        <package android:name="com.mobileiron" />
+        <package android:name="com.samsung.android.knox.containercore" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

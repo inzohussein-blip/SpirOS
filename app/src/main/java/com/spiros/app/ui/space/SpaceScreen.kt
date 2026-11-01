@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AcUnit
 import androidx.compose.material.icons.outlined.Add
@@ -71,8 +73,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private sealed interface SpaceState {
-    data class Unsupported(val reason: String) : SpaceState
-    data object Absent : SpaceState
+    data class Unsupported(val reason: String, val others: List<SpaceManager.OtherProfile>) : SpaceState
+    data class Absent(val others: List<SpaceManager.OtherProfile>) : SpaceState
     data class Paused(val user: UserHandle) : SpaceState
     data class Active(val user: UserHandle, val apps: List<SpaceManager.App>) : SpaceState
 }
@@ -178,22 +180,34 @@ fun SpaceScreen(vault: Vault, onBack: () -> Unit) {
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             when (current) {
                 null -> Centered { CircularProgressIndicator() }
-                is SpaceState.Unsupported -> Centered {
-                    Text(stringResource(R.string.space_intro), textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(16.dp))
+                is SpaceState.Unsupported -> Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     Text(
                         stringResource(R.string.space_unavailable) + "\n" + current.reason,
                         color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
                     )
-                    Spacer(Modifier.height(8.dp))
+                    if (current.others.isNotEmpty()) {
+                        Text(stringResource(R.string.other_explainer), style = MaterialTheme.typography.bodySmall)
+                        current.others.forEach { profile ->
+                            OtherProfileCard(
+                                profile = profile,
+                                space = space,
+                                onLeaveApp = { vault.holdLock = true },
+                                onChanged = { refresh++ },
+                            )
+                        }
+                    }
                     Text(
                         stringResource(R.string.compat_work_profile_fallback),
                         color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center,
                     )
                 }
-                SpaceState.Absent -> Centered {
+                is SpaceState.Absent -> Centered {
                     Text(stringResource(R.string.space_intro), textAlign = TextAlign.Center)
                     Spacer(Modifier.height(24.dp))
                     Button(
@@ -272,7 +286,8 @@ private fun loadState(context: android.content.Context, space: SpaceManager): Sp
     val user = space.spaceUser()
     if (user == null) {
         val check = DeviceCompat.workProfileCheck(context)
-        return if (check.level == DeviceCompat.Level.OK) SpaceState.Absent else SpaceState.Unsupported(check.detail)
+        val others = runCatching { space.otherProfiles() }.getOrDefault(emptyList())
+        return if (check.level == DeviceCompat.Level.OK) SpaceState.Absent(others) else SpaceState.Unsupported(check.detail, others)
     }
     if (space.isPaused(user)) return SpaceState.Paused(user)
     return SpaceState.Active(user, runCatching { space.spaceApps(user) }.getOrDefault(emptyList()))

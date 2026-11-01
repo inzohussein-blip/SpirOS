@@ -9,6 +9,7 @@ import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.os.Process
@@ -59,6 +60,61 @@ class SpaceManager(private val context: Context) {
             .map { it.toApp(badged = true) }
             .distinctBy { it.packageName }
             .sortedBy { it.label.lowercase() }
+
+    // ---- other profiles (not ours) ------------------------------------------------------
+
+    enum class ProfileType { WORK, CLONE, PRIVATE, UNKNOWN }
+
+    /** A profile on this phone that SpirOS does not own (e.g. Shelter, Island, a company, app twins). */
+    data class OtherProfile(
+        val user: UserHandle,
+        val type: ProfileType,
+        val paused: Boolean,
+        /** Display name of the app that most likely manages it, if recognised. */
+        val owner: String?,
+        val ownerPackage: String?,
+        /** Left behind by an earlier SpirOS install whose pairing key was lost. */
+        val isOldSpirOS: Boolean,
+        val apps: List<App>,
+    )
+
+    /**
+     * Android lets only a profile's own admin app (or the user, in Settings) delete or
+     * manage it. SpirOS can still identify it, list and open its apps, and pause it
+     * where the system allows.
+     */
+    fun otherProfiles(): List<OtherProfile> {
+        val me = Process.myUserHandle()
+        val ours = spaceUser()
+        return userManager.userProfiles.filter { it != me && it != ours }.map { user ->
+            val owner = KNOWN_ADMINS.entries.firstOrNull { (pkg, _) -> isInstalled(pkg, user) }
+            OtherProfile(
+                user = user,
+                type = profileType(user),
+                paused = runCatching { userManager.isQuietModeEnabled(user) }.getOrDefault(false),
+                owner = owner?.value,
+                ownerPackage = owner?.key,
+                isOldSpirOS = isInstalled(context.packageName, user),
+                apps = runCatching { spaceApps(user) }.getOrDefault(emptyList()),
+            )
+        }
+    }
+
+    fun setPaused(user: UserHandle, paused: Boolean): Boolean =
+        runCatching { userManager.requestQuietModeEnabled(paused, user) }.getOrDefault(false)
+
+    private fun isInstalled(pkg: String, user: UserHandle) =
+        runCatching { launcherApps.getApplicationInfo(pkg, 0, user) }.getOrNull() != null
+
+    private fun profileType(user: UserHandle): ProfileType {
+        if (Build.VERSION.SDK_INT < 35) return ProfileType.UNKNOWN
+        return when (runCatching { launcherApps.getLauncherUserInfo(user)?.userType }.getOrNull()) {
+            UserManager.USER_TYPE_PROFILE_MANAGED -> ProfileType.WORK
+            UserManager.USER_TYPE_PROFILE_CLONE -> ProfileType.CLONE
+            UserManager.USER_TYPE_PROFILE_PRIVATE -> ProfileType.PRIVATE
+            else -> ProfileType.UNKNOWN
+        }
+    }
 
     /** Apps on the main profile that are not yet in the space. */
     fun cloneCandidates(user: UserHandle): List<App> {
@@ -117,6 +173,19 @@ class SpaceManager(private val context: Context) {
     companion object {
         private const val PREFS = "space"
         private const val ICON_PX = 128
+
+        /** Admin apps that commonly create work profiles (also listed in <queries>). */
+        val KNOWN_ADMINS = linkedMapOf(
+            "com.spiros.app" to "SpirOS",
+            "net.typeblog.shelter" to "Shelter",
+            "com.oasisfeng.island" to "Island",
+            "com.oasisfeng.island.fdroid" to "Insular",
+            "com.google.android.apps.work.clouddpc" to "Android Device Policy",
+            "com.microsoft.windowsintune.companyportal" to "Intune Company Portal",
+            "com.airwatch.androidagent" to "Workspace ONE",
+            "com.mobileiron" to "MobileIron",
+            "com.samsung.android.knox.containercore" to "Knox",
+        )
 
         /** The copy of SpirOS inside the space must not answer commands meant for it from here. */
         fun configureComponents(context: Context) {
