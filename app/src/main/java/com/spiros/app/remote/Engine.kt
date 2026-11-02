@@ -214,7 +214,7 @@ object Engine {
     fun startDesktop(context: Context, geometry: String) {
         val single = Performance.linuxSession(context) == Performance.Session.SINGLE_APP
         startDesktop(
-            context, geometry, dpi = 120,
+            context, Performance.resolve(context, geometry), dpi = 120,
             light = Performance.linuxLight(context),
             singleApp = if (single) Performance.singleApp(context) else null,
             fps = Performance.linuxFps(context),

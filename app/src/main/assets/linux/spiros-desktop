@@ -92,7 +92,7 @@ fi
 Xvnc :1 \
     -geometry "${SPIROS_GEOMETRY:-1280x720}" -depth 24 -dpi "${SPIROS_DPI:-120}" \
     -rfbport -1 -rfbunixpath /tmp/spiros-vnc -rfbunixmode 0600 \
-    -SecurityTypes None -AlwaysShared -nolisten tcp ${GLX:-} &
+    -SecurityTypes None -AlwaysShared -nolisten tcp -FrameRate "${SPIROS_FPS:-30}" ${GLX:-} &
 
 # Wait for the X server before starting the session.
 i=0

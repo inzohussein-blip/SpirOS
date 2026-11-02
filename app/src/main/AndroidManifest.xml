@@ -26,6 +26,11 @@
 
     <!-- Package visibility: list launchable apps in the main profile and in the space. -->
     <queries>
+        <!-- The space's command channel: without this, Android 11+ hides the system's
+             cross-profile forwarder from SpirOS and commands are never sent. -->
+        <intent>
+            <action android:name="com.spiros.app.action.SPACE_COMMAND" />
+        </intent>
         <!-- The SpirOS Engine (Linux + private AI helper). -->
         <package android:name="com.spiros.app.engine" />
         <!-- Recognise the admin app of an existing work profile. -->
@@ -53,6 +58,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:crossProfile="true"
         android:theme="@style/Theme.SpirOS">
 
         <activity

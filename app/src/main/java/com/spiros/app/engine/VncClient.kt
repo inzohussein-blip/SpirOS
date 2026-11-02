@@ -268,19 +268,26 @@ class VncClient(
         _bitmap.value = if (w > 0 && h > 0) Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) else null
     }
 
+    /**
+     * Copies a raw rectangle into the frame. The server sends little-endian 0x00RRGGBB,
+     * so each row is one bulk copy of ints, then the alpha byte is set (much faster
+     * than assembling every pixel from bytes, which matters at 30 frames a second).
+     */
     private fun blit(raw: ByteArray, x: Int, y: Int, w: Int, h: Int) {
-        var i = 0
-        for (row in y until minOf(y + h, height)) {
-            var p = row * width + x
-            for (col in 0 until w) {
-                if (x + col < width) {
-                    pixels[p] = (0xFF shl 24) or
-                        ((raw[i + 2].toInt() and 0xFF) shl 16) or
-                        ((raw[i + 1].toInt() and 0xFF) shl 8) or
-                        (raw[i].toInt() and 0xFF)
-                }
+        val ints = java.nio.ByteBuffer.wrap(raw, 0, w * h * 4).order(java.nio.ByteOrder.LITTLE_ENDIAN).asIntBuffer()
+        val cols = minOf(w, width - x)
+        if (cols <= 0) return
+        for (row in 0 until h) {
+            val yy = y + row
+            if (yy >= height) break
+            val start = yy * width + x
+            ints.position(row * w)
+            ints.get(pixels, start, cols)
+            var p = start
+            val end = start + cols
+            while (p < end) {
+                pixels[p] = pixels[p] or OPAQUE
                 p++
-                i += 4
             }
         }
     }
@@ -295,6 +302,7 @@ class VncClient(
     }
 
     companion object {
+        private const val OPAQUE = 0xFF shl 24
         private fun localSocket(path: String): Transport? {
             val s = LocalSocket()
             return try {

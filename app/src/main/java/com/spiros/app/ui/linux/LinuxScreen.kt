@@ -73,6 +73,7 @@ import com.spiros.app.ui.lab.Cursor
 import com.spiros.app.ui.lab.Touchpad
 import androidx.compose.material.icons.rounded.Mouse
 import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.ScreenRotation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.platform.LocalConfiguration
@@ -127,6 +128,8 @@ fun LinuxScreen(onBack: () -> Unit) {
     var input by remember { mutableStateOf("") }
     var touchpad by remember { mutableStateOf(Performance.touchpad(context)) }
     var typing by remember { mutableStateOf(false) }
+    // Sideways, full screen (no status / navigation bars): the desktop uses the whole phone.
+    var landscape by remember { mutableStateOf(Performance.linuxLandscape(context)) }
     // A TV / monitor (HDMI, USB-C or wireless) shows the desktop when allowed in Settings.
     val external = rememberExternalDisplay()
     val externalNow = external?.takeIf { Performance.externalDisplay(context) }
@@ -146,6 +149,20 @@ fun LinuxScreen(onBack: () -> Unit) {
         DisposableEffect(Unit) {
             Pip.desktopVisible = true
             onDispose { Pip.desktopVisible = false }
+        }
+        val activity = context as? Activity
+        DisposableEffect(landscape) {
+            val window = activity?.window
+            val bars = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, it.decorView) }
+            if (landscape) {
+                activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                bars?.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                bars?.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            }
+            onDispose {
+                activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                bars?.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            }
         }
         Surface(Modifier.fillMaxSize(), color = Color.Black) {
           Box(Modifier.fillMaxSize()) {
@@ -216,6 +233,14 @@ fun LinuxScreen(onBack: () -> Unit) {
                     ) {
                         touchpad = !touchpad
                         Performance.setTouchpad(context, touchpad)
+                    },
+                    DockTool(
+                        Icons.Rounded.ScreenRotation,
+                        stringResource(if (landscape) R.string.linux_portrait else R.string.linux_fullscreen),
+                        if (landscape) Color(0xFF7CE7C3) else Color.White,
+                    ) {
+                        landscape = !landscape
+                        Performance.setLinuxLandscape(context, landscape)
                     },
                     DockTool(Icons.Rounded.PictureInPicture, stringResource(R.string.linux_pip), Color.White) {
                         (context as? Activity)?.let(Pip::enter)
@@ -323,7 +348,7 @@ fun LinuxScreen(onBack: () -> Unit) {
                                         resolution = r
                                         Performance.setLinuxResolution(context, r)
                                     },
-                                    label = { Text(r) },
+                                    label = { Text(if (r == Performance.AUTO) stringResource(R.string.linux_res_auto) else r) },
                                 )
                             }
                         }

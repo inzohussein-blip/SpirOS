@@ -168,7 +168,7 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
                         Performance.setLinuxFps(context, fps)
                     }
                     Label(stringResource(R.string.linux_resolution))
-                    Chips(Performance.RESOLUTIONS, resolution) {
+                    Chips(Performance.RESOLUTIONS, resolution, label = { if (it == Performance.AUTO) context.getString(R.string.linux_res_auto) else it }) {
                         resolution = it
                         Performance.setLinuxResolution(context, it)
                     }
@@ -244,10 +244,10 @@ private fun Label(text: String) = Text(text, style = MaterialTheme.typography.la
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Chips(options: List<String>, selected: String, onSelect: (String) -> Unit) {
+private fun Chips(options: List<String>, selected: String, label: (String) -> String = { it }, onSelect: (String) -> Unit) {
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         options.forEach { option ->
-            FilterChip(selected = option == selected, onClick = { onSelect(option) }, label = { Text(option) })
+            FilterChip(selected = option == selected, onClick = { onSelect(option) }, label = { Text(label(option)) })
         }
     }
 }
