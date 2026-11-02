@@ -127,6 +127,44 @@ object SpaceOwner {
         return true
     }
 
+    /**
+     * Runs the setup inside the space step by step and reports each result, so a
+     * screenshot shows exactly what this phone allows. Only meaningful in a work profile.
+     */
+    fun repairReport(context: Context): String {
+        val dpm = context.getSystemService(DevicePolicyManager::class.java)
+        val admin = admin(context)
+        val lines = mutableListOf<String>()
+        val owner = isProfileOwner(context)
+        lines += "profile owner: " + if (owner) "SpirOS" else "NOT SpirOS (${runCatching { dpm.activeAdmins?.joinToString { it.packageName } }.getOrNull() ?: "none"})"
+        if (!owner) return lines.joinToString("\n")
+        fun step(name: String, block: () -> Unit) {
+            lines += name + ": " + runCatching(block).fold({ "ok" }, { "FAILED " + (it.message ?: it.javaClass.simpleName) })
+        }
+        step("profile enabled") { dpm.setProfileEnabled(admin) }
+        step("command filter") {
+            dpm.clearCrossProfileIntentFilters(admin)
+            dpm.addCrossProfileIntentFilter(
+                admin,
+                IntentFilter(ACTION_COMMAND).apply { addCategory(Intent.CATEGORY_DEFAULT) },
+                DevicePolicyManager.FLAG_PARENT_CAN_ACCESS_MANAGED,
+            )
+        }
+        step("direct channel allowed") { dpm.setCrossProfilePackages(admin, setOf(context.packageName)) }
+        step("copy/paste blocked") { dpm.addUserRestriction(admin, UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE) }
+        val hasToken = prefs(context).getString(KEY_TOKEN, null) != null
+        if (!hasToken) prefs(context).edit().putLong(KEY_ADOPT_UNTIL, System.currentTimeMillis() + 10 * 60_000).apply()
+        lines += "pairing key: " + if (hasToken) "yes" else "waiting for the first command (10 min)"
+        lines += "command screen: " + when (context.packageManager.getComponentEnabledSetting(ComponentName(context, SpaceCommandActivity::class.java))) {
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED -> "DISABLED"
+            else -> "enabled"
+        }
+        lines += "direct link approved: " + runCatching {
+            context.getSystemService(android.content.pm.CrossProfileApps::class.java).canInteractAcrossProfiles()
+        }.getOrDefault(false)
+        return lines.joinToString("\n")
+    }
+
     /** Hide SpirOS's own icon in the space once the main profile can reach it directly. */
     fun hideLauncherWhenLinked(context: Context) {
         val linked = Build.VERSION.SDK_INT >= 30 && runCatching {

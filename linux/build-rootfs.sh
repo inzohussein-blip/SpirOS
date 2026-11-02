@@ -264,6 +264,18 @@ chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
     apt-get clean
     mkdir -p /root/models
     llama-server --version"
+# ---- slim the image: a phone needs Latin and Arabic fonts, English/Arabic messages,
+# and no manuals. Saves a large part of the download.
+before=$(du -sm "$ROOT" | cut -f1)
+if [ -d "$ROOT/usr/share/fonts/truetype/noto" ]; then
+    find "$ROOT/usr/share/fonts/truetype/noto" -type f ! -regex '.*/Noto\(Sans\|Serif\|SansMono\|SansArabic\|SansArabicUI\|NaskhArabic\|NaskhArabicUI\|KufiArabic\|SansUI\|SansSymbols\|SansSymbols2\|SansMath\)-.*' -delete
+fi
+find "$ROOT/usr/share/locale" -mindepth 1 -maxdepth 1 -type d ! -name 'ar*' ! -name 'en*' -exec rm -rf {} + 2>/dev/null || true
+rm -rf "$ROOT/usr/share/man/"* "$ROOT/usr/share/info/"* "$ROOT/usr/share/help/"* "$ROOT/usr/share/gnome/help/"* 2>/dev/null || true
+find "$ROOT/usr/lib" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+chroot "$ROOT" fc-cache -f >/dev/null 2>&1 || true
+echo "slimmed: ${before} MB -> $(du -sm "$ROOT" | cut -f1) MB"
+
 umount "$ROOT/proc" "$ROOT/dev"
 trap - EXIT
 
@@ -286,5 +298,5 @@ done
 echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}  (Mint look $MINT_NOTE)"
 
 # Hard links become separate files so the Android extractor only handles symlinks.
-tar --numeric-owner --hard-dereference -C "$ROOT" -cf - . | xz -T0 -6 > "$OUT"
+tar --numeric-owner --hard-dereference -C "$ROOT" -cf - . | xz -T0 -8 > "$OUT"
 du -h "$OUT"

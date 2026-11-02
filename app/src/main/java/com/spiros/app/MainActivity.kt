@@ -32,9 +32,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Started inside the isolated space (Repair): finish its setup and leave at once.
-        if (SpaceOwner.repairFromLauncher(this)) {
-            android.widget.Toast.makeText(this, R.string.space_repaired, android.widget.Toast.LENGTH_LONG).show()
-            finishAndRemoveTask()
+        // Opened inside the isolated space (Repair, or its icon there): finish the space's
+        // setup and show what this phone allowed, then leave. No vault in here.
+        if (getSystemService(android.os.UserManager::class.java).isManagedProfile) {
+            SpaceManager.configureComponents(this)
+            val report = SpaceOwner.repairReport(this)
+            android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.space_repaired)
+                .setMessage(report)
+                .setPositiveButton(android.R.string.ok) { _, _ -> finishAndRemoveTask() }
+                .setOnCancelListener { finishAndRemoveTask() }
+                .show()
             return
         }
         // No screenshots, screen recording or recents preview unless allowed in Settings.

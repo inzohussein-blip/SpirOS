@@ -427,7 +427,7 @@
     <string name="appearance_font">الخط</string>
     <string name="appearance_font_system">خط الهاتف</string>
     <string name="appearance_font_inter">Inter</string>
-    <string name="space_repaired">مساحة SpirOS جاهزة. ارجع إلى SpirOS.</string>
+    <string name="space_repaired">SpirOS داخل المساحة: تقرير الإعداد (أرسل لقطة شاشة إن ظهر FAILED)</string>
     <string name="space_repair_title">المساحة لم تُكمل إعدادها</string>
     <string name="space_repair_desc">هاتفك لم يسمح لـ SpirOS بإكمال إعداده داخل المساحة، لذلك لا تصلها الأوامر. زر الإصلاح يفتح SpirOS داخل المساحة لثانية ليكمل الإعداد؛ ثم وافق على الربط الذي سيظهر هنا.</string>
     <string name="space_repair">إصلاح المساحة</string>

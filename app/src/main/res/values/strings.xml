@@ -427,7 +427,7 @@
     <string name="appearance_font">Font</string>
     <string name="appearance_font_system">Phone font</string>
     <string name="appearance_font_inter">Inter</string>
-    <string name="space_repaired">SpirOS space is ready. Go back to SpirOS.</string>
+    <string name="space_repaired">SpirOS inside the space: setup report (send a screenshot if something says FAILED)</string>
     <string name="space_repair_title">The space did not finish its setup</string>
     <string name="space_repair_desc">Your phone did not let SpirOS finish setting up inside the space, so commands cannot reach it. Repair opens SpirOS inside the space for a second to complete it; then approve the connection that appears here.</string>
     <string name="space_repair">Repair the space</string>
