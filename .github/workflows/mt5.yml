@@ -14,8 +14,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: mt5-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   versions:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     outputs:
       urls: ${{ steps.pick.outputs.urls }}
@@ -33,6 +38,7 @@ jobs:
           echo "urls=$(jq -R . pick.txt | jq -sc .)" >> "$GITHUB_OUTPUT"
 
   probe:
+    if: github.event_name == 'workflow_dispatch'
     needs: versions
     strategy:
       fail-fast: false
@@ -81,6 +87,8 @@ jobs:
         run: |
           mkdir -p out
           xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 120
+          # Publish only an MT5 that really opens (main window "MetaTrader 5 - ...").
+          grep -q '"MetaTrader 5' out/windows-arm64.txt
           cd out && sha256sum mt5-full.tar.xz | tee mt5-full.tar.xz.sha256
       - name: Publish package
         env:

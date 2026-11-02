@@ -5,7 +5,7 @@
 # ARM phones run the Windows (x86-64) program through Box64; x86-64 phones run Wine
 # directly.
 set -u
-WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz"
+WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/11.21/wine-11.21-amd64-wow64.tar.xz"
 MT5_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 BASE="$HOME/.local/share/spiros"
 WINEDIR="$BASE/wine"
@@ -58,6 +58,8 @@ TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -
 if [ -z "$TERMINAL" ]; then
     echo "== Preparing the Windows environment (one time, a few minutes) =="
     $RUN "$WINE" wineboot -u
+    # MT5's protection takes Wine's crash handler (AeDebug) for a debugger.
+    $RUN "$WINE" reg delete 'HKLM\Software\Microsoft\Windows NT\CurrentVersion\AeDebug' /v Debugger /f
     echo "== Downloading the MetaTrader 5 installer =="
     curl -fL --progress-bar -o "$BASE/mt5setup.exe" "$MT5_URL" || { echo "Download failed."; read -r _; exit 1; }
     echo "== Installing MetaTrader 5: follow the installer window =="
