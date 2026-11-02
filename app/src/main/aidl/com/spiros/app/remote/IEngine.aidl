@@ -55,4 +55,8 @@ interface IEngine {
     void cancelTask();
     /** Forget the last finished task's result. */
     void clearTask();
+
+    // ---- Linux apps (engine v3) ----
+    /** Opens a program inside the running desktop (as the desktop user). */
+    void runInDesktop(String command);
 }

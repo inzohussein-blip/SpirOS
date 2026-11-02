@@ -97,6 +97,11 @@ class LinuxSelfTestActivity : Activity() {
                     client.rightClick(bitmap.width / 2, bitmap.height / 3)
                     Thread.sleep(5000)
                     snapshot(client, "linux-apps.png")
+                    // A Linux app opened directly from SpirOS inside the running desktop.
+                    client.key(com.spiros.app.engine.VncClient.KEY_ESCAPE)
+                    engine { it.runInDesktop("lxterminal") }
+                    Thread.sleep(6000)
+                    snapshot(client, "linux-app.png")
                     return true
                 }
             }

@@ -139,6 +139,7 @@ fun HomeScreen(
     }
     val shieldPhone by ShieldVpnService.running.collectAsState()
     val linuxRunning by Engine.desktopRunning.collectAsState()
+    val engineStatus by Engine.status.collectAsState()
     val aiState by Engine.aiState.collectAsState()
     val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
 
@@ -264,6 +265,35 @@ fun HomeScreen(
 
             fullWidth { SectionTitle(stringResource(R.string.home_tools)) }
             items(tools, key = { it.label }) { ToolTile(it) }
+
+            // Linux programs, opened directly (MetaTrader 5 full screen, terminal, ...).
+            if (engineStatus.linuxInstalled) {
+                fullWidth { SectionTitle(stringResource(R.string.lapp_title)) }
+                items(com.spiros.app.remote.LinuxApps.all, key = { "lapp-" + it.id }) { app ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable {
+                                com.spiros.app.remote.LinuxApps.request(app.id)
+                                onOpenLinux()
+                            }
+                            .padding(vertical = 4.dp),
+                    ) {
+                        androidx.compose.foundation.Image(
+                            androidx.compose.ui.res.painterResource(app.icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                        )
+                        Text(
+                            stringResource(app.label),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
+            }
 
             fullWidth { SectionTitle(stringResource(R.string.home_space_apps)) }
             val d = desktop

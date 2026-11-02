@@ -52,6 +52,23 @@ object LinuxSession {
         thread(name = "linux-log", isDaemon = true) { pump(p) }
     }
 
+    /** Starts [command] inside the running desktop (display :1) without waiting for it. */
+    fun runInDesktop(context: Context, command: String) {
+        if (!_running.value) return
+        val user = LinuxAccounts.desktopUser(context)
+        runCatching {
+            val p = command(context, LinuxDistro.root(context), user = user, envAndCommand = listOf(
+                "DISPLAY=:1",
+                "XDG_RUNTIME_DIR=/tmp/runtime-${user.name}",
+                "/bin/sh", "-c", "$command >/dev/null 2>&1",
+            )).start()
+            // Drain proot's own output so the program never blocks on a full pipe.
+            thread(name = "linux-app", isDaemon = true) {
+                runCatching { val b = ByteArray(4096); while (p.inputStream.read(b) >= 0) Unit }
+            }
+        }
+    }
+
     @Synchronized
     fun stop() {
         process?.let { p ->
@@ -65,12 +82,16 @@ object LinuxSession {
         _running.value = false
     }
 
-    /** Always run the launcher shipped with this app version (assets/linux/spiros-desktop). */
+    /** Always run the scripts shipped with this app version (assets/linux). */
     private fun installLauncher(context: Context, root: File) {
-        val target = File(root, "usr/local/bin/spiros-desktop")
-        target.parentFile?.mkdirs()
-        context.assets.open("linux/spiros-desktop").use { input -> target.outputStream().use { input.copyTo(it) } }
-        target.setExecutable(true, false)
+        for (name in listOf("spiros-desktop", "spiros-mt5")) {
+            val target = File(root, "usr/local/bin/$name")
+            target.parentFile?.mkdirs()
+            runCatching {
+                context.assets.open("linux/$name").use { input -> target.outputStream().use { input.copyTo(it) } }
+                target.setExecutable(true, false)
+            }
+        }
     }
 
     /**

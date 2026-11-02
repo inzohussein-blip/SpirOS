@@ -437,4 +437,11 @@
     <string name="linux_res_auto">شاشة الهاتف</string>
     <string name="linux_fullscreen">ملء الشاشة (بالعرض)</string>
     <string name="linux_portrait">العودة للوضع العادي</string>
+    <string name="lapp_title">تطبيقات لينكس</string>
+    <string name="lapp_mt5">MetaTrader 5</string>
+    <string name="lapp_terminal">الطرفية</string>
+    <string name="lapp_files">الملفات</string>
+    <string name="lapp_ai">محادثة AI</string>
+    <string name="lapp_pin_mt5">إضافة MetaTrader 5 إلى شاشة الهاتف الرئيسية</string>
+    <string name="lapp_pin_unsupported">مشغّل هاتفك لا يدعم إضافة الاختصارات. اضغط مطولًا على أيقونة SpirOS: ستجد MetaTrader 5 في قائمتها.</string>
 </resources>

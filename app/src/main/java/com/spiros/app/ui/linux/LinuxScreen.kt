@@ -60,6 +60,10 @@ import com.spiros.app.R
 import com.spiros.app.SpirApp
 import com.spiros.app.remote.Engine
 import com.spiros.app.remote.EngineInstaller
+import com.spiros.app.remote.LinuxApps
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import com.spiros.app.ui.common.TaskCard
 import com.spiros.app.ui.common.StepIndicator
 import androidx.compose.runtime.produceState
@@ -128,6 +132,16 @@ fun LinuxScreen(onBack: () -> Unit) {
     var input by remember { mutableStateOf("") }
     var touchpad by remember { mutableStateOf(Performance.touchpad(context)) }
     var typing by remember { mutableStateOf(false) }
+    var pinUnsupported by remember { mutableStateOf(false) }
+    // An app asked for from Home or a phone shortcut opens once the engine is ready.
+    val pendingApp by LinuxApps.pending.collectAsState()
+    LaunchedEffect(pendingApp, status.connected, status.linuxInstalled) {
+        val id = pendingApp ?: return@LaunchedEffect
+        if (status.connected && status.linuxInstalled) {
+            LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) }
+            LinuxApps.consume()
+        }
+    }
     // Sideways, full screen (no status / navigation bars): the desktop uses the whole phone.
     var landscape by remember { mutableStateOf(Performance.linuxLandscape(context)) }
     // A TV / monitor (HDMI, USB-C or wireless) shows the desktop when allowed in Settings.
@@ -365,6 +379,33 @@ fun LinuxScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        // Open a Linux program directly (MT5 alone, full screen).
+                        Text(stringResource(R.string.lapp_title), style = MaterialTheme.typography.titleSmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                            LinuxApps.all.forEach { app ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                                        .clickable { LinuxApps.launch(context, app) }
+                                        .padding(8.dp),
+                                ) {
+                                    androidx.compose.foundation.Image(
+                                        androidx.compose.ui.res.painterResource(app.icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(52.dp),
+                                    )
+                                    Text(stringResource(app.label), style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                        OutlinedButton(onClick = {
+                            val mt5 = LinuxApps.byId("mt5") ?: return@OutlinedButton
+                            if (!LinuxApps.pinToHomeScreen(context, mt5)) pinUnsupported = true
+                        }) { Text(stringResource(R.string.lapp_pin_mt5)) }
+                        if (pinUnsupported) {
+                            Text(stringResource(R.string.lapp_pin_unsupported), style = MaterialTheme.typography.bodySmall)
+                        }
                         TextButton(onClick = { confirmRemove = true }) {
                             Text(stringResource(R.string.linux_remove), color = MaterialTheme.colorScheme.error)
                         }

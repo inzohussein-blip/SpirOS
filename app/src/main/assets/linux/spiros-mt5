@@ -13,6 +13,13 @@ export WINEDEBUG=-all WINEARCH=win64
 export BOX64_LOG=0 BOX64_NOBANNER=1 BOX64_DYNAREC_BIGBLOCK=1
 mkdir -p "$BASE"
 
+# Opened directly (from SpirOS or a shortcut) before MT5 is set up: show the progress
+# in a terminal window. Once installed, MT5 opens straight away.
+if [ ! -t 1 ] && [ -z "${SPIROS_IN_TERM:-}" ] &&
+   { [ ! -x "$WINEDIR/bin/wine" ] || [ -z "$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)" ]; }; then
+    exec lxterminal -t "MetaTrader 5" -e env SPIROS_IN_TERM=1 spiros-mt5
+fi
+
 RUN=""
 if [ "$(uname -m)" = aarch64 ]; then
     if ! command -v box64 >/dev/null; then

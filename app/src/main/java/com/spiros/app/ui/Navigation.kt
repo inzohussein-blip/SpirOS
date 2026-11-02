@@ -12,6 +12,8 @@ object Navigation {
     const val BROWSER = "browser"
     const val LINUX = "linux"
     const val SHIELD = "shield"
+    /** Prefix: "linux-app:<id>" opens that Linux program directly (see LinuxApps). */
+    const val LINUX_APP = "linux-app:"
 
     private val _pending = MutableStateFlow<String?>(null)
     val pending: StateFlow<String?> = _pending.asStateFlow()

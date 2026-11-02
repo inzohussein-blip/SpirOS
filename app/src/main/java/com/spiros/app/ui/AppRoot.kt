@@ -122,12 +122,18 @@ private fun Unlocked(vault: Vault) {
     val pending by Navigation.pending.collectAsState()
     LaunchedEffect(pending) {
         pending?.let { destination ->
-            screen = when (destination) {
+            screen = when {
+                destination.startsWith(Navigation.LINUX_APP) -> {
+                    com.spiros.app.remote.LinuxApps.request(destination.removePrefix(Navigation.LINUX_APP))
+                    Screen.Linux
+                }
+                else -> when (destination) {
                 Navigation.VAULT -> Screen.VaultList
                 Navigation.BROWSER -> Screen.Browser
                 Navigation.LINUX -> Screen.Linux
                 Navigation.SHIELD -> Screen.Shield
                 else -> Screen.Home
+                }
             }
             Navigation.consume()
         }

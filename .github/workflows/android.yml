@@ -220,6 +220,7 @@ jobs:
             bash tools/lab_device_test.sh SpirOS-x86_64.apk com.spiros.app .AiSelfTestActivity ai-selftest.log 20
             adb exec-out run-as com.spiros.app cat no_backup/linux-desktop.png > linux-desktop.png || true
             adb exec-out run-as com.spiros.app cat no_backup/linux-apps.png > linux-apps.png || true
+            adb exec-out run-as com.spiros.app cat no_backup/linux-app.png > linux-app.png || true
 
       # Screenshots of SpirOS Linux for design review (branch ci-screens, replaced each run).
       - name: Publish desktop screenshots

@@ -76,6 +76,8 @@ class EngineService : Service() {
 
         override fun clearTask() = BackgroundTask.clear()
 
+        override fun runInDesktop(command: String) = LinuxSession.runInDesktop(this@EngineService, command)
+
         override fun removeLinux() {
             // Never delete the system under a running install.
             if (BackgroundTask.state?.let { it.active && it.kind == "linux" } == true) return

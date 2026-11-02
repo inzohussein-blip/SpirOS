@@ -437,4 +437,11 @@
     <string name="linux_res_auto">Phone screen</string>
     <string name="linux_fullscreen">Full screen (sideways)</string>
     <string name="linux_portrait">Back to normal</string>
+    <string name="lapp_title">Linux apps</string>
+    <string name="lapp_mt5">MetaTrader 5</string>
+    <string name="lapp_terminal">Terminal</string>
+    <string name="lapp_files">Files</string>
+    <string name="lapp_ai">AI Chat</string>
+    <string name="lapp_pin_mt5">Add MetaTrader 5 to the phone\'s home screen</string>
+    <string name="lapp_pin_unsupported">Your launcher cannot add shortcuts. Long-press the SpirOS icon instead: MetaTrader 5 is in its menu.</string>
 </resources>

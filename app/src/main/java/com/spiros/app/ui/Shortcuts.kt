@@ -20,6 +20,8 @@ object Shortcuts {
             return
         }
         val items = buildList {
+            // MetaTrader 5 straight from the SpirOS icon (opens Linux with MT5 only).
+            com.spiros.app.remote.LinuxApps.byId("mt5")?.let { add(com.spiros.app.remote.LinuxApps.shortcut(context, it)) }
             add(shortcut(context, Navigation.VAULT, R.string.section_vault, R.drawable.ic_sc_vault))
             add(shortcut(context, Navigation.BROWSER, R.string.dock_browser, R.drawable.ic_sc_browser))
             add(shortcut(context, Navigation.LINUX, R.string.dock_linux, R.drawable.ic_sc_linux))
