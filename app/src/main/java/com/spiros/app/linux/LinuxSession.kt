@@ -38,6 +38,7 @@ object LinuxSession {
         _log.value = emptyList()
         val root = LinuxDistro.root(context)
         installLauncher(context, root)
+        registerAndroidGroups(root)
         val socket = File(root, "tmp/spiros-vnc").apply { delete() }
         val p = command(context, root, user = LinuxAccounts.desktopUser(context), envAndCommand = listOf(
             "SPIROS_GEOMETRY=${options.geometry}",
@@ -80,6 +81,23 @@ object LinuxSession {
         }
         process = null
         _running.value = false
+    }
+
+    /**
+     * Android gives the engine extra group IDs (inet, cache, ...); Linux tools print
+     * "cannot find name for group ID" for each. Name them in /etc/group once.
+     */
+    private fun registerAndroidGroups(root: File) {
+        runCatching {
+            val gids = File("/proc/self/status").readLines()
+                .firstOrNull { it.startsWith("Groups:") }?.substringAfter(':')?.trim()
+                ?.split(Regex("\\s+"))?.mapNotNull { it.toIntOrNull() }.orEmpty()
+            val file = File(root, "etc/group")
+            if (!file.isFile) return
+            val known = file.readLines().mapNotNull { it.split(':').getOrNull(2) }.toSet()
+            val missing = gids.distinct().filter { it.toString() !in known }
+            if (missing.isNotEmpty()) file.appendText(missing.joinToString("") { "android_$it:x:$it:\n" })
+        }
     }
 
     /** Always run the scripts shipped with this app version (assets/linux). */

@@ -213,6 +213,11 @@ hidescrollbar=true
 hidemenubar=true
 hideclosebutton=true
 CONF
+    # lxterminal reads only ~/.config: give root and every new account these settings.
+    for home in "$ROOT/root" "$ROOT/etc/skel"; do
+        mkdir -p "$home/.config/lxterminal"
+        cp "$ROOT/etc/xdg/lxterminal/lxterminal.conf" "$home/.config/lxterminal/lxterminal.conf"
+    done
     # Keep the app grid to the apps people use.
     mkdir -p "$ROOT/usr/local/share/applications"
     for d in tint2 tint2conf openbox obconf onboard onboard-settings rofi rofi-theme-selector python3.12 lxterminal-preferences pcmanfm-desktop-pref gnome-icon-theme yelp org.xfce.mousepad-settings conky debian-uxterm debian-xterm; do
