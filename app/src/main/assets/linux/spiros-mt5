@@ -16,10 +16,12 @@ mkdir -p "$BASE"
 LOG="$BASE/mt5.log"
 
 RUN=""
-[ "$(uname -m)" = aarch64 ] && command -v box64 >/dev/null && RUN=box64
+[ "$(uname -m)" = aarch64 ] && RUN=box64
 
 FULL=/opt/spiros-mt5
 if [ -f "$FULL/.ready" ] && [ -x "$FULL/wine/bin/wine" ]; then
+    # Use the Box64 the package was tested with.
+    [ -n "$RUN" ] && [ -x "$FULL/box64/box64" ] && RUN="$FULL/box64/box64"
     export WINEPREFIX="$FULL/prefix"
     TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
     if [ -n "$TERMINAL" ]; then

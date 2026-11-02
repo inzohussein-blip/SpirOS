@@ -64,7 +64,7 @@ jobs:
       - name: Save proof
         if: always()
         run: |
-          cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-probe-${{ env.NAME }}
+          mkdir -p out && date > out/run.txt && cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-probe-${{ env.NAME }}
           git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
           git add . && git commit -qm "MT5 proof ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-probe-${{ env.NAME }}
@@ -79,7 +79,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils cmake build-essential python3 git xz-utils \
             libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
-          git clone --depth 1 --branch v0.3.4 https://github.com/ptitSeb/box64 /tmp/box64
+          git clone --depth 1 --branch v0.4.4 https://github.com/ptitSeb/box64 /tmp/box64
           cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
           cmake --build /tmp/box64/build -j$(nproc)
           sudo cmake --install /tmp/box64/build
@@ -97,7 +97,7 @@ jobs:
       - name: Save proof
         if: always()
         run: |
-          cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm64
+          mkdir -p out && date > out/run.txt && cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm64
           git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
           git add . && git commit -qm "MT5 proof ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm64

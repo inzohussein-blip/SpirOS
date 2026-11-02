@@ -62,6 +62,8 @@ sleep 5
 
 [ -n "$PROBE" ] && exit 0
 echo "== Pack"
+# The Box64 this package was tested with travels with it (the system's may be older).
+if [ "$(uname -m)" = aarch64 ]; then mkdir -p "$ROOT/box64" && cp "$(command -v box64)" "$ROOT/box64/box64"; fi
 rm -rf "$WINEPREFIX/drive_c/users/$USER/Temp/"* 2>/dev/null || true
-tar --numeric-owner -C "$ROOT" -cf - wine prefix | xz -T0 -6 > "$OUT/mt5-full.tar.xz"
+tar --numeric-owner -C "$ROOT" -cf - wine prefix $( [ -d "$ROOT/box64" ] && echo box64 ) | xz -T0 -6 > "$OUT/mt5-full.tar.xz"
 du -h "$OUT/mt5-full.tar.xz"
