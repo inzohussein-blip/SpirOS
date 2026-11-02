@@ -1,0 +1,2 @@
+     0xa0001f "Welcome to LiveUpdate": ("terminal64.exe" "terminal64.exe")  450x138+419+308  +419+308
+     0xa00001 "MetaTrader 5 - Netting - EURUSD,H1": ("terminal64.exe" "terminal64.exe")  1280x694+4+30  +4+30
