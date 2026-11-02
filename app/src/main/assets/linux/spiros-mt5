@@ -1,9 +1,7 @@
 #!/bin/sh
-# MetaTrader 5 on SpirOS Linux. With "MetaTrader 5 full" (downloaded by SpirOS into
-# /opt/spiros-mt5: Wine + MT5 already installed) it opens straight away. Without it,
-# the first run downloads Wine and the official MT5 installer from MetaQuotes.
-# ARM phones run the Windows (x86-64) program through Box64; x86-64 phones run Wine
-# directly.
+# MetaTrader 5 on SpirOS Linux. ARM64 phones: "MetaTrader 5 full" (downloaded by
+# SpirOS into /opt/spiros-mt5: Hangover + MT5) opens straight away. x86-64: the first
+# run downloads Wine and the official MT5 installer from MetaQuotes.
 set -u
 WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.20/wine-10.20-staging-amd64-wow64.tar.xz"
 MT5_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
@@ -19,16 +17,13 @@ RUN=""
 [ "$(uname -m)" = aarch64 ] && RUN=box64
 
 FULL=/opt/spiros-mt5
-if [ -f "$FULL/.ready" ] && [ -x "$FULL/wine/bin/wine" ]; then
-    # Use the Box64 the package was tested with.
-    [ -n "$RUN" ] && [ -x "$FULL/box64/box64" ] && RUN="$FULL/box64/box64"
+# "MetaTrader 5 full" for ARM64: Hangover (Wine for ARM64, x86-64 code through FEX).
+HWINE=$(find "$FULL/hangover" -path '*bin/wine' -type f 2>/dev/null | head -n 1)
+if [ -f "$FULL/.ready" ] && [ -n "$HWINE" ]; then
     export WINEPREFIX="$FULL/prefix"
-    TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
-    if [ -n "$TERMINAL" ]; then
-        echo "$(date) start $TERMINAL ($RUN)" >> "$LOG"
-        cd "$(dirname "$TERMINAL")"
-        exec $RUN "$FULL/wine/bin/wine" "$TERMINAL" >> "$LOG" 2>&1
-    fi
+    cd "$WINEPREFIX/drive_c/MT5" || exit 1
+    echo "$(date) start MT5 (Hangover)" >> "$LOG"
+    exec "$HWINE" terminal64.exe /portable >> "$LOG" 2>&1
 fi
 
 # Opened directly (from SpirOS or a shortcut) before MT5 is set up: show the progress

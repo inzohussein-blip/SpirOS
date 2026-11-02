@@ -42,56 +42,14 @@ jobs:
           path: out/mt5-full.tar
           retention-days: 3
 
-  # Runs that package on a real ARM64 machine through Box64.
-  arm:
-    needs: package
-    strategy:
-      fail-fast: false
-      matrix:
-        box64: [v0.4.4, main]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v4
-      - name: Tools and Box64
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils cmake build-essential python3 git xz-utils \
-            libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
-          git clone --depth 1 --branch ${{ matrix.box64 }} https://github.com/ptitSeb/box64 /tmp/box64
-          cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build /tmp/box64/build -j$(nproc)
-          sudo cmake --install /tmp/box64/build
-      - uses: actions/download-artifact@v4
-        with:
-          name: mt5-full
-      - name: Run MT5 through Box64
-        run: |
-          mkdir -p out
-          set -o pipefail
-          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/run-mt5.sh mt5-full.tar "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 30
-          mkdir -p box && cp "$(command -v box64)" box/box64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: box64-${{ matrix.box64 }}
-          path: box/box64
-          retention-days: 3
-      - name: Save proof
-        if: always()
-        run: |
-          mkdir -p out && date > out/run.txt && cd out && git init -q && git checkout -q -b ci-mt5-arm-box64-${{ matrix.box64 }}
-          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
-          git add . && git commit -qm "MT5 ARM proof ${{ github.run_number }}"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm-box64-${{ matrix.box64 }}
-
-  # MT5 on ARM64 through Hangover (no Box64).
-  hangover:
+  # ARM64 phones: Hangover + MT5, tested, then published for SpirOS.
+  arm64:
     needs: package
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Hangover
+      - name: Tools and Hangover
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -101,57 +59,30 @@ jobs:
           URL=$(grep -iE 'noble|24\.04|2404' rel.txt | grep -i arm64 | head -n 1)
           [ -n "$URL" ] || URL=$(grep -iE 'debian|ubuntu' rel.txt | grep -i arm64 | head -n 1)
           echo "using $URL"
-          mkdir -p hv && curl -fsSL "$URL" -o hv/pkg && cd hv && (tar -xf pkg 2>/dev/null || unzip -q pkg 2>/dev/null || true) && ls -la
-          sudo apt-get install -y ./*.deb || sudo apt-get install -y $(find . -name '*.deb')
-          wine --version
+          mkdir -p hv && curl -fsSL "$URL" -o hv/pkg && cd hv && (tar -xf pkg 2>/dev/null || unzip -q pkg 2>/dev/null || true)
+          mkdir -p /tmp/debs && find . -name '*.deb' -exec cp {} /tmp/debs/ \; && ls -la /tmp/debs
+          # Runtime libraries Hangover needs (SpirOS Linux has them too).
+          sudo apt-get install -y $(for d in /tmp/debs/*.deb; do dpkg-deb -f "$d" Depends; done | tr ',' '\n' | sed 's/(.*)//;s/|.*//;s/ //g' | grep -v '^$' | grep -v hangover | sort -u) || true
       - uses: actions/download-artifact@v4
         with:
           name: mt5-full
-      - name: Run MT5 with Hangover
+      - name: Build, run and pack MT5 full (ARM64)
         run: |
           set -o pipefail
           mkdir -p out
-          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/run-hangover.sh mt5-full.tar "$PWD/out" 2>&1 | tail -n 40
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/pack-arm64.sh /tmp/debs mt5-full.tar "$PWD/out" 2>&1 | tail -n 40
+          cd out && sha256sum mt5-full-arm64.tar.xz | tee mt5-full-arm64.tar.xz.sha256
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload linux-rootfs --clobber out/mt5-full-arm64.tar.xz out/mt5-full-arm64.tar.xz.sha256 -R ${{ github.repository }}
       - name: Save proof
         if: always()
         run: |
-          mkdir -p out && date > out/run.txt && cd out && git init -q && git checkout -q -b ci-mt5-hangover
+          mkdir -p out && date > out/run.txt && cd out && rm -f *.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm64
           git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
-          git add . && git commit -qm "MT5 Hangover proof ${{ github.run_number }}"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-hangover
-
-  # The previous package was published although MT5 crashes under Box64 on ARM64.
-  unpublish-broken:
-    runs-on: ubuntu-24.04
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for a in mt5-full.tar.xz mt5-full.tar.xz.sha256; do gh release delete-asset linux-rootfs "$a" -y -R ${{ github.repository }} || true; done
-
-  # Package + the Box64 that ran it, compressed and published for SpirOS.
-  publish:
-    needs: [package, arm]
-    if: github.event_name == 'workflow_dispatch' && needs.package.result == 'success' && needs.arm.result == 'success'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: art
-      - name: Pack and publish
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          ls -R art | head -n 20
-          B=$(ls art/box64-v0.4.4/box64 art/box64-main/box64 2>/dev/null | head -n 1)
-          [ -n "$B" ] || { echo "MT5 did not run on ARM64: not publishing"; exit 1; }
-          echo "Box64: $B"
-          mkdir -p p/box64 && cp "$B" p/box64/box64 && chmod 755 p/box64/box64
-          cp art/mt5-full/mt5-full.tar mt5-full.tar
-          tar --numeric-owner -C p -rf mt5-full.tar box64
-          xz -T0 -6 mt5-full.tar
-          sha256sum mt5-full.tar.xz | tee mt5-full.tar.xz.sha256
-          gh release upload linux-rootfs --clobber mt5-full.tar.xz mt5-full.tar.xz.sha256 -R ${{ github.repository }}
+          git add . && git commit -qm "MT5 ARM64 proof ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm64
 
   # Manual: which Wine builds open MT5 (x86-64).
   versions:

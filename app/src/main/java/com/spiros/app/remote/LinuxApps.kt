@@ -58,7 +58,7 @@ object LinuxApps {
      */
     fun launch(context: Context, app: App) {
         val status = Engine.status.value
-        if (app.id == "mt5" && status.connected && !status.mt5Installed) {
+        if (app.id == "mt5" && status.connected && !status.mt5Installed && status.arch == "arm64") {
             afterInstall = context.applicationContext to app
             if (!mt5Installing(status)) Engine.installMt5(context)
             android.widget.Toast.makeText(context, R.string.mt5_installing, android.widget.Toast.LENGTH_LONG).show()

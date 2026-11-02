@@ -118,13 +118,15 @@ object LinuxDistro {
     fun mt5Installed(context: Context) = File(root(context), "$MT5_DIR/.ready").isFile
 
     /**
-     * Installs "MetaTrader 5 full" into the system: Wine and a Windows prefix with MT5
-     * already installed, built and tested by SpirOS on an ARM64 machine. Blocking; call
+     * Installs "MetaTrader 5 full" into the system: Hangover (Wine built for ARM64) and
+     * a Windows prefix with MT5 ready, built and run by SpirOS on an ARM64 machine. Blocking; call
      * within a [BackgroundTask].
      */
     fun installMt5(context: Context) {
         check(isInstalled(context)) { "Install Linux first" }
-        val name = "mt5-full.tar.xz"
+        // ARM64: Hangover (Wine for ARM64) + MT5. MT5's protection rejects Box64.
+        check(arch() == "arm64") { "MetaTrader 5 full is built for ARM64 phones" }
+        val name = "mt5-full-arm64.tar.xz"
         BackgroundTask.stage(Stage.DOWNLOADING.name)
         val expected = Downloader.text("$BASE/$name.sha256").trim().substringBefore(' ').lowercase()
         val archive = File(downloads(context), name)
