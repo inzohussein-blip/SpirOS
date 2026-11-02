@@ -68,6 +68,7 @@ jobs:
       - name: Run MT5 through Box64
         run: |
           mkdir -p out
+          set -o pipefail
           xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/run-mt5.sh mt5-full.tar "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 30
           mkdir -p box && cp "$(command -v box64)" box/box64
       - uses: actions/upload-artifact@v4
@@ -83,10 +84,55 @@ jobs:
           git add . && git commit -qm "MT5 ARM proof ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm-box64-${{ matrix.box64 }}
 
+  # MT5 on ARM64 through Hangover (no Box64).
+  hangover:
+    needs: package
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hangover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils xz-utils
+          gh api repos/AndreRH/hangover/releases/latest --jq '.tag_name, (.assets[].browser_download_url)' | tee rel.txt
+          URL=$(grep -iE 'noble|24\.04|2404' rel.txt | grep -i arm64 | head -n 1)
+          [ -n "$URL" ] || URL=$(grep -iE 'debian|ubuntu' rel.txt | grep -i arm64 | head -n 1)
+          echo "using $URL"
+          mkdir -p hv && curl -fsSL "$URL" -o hv/pkg && cd hv && (tar -xf pkg 2>/dev/null || unzip -q pkg 2>/dev/null || true) && ls -la
+          sudo apt-get install -y ./*.deb || sudo apt-get install -y $(find . -name '*.deb')
+          wine --version
+      - uses: actions/download-artifact@v4
+        with:
+          name: mt5-full
+      - name: Run MT5 with Hangover
+        run: |
+          set -o pipefail
+          mkdir -p out
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/run-hangover.sh mt5-full.tar "$PWD/out" 2>&1 | tail -n 40
+      - name: Save proof
+        if: always()
+        run: |
+          mkdir -p out && date > out/run.txt && cd out && git init -q && git checkout -q -b ci-mt5-hangover
+          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
+          git add . && git commit -qm "MT5 Hangover proof ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-hangover
+
+  # The previous package was published although MT5 crashes under Box64 on ARM64.
+  unpublish-broken:
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for a in mt5-full.tar.xz mt5-full.tar.xz.sha256; do gh release delete-asset linux-rootfs "$a" -y -R ${{ github.repository }} || true; done
+
   # Package + the Box64 that ran it, compressed and published for SpirOS.
   publish:
     needs: [package, arm]
-    if: always() && needs.package.result == 'success'
+    if: github.event_name == 'workflow_dispatch' && needs.package.result == 'success' && needs.arm.result == 'success'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
