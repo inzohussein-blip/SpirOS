@@ -59,4 +59,8 @@ interface IEngine {
     // ---- Linux apps (engine v3) ----
     /** Opens a program inside the running desktop (as the desktop user). */
     void runInDesktop(String command);
+
+    // ---- MetaTrader 5 full (engine v4) ----
+    /** Downloads Wine + MT5 (installed) into the Linux system; progress in status().task (kind "mt5"). */
+    void installMt5();
 }

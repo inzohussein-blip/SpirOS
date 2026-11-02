@@ -1,0 +1,50 @@
+name: MT5 package
+
+# Builds "MetaTrader 5 full" on a real ARM64 machine (Box64 + Wine + MT5 installed by
+# the official installer), proves it runs with a screenshot, and publishes the
+# package next to the Linux systems for SpirOS to download.
+on:
+  push:
+    paths:
+      - "linux/mt5/**"
+      - ".github/workflows/mt5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mt5:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools and Box64
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick cmake build-essential python3 git xz-utils \
+            libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
+          git clone --depth 1 --branch v0.3.4 https://github.com/ptitSeb/box64 /tmp/box64
+          cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build /tmp/box64/build -j$(nproc)
+          sudo cmake --install /tmp/box64/build
+          box64 --version
+      - name: Build MT5 full (Wine via Box64)
+        run: |
+          mkdir -p out
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | tail -n 200
+          ls -la out
+          cd out && sha256sum mt5-full.tar.xz | tee mt5-full.tar.xz.sha256
+      - name: Publish package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload linux-rootfs --clobber out/mt5-full.tar.xz out/mt5-full.tar.xz.sha256
+      - name: Publish screenshot
+        if: always()
+        run: |
+          ls out/mt5-*.png 2>/dev/null || exit 0
+          mkdir -p /tmp/screens && cp out/mt5-*.png /tmp/screens/ && cd /tmp/screens
+          git init -q && git checkout -q -b ci-screens-mt5
+          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
+          git add . && git commit -qm "MT5 screenshot ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-screens-mt5

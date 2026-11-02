@@ -54,6 +54,8 @@ object Engine {
         /** Installed system: xfce, mate, cinnamon, custom, debian (older) or "". */
         val distro: String = "",
         val task: Task? = null,
+        /** MetaTrader 5 full (Wine + MT5) is installed in the Linux system. */
+        val mt5Installed: Boolean = false,
     ) {
         val taskActive get() = task?.active == true
         val aiActive get() = aiState == AiServer.State.READY || aiState == AiServer.State.LOADING
@@ -171,6 +173,7 @@ object Engine {
             frozen = json.optBoolean("frozen"),
             memoryKb = json.optLong("memoryKb"),
             distro = json.optString("distro"),
+            mt5Installed = json.optBoolean("mt5Installed"),
             task = json.optJSONObject("task")?.let {
                 Task(
                     kind = it.optString("kind"),
@@ -186,6 +189,7 @@ object Engine {
         )
         _status.value = next
         if (!next.desktopRunning) closeScreen()
+        LinuxApps.onStatus(next)
     }
 
     /** Runs [block] against the engine (waits briefly for the connection), off the main thread. */
@@ -234,6 +238,8 @@ object Engine {
             runCatching { pfd?.close() }
         }
     }
+
+    fun installMt5(context: Context) = send(context) { it.installMt5() }
 
     fun pauseTask(context: Context) = send(context) { it.pauseTask() }
     fun resumeTask(context: Context) = send(context) { it.resumeTask() }

@@ -112,6 +112,40 @@ object LinuxDistro {
         }
     }
 
+    /** Where the MetaTrader 5 package (Wine + MT5 installed) lives inside the system. */
+    private const val MT5_DIR = "opt/spiros-mt5"
+
+    fun mt5Installed(context: Context) = File(root(context), "$MT5_DIR/.ready").isFile
+
+    /**
+     * Installs "MetaTrader 5 full" into the system: Wine and a Windows prefix with MT5
+     * already installed, built and tested by SpirOS on an ARM64 machine. Blocking; call
+     * within a [BackgroundTask].
+     */
+    fun installMt5(context: Context) {
+        check(isInstalled(context)) { "Install Linux first" }
+        val name = "mt5-full.tar.xz"
+        BackgroundTask.stage(Stage.DOWNLOADING.name)
+        val expected = Downloader.text("$BASE/$name.sha256").trim().substringBefore(' ').lowercase()
+        val archive = File(downloads(context), name)
+        val target = File(root(context), MT5_DIR)
+        try {
+            Downloader.download("$BASE/$name", archive, stamp = "$name#$expected")
+            BackgroundTask.stage(Stage.VERIFYING.name, archive.length())
+            check(sha256(archive) == expected) { "Checksum mismatch: the download is damaged or was altered" }
+            deleteTree(target)
+            target.mkdirs()
+            BackgroundTask.stage(Stage.EXTRACTING.name, archive.length())
+            extract(archive, target)
+            File(target, ".ready").writeText("$expected\n")
+        } catch (e: Exception) {
+            if (e is BackgroundTask.Cancelled) deleteTree(target)
+            throw e
+        } finally {
+            if (File(target, ".ready").isFile) archive.delete()
+        }
+    }
+
     private fun copy(file: ParcelFileDescriptor, target: File) {
         val total = file.statSize.coerceAtLeast(0)
         BackgroundTask.stage(Stage.COPYING.name, total)

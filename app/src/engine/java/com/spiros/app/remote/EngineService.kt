@@ -41,6 +41,7 @@ class EngineService : Service() {
             .put("frozen", BackgroundFreezer.frozen)
             .put("memoryKb", AppProcesses.list().sumOf { it.rssKb })
             .put("distro", LinuxDistro.installed(this@EngineService) ?: "")
+            .put("mt5Installed", LinuxDistro.mt5Installed(this@EngineService))
             .apply {
                 BackgroundTask.state?.let { t ->
                     put("task", JSONObject()
@@ -78,9 +79,14 @@ class EngineService : Service() {
 
         override fun runInDesktop(command: String) = LinuxSession.runInDesktop(this@EngineService, command)
 
+        override fun installMt5() {
+            val ctx = this@EngineService
+            runTask("mt5", "MetaTrader 5") { LinuxDistro.installMt5(ctx) }
+        }
+
         override fun removeLinux() {
             // Never delete the system under a running install.
-            if (BackgroundTask.state?.let { it.active && it.kind == "linux" } == true) return
+            if (BackgroundTask.state?.let { it.active && it.kind != "model" } == true) return
             LinuxSession.stop()
             AiServer.stop()
             LinuxDistro.remove(this@EngineService)

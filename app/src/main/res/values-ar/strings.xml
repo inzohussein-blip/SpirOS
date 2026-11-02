@@ -444,4 +444,5 @@
     <string name="lapp_ai">محادثة AI</string>
     <string name="lapp_pin_mt5">إضافة MetaTrader 5 إلى شاشة الهاتف الرئيسية</string>
     <string name="lapp_pin_unsupported">مشغّل هاتفك لا يدعم إضافة الاختصارات. اضغط مطولًا على أيقونة SpirOS: ستجد MetaTrader 5 في قائمتها.</string>
+    <string name="mt5_installing">تنزيل MetaTrader 5 الكامل (يفتح تلقائياً عند الجاهزية)</string>
 </resources>

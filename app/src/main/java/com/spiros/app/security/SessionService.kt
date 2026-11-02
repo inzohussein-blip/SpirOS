@@ -81,7 +81,11 @@ class SessionService : Service() {
         val task = Engine.status.value.task?.takeIf { it.active }
         if (task != null) {
             // An install / download in the engine: progress with Pause / Resume / Cancel.
-            val what = if (task.kind == "linux") getString(R.string.dock_linux) else getString(R.string.dock_ai)
+            val what = when (task.kind) {
+                "linux" -> getString(R.string.dock_linux)
+                "mt5" -> getString(R.string.lapp_mt5)
+                else -> getString(R.string.dock_ai)
+            }
             val pct = (task.fraction * 100).toInt()
             val n = Notification.Builder(this, CHANNEL)
                 .setSmallIcon(R.drawable.ic_tile_shield)

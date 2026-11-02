@@ -1,6 +1,7 @@
 #!/bin/sh
-# MetaTrader 5 on SpirOS Linux. The first run downloads Wine (once, ~80 MB) and the
-# official MT5 installer from MetaQuotes; later runs open MT5 directly.
+# MetaTrader 5 on SpirOS Linux. With "MetaTrader 5 full" (downloaded by SpirOS into
+# /opt/spiros-mt5: Wine + MT5 already installed) it opens straight away. Without it,
+# the first run downloads Wine and the official MT5 installer from MetaQuotes.
 # ARM phones run the Windows (x86-64) program through Box64; x86-64 phones run Wine
 # directly.
 set -u
@@ -12,6 +13,21 @@ export WINEPREFIX="$BASE/mt5"
 export WINEDEBUG=-all WINEARCH=win64
 export BOX64_LOG=0 BOX64_NOBANNER=1 BOX64_DYNAREC_BIGBLOCK=1
 mkdir -p "$BASE"
+LOG="$BASE/mt5.log"
+
+RUN=""
+[ "$(uname -m)" = aarch64 ] && command -v box64 >/dev/null && RUN=box64
+
+FULL=/opt/spiros-mt5
+if [ -f "$FULL/.ready" ] && [ -x "$FULL/wine/bin/wine" ]; then
+    export WINEPREFIX="$FULL/prefix"
+    TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
+    if [ -n "$TERMINAL" ]; then
+        echo "$(date) start $TERMINAL ($RUN)" >> "$LOG"
+        cd "$(dirname "$TERMINAL")"
+        exec $RUN "$FULL/wine/bin/wine" "$TERMINAL" >> "$LOG" 2>&1
+    fi
+fi
 
 # Opened directly (from SpirOS or a shortcut) before MT5 is set up: show the progress
 # in a terminal window. Once installed, MT5 opens straight away.

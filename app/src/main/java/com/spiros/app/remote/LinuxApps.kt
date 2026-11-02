@@ -35,8 +35,35 @@ object LinuxApps {
     fun request(id: String) { _pending.value = id }
     fun consume() { _pending.value = null }
 
-    /** Opens [app] inside the running desktop, or alone and full screen if none runs. */
+    /** MT5 asked for while its package was still downloading: opened when it is ready. */
+    @Volatile private var afterInstall: Pair<Context, App>? = null
+
+    /** True while MetaTrader 5 full is being downloaded / installed. */
+    fun mt5Installing(status: Engine.Status) = status.task?.let { it.kind == "mt5" && it.active } == true
+
+    internal fun onStatus(status: Engine.Status) {
+        val (context, app) = afterInstall ?: return
+        if (status.mt5Installed) {
+            afterInstall = null
+            launch(context, app)
+        } else if (!mt5Installing(status) && status.task?.kind == "mt5" && status.task.error != null) {
+            afterInstall = null
+        }
+    }
+
+    /**
+     * Opens [app] inside the running desktop, or alone and full screen if none runs.
+     * MetaTrader 5 first downloads its full package (Wine + MT5 installed) in the
+     * background, then opens by itself.
+     */
     fun launch(context: Context, app: App) {
+        val status = Engine.status.value
+        if (app.id == "mt5" && status.connected && !status.mt5Installed) {
+            afterInstall = context.applicationContext to app
+            if (!mt5Installing(status)) Engine.installMt5(context)
+            android.widget.Toast.makeText(context, R.string.mt5_installing, android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
         if (Engine.status.value.desktopRunning) {
             Engine.send(context) { it.runInDesktop(app.command) }
         } else {

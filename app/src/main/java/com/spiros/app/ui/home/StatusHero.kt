@@ -182,6 +182,8 @@ fun TaskPill() {
 }
 
 @Composable
-private fun taskTitle(task: Engine.Task) =
-    if (task.kind == "linux") stringResource(R.string.task_installing, distroName(task.name))
-    else stringResource(R.string.ai_downloading_model, task.name.substringBefore(".gguf"))
+private fun taskTitle(task: Engine.Task) = when (task.kind) {
+    "linux" -> stringResource(R.string.task_installing, distroName(task.name))
+    "mt5" -> stringResource(R.string.mt5_installing)
+    else -> stringResource(R.string.ai_downloading_model, task.name.substringBefore(".gguf"))
+}

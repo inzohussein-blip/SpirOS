@@ -444,4 +444,5 @@
     <string name="lapp_ai">AI Chat</string>
     <string name="lapp_pin_mt5">Add MetaTrader 5 to the phone\'s home screen</string>
     <string name="lapp_pin_unsupported">Your launcher cannot add shortcuts. Long-press the SpirOS icon instead: MetaTrader 5 is in its menu.</string>
+    <string name="mt5_installing">Downloading MetaTrader 5 full (opens by itself when ready)</string>
 </resources>
