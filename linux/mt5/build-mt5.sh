@@ -7,7 +7,8 @@
 # Usage (inside xvfb-run): linux/mt5/build-mt5.sh <output dir>
 set -euo pipefail
 OUT="$1"
-WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/10.0/wine-10.0-amd64-wow64.tar.xz"
+WINE_URL="${WINE_URL:-$(cat "$(dirname "$0")/wine-url.txt")}"
+PROBE="${PROBE:-}" # set: only test whether MT5 runs (no package)
 MT5_URL="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
 ROOT=/opt/spiros-mt5
 sudo mkdir -p "$ROOT" && sudo chown "$(id -u):$(id -g)" "$ROOT"
@@ -24,6 +25,11 @@ $RUN "$WINE" --version
 
 echo "== Windows prefix"
 $RUN "$WINE" wineboot -u
+$RUN "$ROOT/wine/bin/wineserver" -w || true
+# MT5's protection takes Wine's crash handler (AeDebug "winedbg --auto") for a debugger.
+for k in 'HKLM\Software\Microsoft\Windows NT\CurrentVersion\AeDebug' 'HKLM\Software\Wow6432Node\Microsoft\Windows NT\CurrentVersion\AeDebug'; do
+    $RUN "$WINE" reg delete "$k" /v Debugger /f || true
+done
 $RUN "$ROOT/wine/bin/wineserver" -w || true
 
 echo "== MetaTrader 5 (official installer, silent)"
@@ -49,10 +55,12 @@ for t in 30 60 90 120 180; do
     pgrep -fa terminal64 >/dev/null && echo "t=$t MT5 running" || echo "t=$t MT5 not running"
 done
 pgrep -fa terminal64 && echo "MT5_RUNNING" || echo "MT5_NOT_RUNNING"
+xwininfo -root -tree | grep -E '^ +0x[0-9a-f]+ "' | grep -v '"Default IME"\|has no name' | tee "$OUT/windows-$ARCH.txt" || true
 echo "== MT5 log (last lines)"; tail -n 80 "$OUT/mt5-run-$ARCH.log" || true
 $RUN "$ROOT/wine/bin/wineserver" -k || true
 sleep 5
 
+[ -n "$PROBE" ] && exit 0
 echo "== Pack"
 rm -rf "$WINEPREFIX/drive_c/users/$USER/Temp/"* 2>/dev/null || true
 tar --numeric-owner -C "$ROOT" -cf - wine prefix | xz -T0 -6 > "$OUT/mt5-full.tar.xz"
