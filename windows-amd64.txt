@@ -1,0 +1,1 @@
+     0xa00001 "terminal64.exe": ("terminal64.exe" "terminal64.exe")  312x102+484+322  +484+322
