@@ -19,6 +19,95 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # MT5 is installed on x86-64 (its installer is too slow/unreliable under Box64);
+  # the Windows prefix is the same for every CPU.
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils xz-utils libfreetype6 libfontconfig1 libgnutls30t64
+      - name: Install MT5 into a Wine prefix
+        run: |
+          mkdir -p out
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | tail -n 40
+          cat out/windows-amd64.txt
+          grep -q '"MetaTrader 5' out/windows-amd64.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mt5-full
+          path: out/mt5-full.tar
+          retention-days: 3
+
+  # Runs that package on a real ARM64 machine through Box64.
+  arm:
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        box64: [v0.4.4, main]
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools and Box64
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils cmake build-essential python3 git xz-utils \
+            libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
+          git clone --depth 1 --branch ${{ matrix.box64 }} https://github.com/ptitSeb/box64 /tmp/box64
+          cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build /tmp/box64/build -j$(nproc)
+          sudo cmake --install /tmp/box64/build
+      - uses: actions/download-artifact@v4
+        with:
+          name: mt5-full
+      - name: Run MT5 through Box64
+        run: |
+          mkdir -p out
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/run-mt5.sh mt5-full.tar "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 30
+          mkdir -p box && cp "$(command -v box64)" box/box64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: box64-${{ matrix.box64 }}
+          path: box/box64
+          retention-days: 3
+      - name: Save proof
+        if: always()
+        run: |
+          mkdir -p out && date > out/run.txt && cd out && git init -q && git checkout -q -b ci-mt5-arm-box64-${{ matrix.box64 }}
+          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
+          git add . && git commit -qm "MT5 ARM proof ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm-box64-${{ matrix.box64 }}
+
+  # Package + the Box64 that ran it, compressed and published for SpirOS.
+  publish:
+    needs: [package, arm]
+    if: always() && needs.package.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Pack and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -R art | head -n 20
+          B=$(ls art/box64-v0.4.4/box64 art/box64-main/box64 2>/dev/null | head -n 1)
+          [ -n "$B" ] || { echo "MT5 did not run on ARM64: not publishing"; exit 1; }
+          echo "Box64: $B"
+          mkdir -p p/box64 && cp "$B" p/box64/box64 && chmod 755 p/box64/box64
+          cp art/mt5-full/mt5-full.tar mt5-full.tar
+          tar --numeric-owner -C p -rf mt5-full.tar box64
+          xz -T0 -6 mt5-full.tar
+          sha256sum mt5-full.tar.xz | tee mt5-full.tar.xz.sha256
+          gh release upload linux-rootfs --clobber mt5-full.tar.xz mt5-full.tar.xz.sha256 -R ${{ github.repository }}
+
+  # Manual: which Wine builds open MT5 (x86-64).
   versions:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
@@ -69,75 +158,3 @@ jobs:
           git add . && git commit -qm "MT5 proof ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-probe-${{ env.NAME }}
 
-  probe-arm:
-    strategy:
-      fail-fast: false
-      matrix:
-        wine:
-          - https://github.com/Kron4ek/Wine-Builds/releases/download/10.20/wine-10.20-staging-amd64-wow64.tar.xz
-          - https://github.com/Kron4ek/Wine-Builds/releases/download/10.20/wine-10.20-staging-amd64.tar.xz
-          - https://github.com/Kron4ek/Wine-Builds/releases/download/11.21/wine-11.21-amd64.tar.xz
-        box64: [v0.4.4, main]
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - name: Tools and Box64
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils cmake build-essential python3 git xz-utils \
-            libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
-          git clone --depth 1 --branch ${{ matrix.box64 }} https://github.com/ptitSeb/box64 /tmp/box64
-          cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build /tmp/box64/build -j$(nproc)
-          sudo cmake --install /tmp/box64/build
-      - name: Try MT5 (ARM, Box64)
-        env:
-          WINE_URL: ${{ matrix.wine }}
-          PROBE: "1"
-        run: |
-          mkdir -p out
-          echo "NAME=$(basename "$WINE_URL" .tar.xz)-box64-${{ matrix.box64 }}" >> "$GITHUB_ENV"
-          timeout 40m xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 40 || true
-          cat out/windows-arm64.txt || true
-      - name: Save proof
-        if: always()
-        run: |
-          mkdir -p out && date > out/run.txt && cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm-${{ env.NAME }}
-          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
-          git add . && git commit -qm "MT5 proof ${{ github.run_number }}"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm-${{ env.NAME }}
-
-  mt5:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-      - name: Tools and Box64
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils cmake build-essential python3 git xz-utils \
-            libfreetype6 libfontconfig1 libgnutls30t64 libx11-6 libxext6 libxrender1 libxrandr2 libxinerama1 libxcursor1 libxcomposite1 libxi6
-          git clone --depth 1 --branch v0.4.4 https://github.com/ptitSeb/box64 /tmp/box64
-          cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake --build /tmp/box64/build -j$(nproc)
-          sudo cmake --install /tmp/box64/build
-      - name: Build MT5 full (Wine via Box64)
-        run: |
-          mkdir -p out
-          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | grep -v '^\[BOX64\]' | tail -n 120
-          # Publish only an MT5 that really opens (main window "MetaTrader 5 - ...").
-          grep -q '"MetaTrader 5' out/windows-arm64.txt
-          cd out && sha256sum mt5-full.tar.xz | tee mt5-full.tar.xz.sha256
-      - name: Publish package
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload linux-rootfs --clobber out/mt5-full.tar.xz out/mt5-full.tar.xz.sha256
-      - name: Save proof
-        if: always()
-        run: |
-          mkdir -p out && date > out/run.txt && cd out && rm -f mt5-full.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm64
-          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
-          git add . && git commit -qm "MT5 proof ${{ github.run_number }}"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm64
