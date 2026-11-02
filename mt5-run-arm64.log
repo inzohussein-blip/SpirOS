@@ -1,0 +1,116 @@
+[BOX64] Dynarec for ARM64, with extension: ASIMD AES CRC32 PMULL ATOMICS SHA1 SHA2 USCAT FLAGM FLAGM2 FRINT
+[BOX64] Running on Neoverse-N2 with 4 cores, pagesize: 4096
+[BOX64] Will use hardware counter measured at 1.0 GHz emulating 2.0 GHz
+[BOX64] Wine64 detected, WINEPRELOADRESERVE=""
+[BOX64] Detected 48bits at least of address space
+[BOX64] WINE prereserve of 0x10000:0x8000 done
+[BOX64] WINE prereserve of 0x110000:0x30000000 done
+[BOX64] WINE prereserve of 0x7f000000:0x3000000 done
+[BOX64] Detected running wine with "terminal64.exe"
+[BOX64] Counted 114 Env var
+[BOX64] Library search path: 
+[BOX64] Binary search path: ./:bin/:/snap/bin/:/home/runner/.local/bin/:/opt/pipx_bin/:/home/runner/.cargo/bin/:/home/runner/.config/composer/vendor/bin/:/home/runner/.dotnet/tools/:/usr/local/sbin/:/usr/local/bin/:/usr/sbin/:/usr/bin/:/sbin/:/bin/:/usr/games/:/usr/local/games/:/snap/bin/
+[BOX64] Looking for /opt/spiros-mt5/wine/bin/wine
+[BOX64] BOX64ENV: Variables overridden via env and/or RC file:
+	BOX64_LOG=1
+	BOX64_MAXCPU=64
+	BOX64_NOBANNER=1
+[BOX64] argv[1]="/opt/spiros-mt5/prefix/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+[BOX64] Rename process to "wine"
+[BOX64] Using native(wrapped) libdl.so.2
+[BOX64] Using native(wrapped) libpthread.so.0
+[BOX64] Using native(wrapped) libc.so.6
+[BOX64] Using native(wrapped) ld-linux-x86-64.so.2
+[BOX64] Using native(wrapped) libutil.so.1
+[BOX64] Using native(wrapped) librt.so.1
+[BOX64] Using native(wrapped) libbsd.so.0
+[BOX64] Using emulated /opt/spiros-mt5/wine/bin/../lib/wine/x86_64-unix/ntdll.so
+[BOX64] Using emulated /usr/lib/box64-x86_64-linux-gnu/libgcc_s.so.1
+[BOX64] Dynarec for ARM64, with extension: ASIMD AES CRC32 PMULL ATOMICS SHA1 SHA2 USCAT FLAGM FLAGM2 FRINT
+[BOX64] Running on Neoverse-N2 with 4 cores, pagesize: 4096
+[BOX64] Will use hardware counter measured at 1.0 GHz emulating 2.0 GHz
+[BOX64] Wine64 detected, WINEPRELOADRESERVE=""
+[BOX64] Detected 48bits at least of address space
+[BOX64] WINE prereserve of 0x10000:0x8000 done
+[BOX64] WINE prereserve of 0x110000:0x30000000 done
+[BOX64] WINE prereserve of 0x7f000000:0x3000000 done
+[BOX64] Detected running wine with "terminal64.exe"
+[BOX64] Counted 117 Env var
+[BOX64] Library search path: 
+[BOX64] Binary search path: ./:bin/:/snap/bin/:/home/runner/.local/bin/:/opt/pipx_bin/:/home/runner/.cargo/bin/:/home/runner/.config/composer/vendor/bin/:/home/runner/.dotnet/tools/:/usr/local/sbin/:/usr/local/bin/:/usr/sbin/:/usr/bin/:/sbin/:/bin/:/usr/games/:/usr/local/games/:/snap/bin/
+[BOX64] Looking for /opt/spiros-mt5/wine/bin/wine
+[BOX64] BOX64ENV: Variables overridden via env and/or RC file:
+	BOX64_LOG=1
+	BOX64_MAXCPU=64
+	BOX64_NOBANNER=1
+[BOX64] argv[1]="/opt/spiros-mt5/prefix/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+[BOX64] Rename process to "wine"
+[BOX64] Using native(wrapped) libdl.so.2
+[BOX64] Using native(wrapped) libpthread.so.0
+[BOX64] Using native(wrapped) libc.so.6
+[BOX64] Using native(wrapped) ld-linux-x86-64.so.2
+[BOX64] Using native(wrapped) libutil.so.1
+[BOX64] Using native(wrapped) librt.so.1
+[BOX64] Using native(wrapped) libbsd.so.0
+[BOX64] Using emulated /opt/spiros-mt5/wine/bin/../lib/wine/x86_64-unix/ntdll.so
+[BOX64] Using emulated /usr/lib/box64-x86_64-linux-gnu/libgcc_s.so.1
+[BOX64] posix_spawn(0xff4c045fe37c, "/opt/spiros-mt5/wine/bin/wineserver", (nil), (nil), 0xff4c045fe380["/opt/spiros-mt5/wine/bin/wineserver", "", ...], 0xff4c045fe740), IsX64=1, IsX86=0 IsScript=0 envp is context->envv
+[BOX64]  => posix_spawn(0xff4c045fe37c, "/usr/local/bin/box64", (nil), (nil), 0xffffde32d5a0 ["/usr/local/bin/box64", "/opt/spiros-mt5/wine/bin/wineserver", ""...:1], 0xffffde32dda8)
+[BOX64] posix_spawn returned 0
+[BOX64] Dynarec for ARM64, with extension: ASIMD AES CRC32 PMULL ATOMICS SHA1 SHA2 USCAT FLAGM FLAGM2 FRINT
+[BOX64] Running on Neoverse-N2 with 4 cores, pagesize: 4096
+[BOX64] Will use hardware counter measured at 1.0 GHz emulating 2.0 GHz
+[BOX64] Detected 48bits at least of address space
+[BOX64] Counted 117 Env var
+[BOX64] Library search path: 
+[BOX64] Binary search path: ./:bin/:/snap/bin/:/home/runner/.local/bin/:/opt/pipx_bin/:/home/runner/.cargo/bin/:/home/runner/.config/composer/vendor/bin/:/home/runner/.dotnet/tools/:/usr/local/sbin/:/usr/local/bin/:/usr/sbin/:/usr/bin/:/sbin/:/bin/:/usr/games/:/usr/local/games/:/snap/bin/
+[BOX64] Looking for /opt/spiros-mt5/wine/bin/wineserver
+[BOX64] BOX64ENV: Variables overridden via env and/or RC file:
+	BOX64_LOG=1
+	BOX64_NOBANNER=1
+[BOX64] Rename process to "wineserver"
+[BOX64] Using native(wrapped) libdl.so.2
+[BOX64] Using native(wrapped) libc.so.6
+[BOX64] Using native(wrapped) ld-linux-x86-64.so.2
+[BOX64] Using native(wrapped) libpthread.so.0
+[BOX64] Using native(wrapped) libutil.so.1
+[BOX64] Using native(wrapped) librt.so.1
+[BOX64] Using native(wrapped) libbsd.so.0
+002c:err:wineboot:process_run_key Error running cmd L"C:\\windows\\system32\\winemenubuilder.exe -a -r" (2).
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/win32u.so
+[BOX64] Using native(wrapped) libm.so.6
+[BOX64] Using native(wrapped) libfreetype.so.6
+[BOX64] Using native(wrapped) libfontconfig.so.1
+[BOX64] Using native(wrapped) libexpat.so.1
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/bcrypt.so
+[BOX64] Using native(wrapped) libgnutls.so.30
+[BOX64] Look for gnutls_x509_spki_set_rsa_oaep_params in loaded elfs
+[BOX64] Warning, function gnutls_x509_spki_set_rsa_oaep_params not found in lib libgnutls.so.30
+[BOX64] Look for gnutls_x509_spki_set_rsa_oaep_params in loaded elfs
+[BOX64] Warning, function gnutls_x509_spki_set_rsa_oaep_params not found in lib libgnutls.so.30
+[BOX64] Look for gnutls_x509_spki_set_rsa_oaep_params in loaded elfs
+[BOX64] Warning, function gnutls_x509_spki_set_rsa_oaep_params not found in lib libgnutls.so.30
+[BOX64] Look for gnutls_x509_spki_set_rsa_oaep_params in loaded elfs
+[BOX64] Warning, function gnutls_x509_spki_set_rsa_oaep_params not found in lib libgnutls.so.30
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/crypt32.so
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/winex11.so
+[BOX64] Using native(wrapped) libXext.so.6
+[BOX64] Using native(wrapped) libX11.so.6
+[BOX64] Using native(wrapped) libxcb.so.1
+[BOX64] Using native(wrapped) libXau.so.6
+[BOX64] Using native(wrapped) libXdmcp.so.6
+[BOX64] Using native(wrapped) libXinerama.so.1
+[BOX64] Using native(wrapped) libXxf86vm.so.1
+[BOX64] Using native(wrapped) libXrender.so.1
+[BOX64] Using native(wrapped) libXrandr.so.2
+[BOX64] Using native(wrapped) libXcomposite.so.1
+[BOX64] Using native(wrapped) libXi.so.6
+[BOX64] Using native(wrapped) libXcursor.so.1
+[BOX64] Using native(wrapped) libXfixes.so.3
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/winspool.so
+[BOX64] Using native(wrapped) libcups.so.2
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/dnsapi.so
+[BOX64] Using native(wrapped) libresolv.so.2
+[BOX64] Using emulated /opt/spiros-mt5/wine/lib/wine/x86_64-unix/ws2_32.so
+0024:err:seh:call_seh_handlers invalid frame 00006FFFFFF6D320 (000000007FFF2000-00000000801F0000)
+0024:err:seh:NtRaiseException Exception frame is not in stack limits => unable to dispatch exception.
