@@ -1,0 +1,4 @@
+002c:err:wineboot:process_run_key Error running cmd L"C:\\windows\\system32\\winemenubuilder.exe -a -r" (2).
+[[31mBOX64[0m] Error initializing native libSDL2-2.0.so.0 (last dlerror is libSDL2-2.0.so.0: cannot open shared object file: No such file or directory)
+0024:err:seh:call_seh_handlers invalid frame 000000000031F5BC (0000000000122000-0000000000320000)
+0024:err:seh:NtRaiseException Exception frame is not in stack limits => unable to dispatch exception.
