@@ -41,10 +41,15 @@ sleep 60 # let the installer finish and start the terminal once
 echo "== Run MT5 and take a screenshot"
 $RUN "$ROOT/wine/bin/wineserver" -k || true
 sleep 3
-( $RUN "$WINE" "$TERMINAL" & )
-sleep 120
-import -window root "$OUT/mt5-$(dpkg --print-architecture).png" || true
+ARCH=$(dpkg --print-architecture)
+( cd "$(dirname "$TERMINAL")" && WINEDEBUG=err+all,fixme-all BOX64_LOG=1 $RUN "$WINE" "$TERMINAL" > "$OUT/mt5-run-$ARCH.log" 2>&1 & )
+for t in 30 60 90 120 180; do
+    sleep 30
+    import -window root "$OUT/mt5-$ARCH-$t.png" || true
+    pgrep -fa terminal64 >/dev/null && echo "t=$t MT5 running" || echo "t=$t MT5 not running"
+done
 pgrep -fa terminal64 && echo "MT5_RUNNING" || echo "MT5_NOT_RUNNING"
+echo "== MT5 log (last lines)"; tail -n 80 "$OUT/mt5-run-$ARCH.log" || true
 $RUN "$ROOT/wine/bin/wineserver" -k || true
 sleep 5
 
