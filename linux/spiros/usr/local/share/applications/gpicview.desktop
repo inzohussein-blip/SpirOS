@@ -3,5 +3,5 @@ Type=Application
 Name=Images
 Name[ar]=الصور
 Exec=gpicview %f
-Icon=image-viewer
+Icon=/usr/share/spiros/images.png
 Categories=Graphics;Viewer;

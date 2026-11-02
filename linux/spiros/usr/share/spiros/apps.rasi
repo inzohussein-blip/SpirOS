@@ -11,15 +11,10 @@
     text-color: @fg;
 }
 window {
-    width: 92%;
-    height: 82%;
-    location: center;
-    anchor: center;
-    border-radius: 28px;
+    /* Full-screen app drawer, like a phone's. */
+    fullscreen: true;
     background-color: @bg;
-    border: 1px;
-    border-color: #2b2a48;
-    padding: 28px;
+    padding: 48px 8% 96px 8%;
     /* No compositor in a phone session: blend with a snapshot of the desktop so the
        rounded corners and the glass sheet look right. */
     transparency: "screenshot";

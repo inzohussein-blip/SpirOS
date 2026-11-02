@@ -188,7 +188,7 @@ spiros)
     mkdir -p "$ROOT/usr/share/backgrounds"
     python3 "$HERE/spiros/usr/share/spiros/make-wallpaper.py" "$ROOT/usr/share/backgrounds/spiros.png"
     rm -f "$ROOT/usr/share/spiros/make-wallpaper.py"
-    for icon in apps keyboard close mt5 pdf ai; do
+    for icon in apps keyboard close mt5 pdf ai images; do
         rsvg-convert -w 128 -h 128 "$ROOT/usr/share/spiros/$icon.svg" -o "$ROOT/usr/share/spiros/$icon.png"
     done
     mkdir -p "$ROOT/etc/gtk-3.0" "$ROOT/etc/xdg/lxterminal"
