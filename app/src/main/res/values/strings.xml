@@ -445,4 +445,18 @@
     <string name="lapp_pin_mt5">Add MetaTrader 5 to the phone\'s home screen</string>
     <string name="lapp_pin_unsupported">Your launcher cannot add shortcuts. Long-press the SpirOS icon instead: MetaTrader 5 is in its menu.</string>
     <string name="mt5_installing">Downloading MetaTrader 5 full (opens by itself when ready)</string>
+    <string name="update_title">Updates</string>
+    <string name="update_current">SpirOS build %1$d</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_latest">You have the latest version</string>
+    <string name="update_available">Build %1$d is available</string>
+    <string name="update_whats_new">What\'s new: %1$s</string>
+    <string name="update_now">Update now</string>
+    <string name="update_dl_engine">Downloading the engine update</string>
+    <string name="update_dl_app">Downloading the SpirOS update</string>
+    <string name="update_verifying">Checking the fingerprint and signature…</string>
+    <string name="update_installing_engine">Installing the engine…</string>
+    <string name="update_installing_app">Installing SpirOS… (it restarts by itself)</string>
+    <string name="update_failed">Update failed: %1$s</string>
 </resources>

@@ -65,6 +65,11 @@ jobs:
           # SpirOS checks these before installing the engine (and its signature too).
           sha256sum SpirOS-Engine.apk > SpirOS-Engine.apk.sha256
           sha256sum SpirOS-Engine-x86_64.apk > SpirOS-Engine-x86_64.apk.sha256
+          # In-app updates (Settings → Updates) read version.json and check these too.
+          sha256sum SpirOS.apk > SpirOS.apk.sha256
+          sha256sum SpirOS-x86_64.apk > SpirOS-x86_64.apk.sha256
+          jq -n --argjson v "${{ github.run_number }}" --arg n "$(git log -1 --format=%s)" '{versionCode: $v, notes: $n}' > version.json
+          cat version.json
 
       - uses: actions/upload-artifact@v4
         with:
@@ -97,7 +102,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          FILES="SpirOS.apk SpirOS-Engine.apk SpirOS-Engine.apk.sha256 SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256"
+          FILES="SpirOS.apk SpirOS.apk.sha256 SpirOS-x86_64.apk SpirOS-x86_64.apk.sha256 version.json SpirOS-Engine.apk SpirOS-Engine.apk.sha256 SpirOS-Engine-x86_64.apk SpirOS-Engine-x86_64.apk.sha256"
           NOTES="نسخة تجريبية مبنية تلقائيًا من ${{ github.sha }}. ثبّت SpirOS.apk فقط. محرك لينكس والذكاء الاصطناعي (SpirOS-Engine) يثبّته SpirOS بنفسه من داخل التطبيق عند أول استخدام بعد التحقق من بصمته وتوقيعه."
           # Each build is a new release marked "latest" (published releases may be
           # immutable, so a tag is never reused). Stable links for people and the app:

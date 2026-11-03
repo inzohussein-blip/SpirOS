@@ -445,4 +445,18 @@
     <string name="lapp_pin_mt5">إضافة MetaTrader 5 إلى شاشة الهاتف الرئيسية</string>
     <string name="lapp_pin_unsupported">مشغّل هاتفك لا يدعم إضافة الاختصارات. اضغط مطولًا على أيقونة SpirOS: ستجد MetaTrader 5 في قائمتها.</string>
     <string name="mt5_installing">تنزيل MetaTrader 5 الكامل (يفتح تلقائياً عند الجاهزية)</string>
+    <string name="update_title">التحديثات</string>
+    <string name="update_current">SpirOS إصدار %1$d</string>
+    <string name="update_check">التحقق من وجود تحديث</string>
+    <string name="update_checking">جارٍ التحقق…</string>
+    <string name="update_latest">لديك أحدث إصدار</string>
+    <string name="update_available">الإصدار %1$d متوفر</string>
+    <string name="update_whats_new">الجديد: %1$s</string>
+    <string name="update_now">تحديث الآن</string>
+    <string name="update_dl_engine">تنزيل تحديث المحرك</string>
+    <string name="update_dl_app">تنزيل تحديث SpirOS</string>
+    <string name="update_verifying">التحقق من البصمة والتوقيع…</string>
+    <string name="update_installing_engine">تثبيت المحرك…</string>
+    <string name="update_installing_app">تثبيت SpirOS… (سيُعاد تشغيله تلقائياً)</string>
+    <string name="update_failed">فشل التحديث: %1$s</string>
 </resources>

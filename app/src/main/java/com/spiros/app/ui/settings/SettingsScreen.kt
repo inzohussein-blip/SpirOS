@@ -61,6 +61,21 @@ import com.spiros.app.ui.lock.PinEntry
 import com.spiros.app.vault.BiometricGate
 import com.spiros.app.vault.Vault
 import kotlinx.coroutines.launch
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import com.spiros.app.SpirApp
+import com.spiros.app.remote.ApkInstaller
+import com.spiros.app.remote.AppUpdater
+import com.spiros.app.remote.EngineInstaller
 
 @Composable
 fun SettingsScreen(
@@ -146,6 +161,10 @@ fun SettingsScreen(
                     modifier = Modifier.clickable(onClick = onOpenPerformance),
                     colors = itemColors,
                 )
+            }
+            if (match(R.string.update_title, R.string.update_check)) {
+                GroupTitle(stringResource(R.string.update_title))
+                UpdateSection()
             }
             if (match(R.string.appearance_title, R.string.appearance_theme, R.string.appearance_colors, R.string.appearance_style)) {
                 GroupTitle(stringResource(R.string.appearance_title))
@@ -376,6 +395,75 @@ fun SettingsScreen(
             },
             dismissButton = { TextButton(onClick = { confirmWipe = false }) { Text(cancel) } },
         )
+    }
+}
+
+/** Version, "check for updates" and one-tap update of SpirOS and its engine. */
+@Composable
+private fun UpdateSection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val state by AppUpdater.state.collectAsState()
+    LaunchedEffect(Unit) { if (AppUpdater.state.value is AppUpdater.State.Idle) AppUpdater.check(context) }
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(20.dp)).background(scheme.surfaceVariant.copy(alpha = 0.5f)).padding(16.dp)
+            .animateContentSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.SystemUpdate, null, tint = scheme.primary)
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(stringResource(R.string.update_current, AppUpdater.current), style = MaterialTheme.typography.titleSmall)
+                val line = when (val s = state) {
+                    is AppUpdater.State.Checking -> stringResource(R.string.update_checking)
+                    is AppUpdater.State.UpToDate -> stringResource(R.string.update_latest)
+                    is AppUpdater.State.Available -> stringResource(R.string.update_available, s.release.versionCode)
+                    is AppUpdater.State.Working -> stringResource(
+                        when (s.stage) {
+                            ApkInstaller.Stage.DOWNLOADING -> if (s.engine) R.string.update_dl_engine else R.string.update_dl_app
+                            ApkInstaller.Stage.VERIFYING -> R.string.update_verifying
+                            ApkInstaller.Stage.INSTALLING -> if (s.engine) R.string.update_installing_engine else R.string.update_installing_app
+                        },
+                    ) + if (s.stage == ApkInstaller.Stage.DOWNLOADING) " · ${(s.fraction * 100).toInt()}%" else ""
+                    is AppUpdater.State.Failed -> stringResource(R.string.update_failed, s.message)
+                    else -> ""
+                }
+                if (line.isNotEmpty()) Text(
+                    line, style = MaterialTheme.typography.bodySmall,
+                    color = if (state is AppUpdater.State.Failed) scheme.error else scheme.onSurfaceVariant,
+                )
+            }
+            if (state is AppUpdater.State.Checking) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+        }
+        (state as? AppUpdater.State.Working)?.let { s ->
+            if (s.stage == ApkInstaller.Stage.DOWNLOADING) LinearProgressIndicator(progress = { s.fraction }, modifier = Modifier.fillMaxWidth())
+            else LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
+        (state as? AppUpdater.State.Available)?.release?.notes?.takeIf { it.isNotBlank() }?.let {
+            Text(stringResource(R.string.update_whats_new, it), style = MaterialTheme.typography.bodySmall)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (state) {
+                is AppUpdater.State.Available -> Button(onClick = {
+                    // Android's install screens must not lock SpirOS behind them.
+                    (context.applicationContext as SpirApp).vault.holdLock = true
+                    if (!EngineInstaller.canInstall(context)) {
+                        runCatching { context.startActivity(EngineInstaller.allowInstallsIntent(context)) }
+                    } else {
+                        scope.launch { AppUpdater.update(context) }
+                    }
+                }) { Text(stringResource(R.string.update_now)) }
+                is AppUpdater.State.Working, is AppUpdater.State.Checking -> Unit
+                else -> OutlinedButton(onClick = { scope.launch { AppUpdater.check(context) } }) {
+                    Text(stringResource(R.string.update_check))
+                }
+            }
+        }
+        if (state is AppUpdater.State.Available && !EngineInstaller.canInstall(context)) {
+            Text(stringResource(R.string.engine_allow_hint), style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+        }
     }
 }
 
