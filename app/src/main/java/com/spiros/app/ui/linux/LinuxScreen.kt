@@ -404,6 +404,7 @@ fun LinuxScreen(onBack: () -> Unit, onOpenStore: () -> Unit = {}) {
                                 }
                             }
                         }
+                        CommandAssistant()
                         Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Rounded.Storefront, null)
                             Text(stringResource(R.string.store_title), modifier = Modifier.padding(start = 8.dp))

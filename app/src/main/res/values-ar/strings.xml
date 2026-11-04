@@ -534,4 +534,12 @@
     <string name="report_title">إرسال تقرير مشكلة</string>
     <string name="report_desc">الإصدارات والسجلات (لينكس، الذكاء الاصطناعي، MT5/MT4، المساحة) لترسلها لمن يساعدك. بدون محتوى الخزنة أو المفاتيح أو ملفاتك.</string>
     <string name="report_collecting">جارٍ الجمع…</string>
+    <string name="assist_title">مساعد الأوامر</string>
+    <string name="assist_hint">اكتب ما تريد، مثل «اعرض المساحة الفارغة» أو «ثبّت قارئ PDF»</string>
+    <string name="assist_suggest">اقترح أمراً</string>
+    <string name="assist_run">تشغيل في الطرفية</string>
+    <string name="assist_copy">نسخ</string>
+    <string name="assist_risky">انتبه: هذا الأمر يغيّر أو يحذف أشياء. اقرأه قبل التشغيل.</string>
+    <string name="assist_failed">لم يعطِ الذكاء الاصطناعي أمراً صالحاً. جرّب صياغة أخرى.</string>
+    <string name="assist_need_ai">شغّل الذكاء الاصطناعي الخاص (شاشة الذكاء الاصطناعي) مع نموذج، ثم اسأل هنا بكلماتك. لا شيء يخرج من الهاتف.</string>
 </resources>

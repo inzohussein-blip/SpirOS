@@ -534,4 +534,12 @@
     <string name="report_title">Send a problem report</string>
     <string name="report_desc">Versions and logs (Linux, AI, MT5/MT4, space) to send to whoever helps you. No vault content, keys or personal files.</string>
     <string name="report_collecting">Collecting…</string>
+    <string name="assist_title">Command assistant</string>
+    <string name="assist_hint">Say what you want, e.g. \"show free space\" or \"install a PDF reader\"</string>
+    <string name="assist_suggest">Suggest a command</string>
+    <string name="assist_run">Run in terminal</string>
+    <string name="assist_copy">Copy</string>
+    <string name="assist_risky">Careful: this command changes or deletes things. Read it before running.</string>
+    <string name="assist_failed">The AI did not give a usable command. Try saying it differently.</string>
+    <string name="assist_need_ai">Start the private AI (AI screen) with a model, then ask here in your own words. Nothing leaves the phone.</string>
 </resources>
