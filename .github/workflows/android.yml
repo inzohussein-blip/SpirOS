@@ -56,12 +56,18 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug assembleRelease
 
       - name: Name APKs
+        env:
+          SPIROS_KEYSTORE_B64: ${{ secrets.SPIROS_KEYSTORE_B64 }}
+          SPIROS_KEYSTORE_PASS: ${{ secrets.SPIROS_KEYSTORE_PASS }}
         run: |
           OUT=app/build/outputs/apk
           cp $OUT/secure/release/app-secure-arm64-v8a-release.apk SpirOS.apk
           cp $OUT/engine/release/app-engine-arm64-v8a-release.apk SpirOS-Engine.apk
           cp $OUT/secure/debug/app-secure-x86_64-debug.apk SpirOS-x86_64.apk
           cp $OUT/engine/debug/app-engine-x86_64-debug.apk SpirOS-Engine-x86_64.apk
+          # The private release key (if the repository has it) replaces the public
+          # project key, with v3 key rotation so installed builds update in place.
+          bash tools/sign_release.sh SpirOS.apk SpirOS-Engine.apk SpirOS-x86_64.apk SpirOS-Engine-x86_64.apk
           # SpirOS checks these before installing the engine (and its signature too).
           sha256sum SpirOS-Engine.apk > SpirOS-Engine.apk.sha256
           sha256sum SpirOS-Engine-x86_64.apk > SpirOS-Engine-x86_64.apk.sha256

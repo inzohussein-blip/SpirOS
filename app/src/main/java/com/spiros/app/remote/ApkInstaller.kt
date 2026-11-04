@@ -60,9 +60,15 @@ object ApkInstaller {
         val flags = PackageManager.GET_SIGNING_CERTIFICATES
         val theirs = pm.getPackageArchiveInfo(apk.path, flags)?.signingInfo ?: return false
         val ours = pm.getPackageInfo(context.packageName, flags).signingInfo ?: return false
-        val a = (if (theirs.hasMultipleSigners()) theirs.apkContentsSigners else theirs.signingCertificateHistory).map { it.toCharsString() }
-        val b = (if (ours.hasMultipleSigners()) ours.apkContentsSigners else ours.signingCertificateHistory).map { it.toCharsString() }
-        return a.isNotEmpty() && a.toSet() == b.toSet()
+        if (theirs.hasMultipleSigners() || ours.hasMultipleSigners()) {
+            return theirs.apkContentsSigners.map { it.toCharsString() }.toSet() == ours.apkContentsSigners.map { it.toCharsString() }.toSet()
+        }
+        // Key rotation (v3): the update's signing history must contain the key this
+        // SpirOS is signed with now (old key -> private release key is accepted; an
+        // APK signed only with an older key is not).
+        val theirHistory = theirs.signingCertificateHistory.map { it.toCharsString() }
+        val ourCurrent = ours.signingCertificateHistory.lastOrNull()?.toCharsString() ?: return false
+        return ourCurrent in theirHistory
     }
 
     private fun commit(context: Context, apk: File, packageName: String): Int {
