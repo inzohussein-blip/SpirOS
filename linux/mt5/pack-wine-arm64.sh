@@ -12,6 +12,14 @@ ROOT=/opt/spiros-wine
 sudo mkdir -p "$ROOT" && sudo chown "$(id -u):$(id -g)" "$ROOT"
 mkdir -p "$ROOT/hangover"
 for d in "$DEBS"/*.deb; do dpkg-deb -x "$d" "$ROOT/hangover"; done
+# Slim: nothing a program needs at run time is in import libraries (*.a), headers,
+# manuals or docs (they are for building Windows programs with winegcc).
+H="$ROOT/hangover"
+echo "hangover before: $(du -sm "$H" | cut -f1) MB"
+find "$H" -name '*.a' -delete
+rm -rf "$H/usr/include" "$H/usr/share/man" "$H/usr/share/doc" "$H/usr/share/applications" "$H/usr/share/lintian"
+echo "hangover after: $(du -sm "$H" | cut -f1) MB"
+du -m --max-depth=5 "$H" | sort -n | tail -n 15
 WINE=$(find "$ROOT/hangover" -path '*bin/wine' -type f | head -n 1)
 SERVER="$(dirname "$WINE")/wineserver"
 echo "wine: $WINE"; "$WINE" --version || exit 1
@@ -21,8 +29,10 @@ for k in 'HKLM\Software\Microsoft\Windows NT\CurrentVersion\AeDebug' 'HKLM\Softw
     "$WINE" reg delete "$k" /v Debugger /f || true
 done
 "$SERVER" -w
+# The prefix ships complete: Wine must never re-run its slow "update" on the phone.
+echo disable > "$WINEPREFIX/.update-timestamp"
 rm -rf "$WINEPREFIX/drive_c/users/${USER:-root}/Temp/"* 2>/dev/null || true
-tar --numeric-owner -C "$ROOT" -cf - hangover prefix | xz -T0 -6 > "$OUT/wine-base-arm64.tar.xz" || exit 1
+tar --numeric-owner -C "$ROOT" -cf - hangover prefix | xz -T0 -9 > "$OUT/wine-base-arm64.tar.xz" || exit 1
 du -h "$OUT/wine-base-arm64.tar.xz"
 
 # opens <id> <folder> <exe> <env>: runs it and tells whether its main window opened.
@@ -52,7 +62,7 @@ for id in mt5 mt4; do
     echo "$id: opens ($ok)"
     echo "$ok" > "$WINEPREFIX/drive_c/$folder/spiros.env"
     rm -rf "$WINEPREFIX/drive_c/$folder/logs/"* 2>/dev/null || true
-    tar --numeric-owner -C "$WINEPREFIX/drive_c" -cf - "$folder" | xz -T0 -6 > "$OUT/$id-arm64.tar.xz"
+    tar --numeric-owner -C "$WINEPREFIX/drive_c" -cf - "$folder" | xz -T0 -9 > "$OUT/$id-arm64.tar.xz"
     du -h "$OUT/$id-arm64.tar.xz"
 done
 [ -f "$OUT/mt5-arm64.tar.xz" ] || { echo "MT5 did not open on ARM64"; exit 1; }
