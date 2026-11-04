@@ -513,4 +513,8 @@
     <string name="download_none">Nothing is downloading.</string>
     <string name="store_tab_apps">Apps</string>
     <string name="store_tab_downloads">Downloads</string>
+    <string name="app_starting">Starting %1$s…</string>
+    <string name="app_starting_hint">The window appears in a moment.</string>
+    <string name="app_starting_slow">Windows programs take longer the first time on a phone (up to a minute or two). Later starts are faster.</string>
+    <string name="app_starting_hide">Hide</string>
 </resources>

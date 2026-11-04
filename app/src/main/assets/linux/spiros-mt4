@@ -11,6 +11,12 @@ if [ ! -f "$W/.mt4" ] || [ ! -f "$W/.base" ]; then
 fi
 HWINE=$(find "$W/hangover" -path '*bin/wine' -type f 2>/dev/null | head -n 1)
 export WINEPREFIX="$W/prefix" WINEDEBUG=-all
+# The prefix arrives complete: never let Wine "update" it at start (slow under
+# emulation, and it shows a "configuration is being updated" box every time
+# the unpacked files' dates differ from what the prefix recorded).
+[ -f "$WINEPREFIX/system.reg" ] && [ "$(cat "$WINEPREFIX/.update-timestamp" 2>/dev/null)" != disable ] && echo disable > "$WINEPREFIX/.update-timestamp"
+# Keep Wine's server warm for 10 minutes after MT closes: reopening is quick.
+"$(dirname "$HWINE")/wineserver" -p600 >/dev/null 2>&1 || true
 cd "$WINEPREFIX/drive_c/MT4" || exit 1
 # The x86 emulator (FEX or Box64 inside Hangover) MT4 was tested with.
 [ -f spiros.env ] && export $(cat spiros.env)

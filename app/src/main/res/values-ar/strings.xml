@@ -513,4 +513,8 @@
     <string name="download_none">لا يوجد تنزيل الآن.</string>
     <string name="store_tab_apps">التطبيقات</string>
     <string name="store_tab_downloads">التنزيلات</string>
+    <string name="app_starting">جارٍ تشغيل %1$s…</string>
+    <string name="app_starting_hint">ستظهر النافذة بعد لحظات.</string>
+    <string name="app_starting_slow">برامج ويندوز تأخذ وقتاً أطول في أول تشغيل على الهاتف (حتى دقيقة أو دقيقتين). المرات التالية أسرع.</string>
+    <string name="app_starting_hide">إخفاء</string>
 </resources>

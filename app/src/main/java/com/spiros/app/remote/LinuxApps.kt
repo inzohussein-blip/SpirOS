@@ -57,6 +57,11 @@ object LinuxApps {
     fun request(id: String) { _pending.value = id }
     fun consume() { _pending.value = null }
 
+    /** The app being opened (name), shown over the screen until its window appears. */
+    private val _launching = MutableStateFlow<String?>(null)
+    val launching: StateFlow<String?> = _launching.asStateFlow()
+    fun launched() { _launching.value = null }
+
     /** Windows programs (MetaTrader 5 / 4 full): installed by the engine on first use. */
     val ADDONS = setOf("mt5", "mt4")
 
@@ -99,6 +104,7 @@ object LinuxApps {
             )
             return
         }
+        _launching.value = app.name(context)
         if (Engine.status.value.desktopRunning) {
             Engine.send(context) { it.runInDesktop(app.command) }
         } else {

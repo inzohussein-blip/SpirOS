@@ -235,6 +235,7 @@ fun LinuxScreen(onBack: () -> Unit, onOpenStore: () -> Unit = {}) {
                     VmScreen(client, Modifier.weight(1f))
                 }
             }
+            AppLaunchOverlay(client)
             // One floating, draggable button holds every desktop tool.
             FloatingDock(
                 tools = listOf(
@@ -569,6 +570,49 @@ private fun AccountStep(onCreated: () -> Unit, onSkip: () -> Unit) {
                 ) { Text(stringResource(R.string.wizard_account_create)) }
                 TextButton(onClick = onSkip) { Text(stringResource(R.string.wizard_skip)) }
             }
+        }
+    }
+}
+
+/**
+ * "Starting MetaTrader 5…" over the desktop until the app's window appears (the
+ * screen changes clearly from when it was asked for), at most 4 minutes. Windows
+ * programs take a while under emulation; this shows it is working.
+ */
+@Composable
+private fun AppLaunchOverlay(client: com.spiros.app.engine.VncClient) {
+    val name by LinuxApps.launching.collectAsState()
+    val app = name ?: return
+    var seconds by remember(app) { mutableIntStateOf(0) }
+    LaunchedEffect(app) {
+        fun sample(): IntArray? = client.bitmap.value?.let { b ->
+            val xs = 24; val ys = 14
+            IntArray(xs * ys) { i -> b.getPixel((i % xs) * (b.width - 1) / (xs - 1), (i / xs) * (b.height - 1) / (ys - 1)) }
+        }
+        var base = sample()
+        while (seconds < 240) {
+            kotlinx.coroutines.delay(1000)
+            seconds++
+            val now = sample() ?: continue
+            val ref = base
+            if (ref == null) { base = now; continue }
+            val changed = now.indices.count { now[it] != ref[it] }
+            // A new window covers a good part of the screen.
+            if (seconds > 2 && changed > now.size / 4) break
+        }
+        LinuxApps.launched()
+    }
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f)), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            androidx.compose.material3.CircularProgressIndicator(color = Color(0xFF7CE7C3))
+            Text(stringResource(R.string.app_starting, app), color = Color.White, style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(if (seconds > 20) R.string.app_starting_slow else R.string.app_starting_hint),
+                color = Color(0xFF9FB0D0), style = MaterialTheme.typography.bodySmall,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp),
+            )
+            TextButton(onClick = { LinuxApps.launched() }) { Text(stringResource(R.string.app_starting_hide), color = Color.White) }
         }
     }
 }

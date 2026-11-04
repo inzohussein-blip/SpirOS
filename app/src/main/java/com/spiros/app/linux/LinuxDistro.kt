@@ -282,6 +282,9 @@ object LinuxDistro {
                         out.parentFile?.mkdirs()
                         out.outputStream().use { tar.copyTo(it, 1 shl 16) }
                         chmod(out, entry.mode or 0b110_000_000)
+                        // Keep the archive's dates: programs compare them (Wine re-runs
+                        // its slow prefix update when they change).
+                        runCatching { out.setLastModified(entry.modTime.time) }
                     }
                     else -> Unit // device nodes, fifos: provided by proot binds
                 }
