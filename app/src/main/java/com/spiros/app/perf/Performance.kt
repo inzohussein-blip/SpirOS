@@ -16,13 +16,28 @@ object Performance {
     const val AUTO = "auto"
     val RESOLUTIONS = listOf(AUTO, "960x540", "1280x720", "1600x900", "1920x1080")
 
-    /** Desktop size with this phone's aspect ratio, 720 pixels high (light and sharp). */
+    /**
+     * How sharp the "phone screen" desktop is drawn (it is always shown full screen):
+     * fast = 540 pixels high, balanced = 720, sharp = 900. Fewer pixels = much less
+     * work for Linux, the transfer and the phone.
+     */
+    val QUALITIES = listOf("fast", "balanced", "sharp")
+    fun linuxQuality(c: Context) = prefs(c).getString("linux_quality", "fast")!!
+    fun setLinuxQuality(c: Context, v: String) = prefs(c).edit().putString("linux_quality", v).apply()
+    private fun qualityHeight(c: Context) = when (linuxQuality(c)) { "sharp" -> 900; "balanced" -> 720; else -> 540 }
+
+    /** 16-bit colour for the desktop picture: half the data, hardly visible. */
+    fun linuxColors16(c: Context) = prefs(c).getBoolean("linux_colors16", true)
+    fun setLinuxColors16(c: Context, v: Boolean) = prefs(c).edit().putBoolean("linux_colors16", v).apply()
+
+    /** Desktop size with this phone's aspect ratio, as high as the chosen quality. */
     fun phoneGeometry(c: Context): String {
         val bounds = c.getSystemService(android.view.WindowManager::class.java).maximumWindowMetrics.bounds
         val long = maxOf(bounds.width(), bounds.height()).toFloat()
         val short = minOf(bounds.width(), bounds.height()).toFloat().coerceAtLeast(1f)
-        val w = (720 * long / short).toInt().coerceIn(960, 1920)
-        return "${w - w % 8}x720"
+        val h = qualityHeight(c)
+        val w = (h * long / short).toInt().coerceIn(720, 2400)
+        return "${w - w % 8}x$h"
     }
 
     fun resolve(c: Context, geometry: String) = if (geometry == AUTO) phoneGeometry(c) else geometry

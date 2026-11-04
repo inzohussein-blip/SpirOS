@@ -64,6 +64,8 @@ object Engine {
         val finished: List<Task> = emptyList(),
         /** Free space in the engine's storage. */
         val freeBytes: Long = 0,
+        /** The engine may run without Android's battery limits. */
+        val batteryExempt: Boolean = true,
     ) {
         val taskActive get() = task?.active == true
         val aiActive get() = aiState == AiServer.State.READY || aiState == AiServer.State.LOADING
@@ -194,6 +196,7 @@ object Engine {
             queue = json.optJSONArray("queue")?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.map { it.optString("kind") to it.optString("name") } }.orEmpty(),
             finished = json.optJSONArray("finished")?.let { a -> (0 until a.length()).map { task(a.getJSONObject(it)) } }.orEmpty(),
             freeBytes = json.optLong("freeBytes"),
+            batteryExempt = json.optBoolean("batteryExempt", true),
         )
         _status.value = next
         if (!next.desktopRunning) closeScreen()
@@ -289,6 +292,7 @@ object Engine {
             connector = { service?.openDisplay()?.let(VncClient::fromDescriptor) },
             connectTimeoutMs = 120_000,
             maxFps = fps,
+            colors16 = app?.let { Performance.linuxColors16(it) } ?: true,
         ).also { it.start() }
     }
 

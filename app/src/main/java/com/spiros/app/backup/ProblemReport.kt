@@ -25,6 +25,9 @@ object ProblemReport {
             appendLine("SpirOS build ${AppUpdater.current} (${BuildConfig.VERSION_NAME})")
             appendLine("Engine installed: ${Engine.isInstalled(context)} version ${AppUpdater.engineVersion(context)}")
             appendLine("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}, ${Build.SUPPORTED_ABIS.joinToString()}")
+            appendLine("Linux picture: " + (Engine.screen.value?.lastStats?.ifEmpty { "(no recent frames)" } ?: "(desktop not shown)") +
+                ", quality ${com.spiros.app.perf.Performance.linuxQuality(context)}, fps cap ${com.spiros.app.perf.Performance.linuxFps(context)}")
+            appendLine("battery limits off (SpirOS): ${com.spiros.app.perf.BatteryExemption.spirosExempt(context)}")
             appendLine("== Isolated space")
             runCatching { SpaceManager(context).diagnostics().forEach { (k, v) -> appendLine("$k: $v") } }
                 .onFailure { appendLine("(unavailable: ${it.message})") }

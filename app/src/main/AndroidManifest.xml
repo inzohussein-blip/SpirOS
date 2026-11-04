@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Downloads can wait for Wi-Fi (Settings: only on Wi-Fi). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Linux and its programs run in the engine: ask once to run it without battery limits. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Fallback path when the space cannot uninstall an app silently. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <!-- Control notification while Linux / AI / Lab run (keeps them alive in the background). -->

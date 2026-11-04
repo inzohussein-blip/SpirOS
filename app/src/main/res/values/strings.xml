@@ -548,4 +548,17 @@
     <string name="lab_boot_isolated">Start isolated Debian</string>
     <string name="lab_isolated_wipe">Erase the encrypted disk</string>
     <string name="lab_isolated_wipe_body">Everything inside isolated Debian is deleted for good, and its key is destroyed. It starts fresh next time.</string>
+    <string name="perf_quality">Desktop sharpness (phone screen)</string>
+    <string name="perf_quality_fast">Fast (540p)</string>
+    <string name="perf_quality_balanced">Balanced (720p)</string>
+    <string name="perf_quality_sharp">Sharp (900p)</string>
+    <string name="perf_colors16">16-bit colour</string>
+    <string name="perf_colors16_desc">Half the data per frame: smoother Linux, hardly visible difference</string>
+    <string name="battery_title">Run without battery limits</string>
+    <string name="battery_desc">Linux, the AI and MT5 run in the background in the SpirOS Engine. Android slows such apps down unless you allow them to run freely.</string>
+    <string name="battery_allow_spiros">Allow SpirOS</string>
+    <string name="battery_allow_engine">Allow the engine</string>
+    <string name="battery_ok">Allowed for SpirOS and the engine</string>
+    <string name="battery_honor">Honor / Huawei: also open Settings → Battery → App launch, find SpirOS and SpirOS Engine, choose \"Manage manually\" and turn on all three switches.</string>
+    <string name="battery_open_settings">Open battery settings</string>
 </resources>

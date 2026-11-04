@@ -44,6 +44,7 @@ class EngineService : Service() {
             .put("distro", LinuxDistro.installed(this@EngineService) ?: "")
             .put("mt5Installed", LinuxDistro.mt5Installed(this@EngineService))
             .put("addons", LinuxDistro.addons(this@EngineService))
+            .put("batteryExempt", getSystemService(android.os.PowerManager::class.java).isIgnoringBatteryOptimizations(packageName))
             .apply {
                 BackgroundTask.state?.let { put("task", taskJson(it)) }
                 put("queue", JSONArray().apply { queue.forEach { put(JSONObject().put("kind", it.kind).put("name", it.name)) } })

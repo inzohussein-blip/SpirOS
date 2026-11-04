@@ -404,6 +404,7 @@ fun LinuxScreen(onBack: () -> Unit, onOpenStore: () -> Unit = {}) {
                                 }
                             }
                         }
+                        com.spiros.app.ui.performance.BatteryCard(onlyWhenNeeded = true)
                         CommandAssistant()
                         Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) {
                             Icon(Icons.Rounded.Storefront, null)

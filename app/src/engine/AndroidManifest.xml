@@ -43,5 +43,13 @@
         <service
             android:name="com.spiros.app.remote.EngineKeepAlive"
             android:exported="false" />
+        <!-- Asks Android (for the engine itself) to run it without battery limits;
+             opened by SpirOS only (signature permission). No screen of its own. -->
+        <activity
+            android:name="com.spiros.app.remote.EngineBatteryActivity"
+            android:exported="true"
+            android:permission="com.spiros.app.permission.ENGINE"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 </manifest>

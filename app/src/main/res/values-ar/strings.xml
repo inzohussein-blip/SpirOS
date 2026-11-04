@@ -548,4 +548,17 @@
     <string name="lab_boot_isolated">تشغيل Debian المعزول</string>
     <string name="lab_isolated_wipe">مسح القرص المشفّر</string>
     <string name="lab_isolated_wipe_body">يُحذف كل ما داخل Debian المعزول نهائياً ويُتلف مفتاحه. يبدأ من جديد في المرة القادمة.</string>
+    <string name="perf_quality">دقة سطح المكتب (شاشة الهاتف)</string>
+    <string name="perf_quality_fast">سريع (540p)</string>
+    <string name="perf_quality_balanced">متوازن (720p)</string>
+    <string name="perf_quality_sharp">حاد (900p)</string>
+    <string name="perf_colors16">ألوان 16 بت</string>
+    <string name="perf_colors16_desc">نصف البيانات لكل إطار: لينكس أنعم، والفرق في الألوان شبه غير ملحوظ</string>
+    <string name="battery_title">التشغيل بلا قيود البطارية</string>
+    <string name="battery_desc">لينكس والذكاء الاصطناعي وMT5 تعمل في الخلفية داخل محرك SpirOS. أندرويد يبطئ هذه التطبيقات ما لم تسمح لها بالعمل بحرية.</string>
+    <string name="battery_allow_spiros">السماح لـ SpirOS</string>
+    <string name="battery_allow_engine">السماح للمحرك</string>
+    <string name="battery_ok">مسموح لـ SpirOS وللمحرك</string>
+    <string name="battery_honor">في هواتف Honor / Huawei: افتح أيضاً الإعدادات ← البطارية ← تشغيل التطبيقات، ثم SpirOS وSpirOS Engine، واختر «إدارة يدوية» وفعّل المفاتيح الثلاثة.</string>
+    <string name="battery_open_settings">فتح إعدادات البطارية</string>
 </resources>

@@ -62,6 +62,8 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
     var light by remember { mutableStateOf(Performance.linuxLight(context)) }
     var fps by remember { mutableIntStateOf(Performance.linuxFps(context)) }
     var resolution by remember { mutableStateOf(Performance.linuxResolution(context)) }
+    var quality by remember { mutableStateOf(Performance.linuxQuality(context)) }
+    var colors16 by remember { mutableStateOf(Performance.linuxColors16(context)) }
     var freeze by remember { mutableStateOf(Performance.freezeInBackground(context)) }
     var pip by remember { mutableStateOf(Performance.pip(context)) }
     var external by remember { mutableStateOf(Performance.externalDisplay(context)) }
@@ -172,6 +174,19 @@ fun PerformanceScreen(vault: Vault, onBack: () -> Unit) {
                         resolution = it
                         Performance.setLinuxResolution(context, it)
                     }
+                    // Speed of the "phone screen" desktop and of its picture.
+                    Label(stringResource(R.string.perf_quality))
+                    Chips(Performance.QUALITIES, quality, label = {
+                        context.getString(when (it) { "sharp" -> R.string.perf_quality_sharp; "balanced" -> R.string.perf_quality_balanced; else -> R.string.perf_quality_fast })
+                    }) {
+                        quality = it
+                        Performance.setLinuxQuality(context, it)
+                    }
+                    Toggle(stringResource(R.string.perf_colors16), stringResource(R.string.perf_colors16_desc), colors16) {
+                        colors16 = it
+                        Performance.setLinuxColors16(context, it)
+                    }
+                    BatteryCard()
                     Label(stringResource(R.string.perf_session))
                     Chips(
                         listOf(stringResource(R.string.perf_session_desktop), stringResource(R.string.perf_session_app)),
