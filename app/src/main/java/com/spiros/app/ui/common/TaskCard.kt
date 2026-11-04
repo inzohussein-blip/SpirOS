@@ -39,6 +39,7 @@ fun stageLabel(stage: String) = stringResource(
         "VERIFYING" -> R.string.linux_stage_verify
         "EXTRACTING" -> R.string.linux_stage_extract
         "FINISHING" -> R.string.task_stage_finish
+        "INSTALLING" -> R.string.task_stage_install
         else -> R.string.linux_stage_download
     },
 )
@@ -84,9 +85,11 @@ fun TaskCard(task: Engine.Task, title: String, onRetry: (() -> Unit)? = null) {
                         LinearProgressIndicator(Modifier.fillMaxWidth())
                     }
                     val details = buildList {
-                        if (task.total > 0) add("${mb(task.done)} / ${mb(task.total)}")
+                        // apt reports percentages, not bytes.
+                        val bytes = task.kind != "apt"
+                        if (task.total > 0 && bytes) add("${mb(task.done)} / ${mb(task.total)}")
                         if (task.paused) add(context.getString(R.string.task_paused))
-                        else if (speed > 1024 && task.total > 0) {
+                        else if (bytes && speed > 1024 && task.total > 0) {
                             add("${mb(speed.toLong())}/s")
                             val left = ((task.total - task.done) / speed).toLong()
                             if (left > 0) add(context.getString(R.string.task_left, left / 60, left % 60))
@@ -101,7 +104,7 @@ fun TaskCard(task: Engine.Task, title: String, onRetry: (() -> Unit)? = null) {
                                 Icon(Icons.Rounded.PlayArrow, null)
                                 Text(stringResource(R.string.task_resume))
                             }
-                        } else {
+                        } else if (task.kind != "apt") { // apt is not paused half-way
                             FilledTonalButton(onClick = { Engine.pauseTask(context) }) {
                                 Icon(Icons.Rounded.Pause, null)
                                 Text(stringResource(R.string.task_pause))

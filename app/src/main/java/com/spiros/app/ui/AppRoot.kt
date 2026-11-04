@@ -66,6 +66,7 @@ private sealed interface Screen {
     data object Space : Screen
     data object Lab : Screen
     data object Linux : Screen
+    data object LinuxStore : Screen
     data object Ai : Screen
     data object LinuxAccounts : Screen
     data object Performance : Screen
@@ -114,6 +115,7 @@ private fun Unlocked(vault: Vault) {
         screen = when (screen) {
             is Screen.Viewer -> Screen.VaultList
             Screen.Compat, Screen.LinuxAccounts, Screen.Performance -> Screen.Settings
+            Screen.LinuxStore -> Screen.Linux
             else -> Screen.Home
         }
     }
@@ -196,7 +198,7 @@ private fun ScreensAnimated(screen: Screen, vault: Vault, navigate: (Screen) -> 
 
 private fun depth(screen: Screen) = when (screen) {
     Screen.Home -> 0
-    is Screen.Viewer, Screen.Compat, Screen.LinuxAccounts, Screen.Performance -> 2
+    is Screen.Viewer, Screen.Compat, Screen.LinuxAccounts, Screen.Performance, Screen.LinuxStore -> 2
     else -> 1
 }
 
@@ -208,6 +210,7 @@ private fun ScreenContent(current: Screen, vault: Vault, navigate: (Screen) -> U
             onOpenSpace = { navigate(Screen.Space) },
             onOpenLab = { navigate(Screen.Lab) },
             onOpenLinux = { navigate(Screen.Linux) },
+            onOpenStore = { navigate(Screen.LinuxStore) },
             onOpenAi = { navigate(Screen.Ai) },
             onOpenShield = { navigate(Screen.Shield) },
             onOpenBrowser = { navigate(Screen.Browser) },
@@ -217,7 +220,8 @@ private fun ScreenContent(current: Screen, vault: Vault, navigate: (Screen) -> U
         Screen.VaultList -> VaultScreen(vault, onBack = { navigate(Screen.Home) }, onOpen = { navigate(Screen.Viewer(it)) })
         is Screen.Viewer -> ViewerScreen(vault, s.item, onBack = { navigate(Screen.VaultList) })
         Screen.Space -> SpaceScreen(vault, onBack = { navigate(Screen.Home) })
-        Screen.Linux -> LinuxScreen(onBack = { navigate(Screen.Home) })
+        Screen.Linux -> LinuxScreen(onBack = { navigate(Screen.Home) }, onOpenStore = { navigate(Screen.LinuxStore) })
+        Screen.LinuxStore -> com.spiros.app.ui.linux.StoreScreen(onBack = { navigate(Screen.Linux) })
         Screen.Ai -> AiScreen(onBack = { navigate(Screen.Home) }, onOpenLinux = { navigate(Screen.Linux) })
         Screen.Lab -> LabScreen(vault, onBack = { navigate(Screen.Home) })
         Screen.Shield -> ShieldScreen(vault, onBack = { navigate(Screen.Home) })

@@ -52,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -108,6 +109,7 @@ fun HomeScreen(
     onOpenSpace: () -> Unit,
     onOpenLab: () -> Unit,
     onOpenLinux: () -> Unit,
+    onOpenStore: () -> Unit = {},
     onOpenAi: () -> Unit,
     onOpenShield: () -> Unit,
     onOpenBrowser: () -> Unit,
@@ -139,6 +141,8 @@ fun HomeScreen(
     }
     val shieldPhone by ShieldVpnService.running.collectAsState()
     val linuxRunning by Engine.desktopRunning.collectAsState()
+    val storeInstalled by com.spiros.app.remote.LinuxStore.installed.collectAsState()
+    LaunchedEffect(Unit) { com.spiros.app.remote.LinuxStore.load(context) }
     val engineStatus by Engine.status.collectAsState()
     val aiState by Engine.aiState.collectAsState()
     val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
@@ -269,7 +273,7 @@ fun HomeScreen(
             // Linux programs, opened directly (MetaTrader 5 full screen, terminal, ...).
             if (engineStatus.linuxInstalled) {
                 fullWidth { SectionTitle(stringResource(R.string.lapp_title)) }
-                items(com.spiros.app.remote.LinuxApps.all, key = { "lapp-" + it.id }) { app ->
+                items(com.spiros.app.remote.LinuxApps.installed(context, storeInstalled), key = { "lapp-" + it.id }) { app ->
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
@@ -286,7 +290,25 @@ fun HomeScreen(
                             modifier = Modifier.size(56.dp),
                         )
                         Text(
-                            stringResource(app.label),
+                            app.name(context),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                }
+                item(key = "lapp-store") {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onOpenStore).padding(vertical = 4.dp),
+                    ) {
+                        androidx.compose.foundation.Image(
+                            androidx.compose.ui.res.painterResource(R.drawable.ic_sc_store),
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                        )
+                        Text(
+                            stringResource(R.string.store_short),
                             style = MaterialTheme.typography.labelMedium,
                             maxLines = 1,
                             modifier = Modifier.padding(top = 6.dp),

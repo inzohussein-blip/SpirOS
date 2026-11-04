@@ -1,17 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.spiros.app"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.spiros.app"
         minSdk = 30
-        targetSdk = 35
+        targetSdk = 37
         // CI run number, so every published build updates in place over the previous one.
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
         versionName = "0.1.0"
@@ -82,9 +81,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         aidl = true
         buildConfig = true
@@ -131,4 +127,11 @@ dependencies {
     implementation(libs.commons.compress)
     implementation(libs.xz)
     debugImplementation(libs.androidx.compose.ui.tooling)
+}
+
+// AGP 9 compiles Kotlin itself (built-in Kotlin); options go here.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }

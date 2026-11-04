@@ -1,0 +1,25 @@
+{
+  "note": "Apps in the SpirOS Linux store: Ubuntu packages (apt, signed official archive) that run under proot without services. Snap-only apps (Firefox, Thunderbird, Chromium) are not offered.",
+  "apps": [
+    {"id": "geany", "packages": "geany", "exec": "geany", "category": "dev", "size": 12, "name": "Geany", "name_ar": "Geany", "desc": "Fast, light code editor", "desc_ar": "محرر برمجة سريع وخفيف"},
+    {"id": "git", "packages": "git", "exec": "", "category": "dev", "size": 25, "name": "Git", "name_ar": "Git", "desc": "Version control (command line)", "desc_ar": "إدارة نسخ الكود (سطر الأوامر)"},
+    {"id": "python", "packages": "python3-pip python3-venv idle", "exec": "idle", "category": "dev", "size": 40, "name": "Python IDLE", "name_ar": "بايثون IDLE", "desc": "Python with pip and its editor", "desc_ar": "بايثون مع pip ومحرره"},
+    {"id": "nodejs", "packages": "nodejs npm", "exec": "", "category": "dev", "size": 60, "name": "Node.js", "name_ar": "Node.js", "desc": "JavaScript runtime and npm", "desc_ar": "تشغيل جافاسكربت مع npm"},
+    {"id": "sqlitebrowser", "packages": "sqlitebrowser", "exec": "sqlitebrowser", "category": "dev", "size": 30, "name": "DB Browser for SQLite", "name_ar": "متصفح قواعد SQLite", "desc": "Open and edit SQLite databases", "desc_ar": "فتح وتعديل قواعد بيانات SQLite"},
+    {"id": "abiword", "packages": "abiword", "exec": "abiword", "category": "office", "size": 20, "name": "AbiWord", "name_ar": "AbiWord", "desc": "Light word processor", "desc_ar": "معالج نصوص خفيف"},
+    {"id": "gnumeric", "packages": "gnumeric", "exec": "gnumeric", "category": "office", "size": 30, "name": "Gnumeric", "name_ar": "Gnumeric", "desc": "Light spreadsheet", "desc_ar": "جداول بيانات خفيفة"},
+    {"id": "gnucash", "packages": "gnucash", "exec": "gnucash", "category": "office", "size": 90, "name": "GnuCash", "name_ar": "GnuCash", "desc": "Personal and small-business accounting", "desc_ar": "محاسبة شخصية وللأعمال الصغيرة"},
+    {"id": "keepassxc", "packages": "keepassxc", "exec": "keepassxc", "category": "tools", "size": 25, "name": "KeePassXC", "name_ar": "KeePassXC", "desc": "Offline password manager", "desc_ar": "مدير كلمات مرور بدون إنترنت"},
+    {"id": "galculator", "packages": "galculator", "exec": "galculator", "category": "tools", "size": 2, "name": "Galculator", "name_ar": "الآلة الحاسبة", "desc": "Scientific calculator", "desc_ar": "آلة حاسبة علمية"},
+    {"id": "htop", "packages": "htop", "exec": "lxterminal -t htop -e htop", "category": "tools", "size": 1, "name": "htop", "name_ar": "مراقب العمليات htop", "desc": "See what uses CPU and memory", "desc_ar": "ما الذي يستهلك المعالج والذاكرة"},
+    {"id": "fastfetch", "packages": "fastfetch", "exec": "lxterminal -t fastfetch -e sh -c 'fastfetch; read x'", "category": "tools", "size": 2, "name": "fastfetch", "name_ar": "معلومات النظام", "desc": "System information at a glance", "desc_ar": "معلومات النظام بنظرة"},
+    {"id": "vlc", "packages": "vlc", "exec": "vlc", "category": "media", "size": 80, "name": "VLC", "name_ar": "VLC", "desc": "Plays almost any video and audio", "desc_ar": "يشغّل تقريباً كل الفيديو والصوت"},
+    {"id": "mpv", "packages": "mpv", "exec": "mpv --player-operation-mode=pseudo-gui", "category": "media", "size": 30, "name": "mpv", "name_ar": "mpv", "desc": "Minimal, fast video player", "desc_ar": "مشغل فيديو بسيط وسريع"},
+    {"id": "audacious", "packages": "audacious", "exec": "audacious", "category": "media", "size": 15, "name": "Audacious", "name_ar": "Audacious", "desc": "Light music player", "desc_ar": "مشغل موسيقى خفيف"},
+    {"id": "gimp", "packages": "gimp", "exec": "gimp", "category": "graphics", "size": 200, "name": "GIMP", "name_ar": "GIMP", "desc": "Photo editing", "desc_ar": "تعديل الصور"},
+    {"id": "inkscape", "packages": "inkscape", "exec": "inkscape", "category": "graphics", "size": 180, "name": "Inkscape", "name_ar": "Inkscape", "desc": "Vector drawing (SVG)", "desc_ar": "رسم متجهي (SVG)"},
+    {"id": "drawing", "packages": "drawing", "exec": "drawing", "category": "graphics", "size": 10, "name": "Drawing", "name_ar": "رسم", "desc": "Simple painting app", "desc_ar": "برنامج رسم بسيط"},
+    {"id": "filezilla", "packages": "filezilla", "exec": "filezilla", "category": "internet", "size": 30, "name": "FileZilla", "name_ar": "FileZilla", "desc": "FTP / SFTP file transfer", "desc_ar": "نقل الملفات FTP / SFTP"},
+    {"id": "transmission", "packages": "transmission-gtk", "exec": "transmission-gtk", "category": "internet", "size": 10, "name": "Transmission", "name_ar": "Transmission", "desc": "Light torrent client", "desc_ar": "برنامج تورنت خفيف"}
+  ]
+}

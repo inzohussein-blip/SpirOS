@@ -61,6 +61,8 @@ import com.spiros.app.SpirApp
 import com.spiros.app.remote.Engine
 import com.spiros.app.remote.EngineInstaller
 import com.spiros.app.remote.LinuxApps
+import com.spiros.app.remote.LinuxStore
+import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.draw.clip
@@ -96,7 +98,7 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LinuxScreen(onBack: () -> Unit) {
+fun LinuxScreen(onBack: () -> Unit, onOpenStore: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val status by Engine.status.collectAsState()
@@ -138,7 +140,7 @@ fun LinuxScreen(onBack: () -> Unit) {
     LaunchedEffect(pendingApp, status.connected, status.linuxInstalled) {
         val id = pendingApp ?: return@LaunchedEffect
         if (status.connected && status.linuxInstalled) {
-            LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) }
+            LinuxApps.byId(context, id)?.let { LinuxApps.launch(context, it) }
             LinuxApps.consume()
         }
     }
@@ -382,7 +384,8 @@ fun LinuxScreen(onBack: () -> Unit) {
                         // Open a Linux program directly (MT5 alone, full screen).
                         Text(stringResource(R.string.lapp_title), style = MaterialTheme.typography.titleSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                            LinuxApps.all.forEach { app ->
+                            val storeInstalled by LinuxStore.installed.collectAsState()
+                            LinuxApps.installed(context, storeInstalled).forEach { app ->
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
@@ -395,9 +398,13 @@ fun LinuxScreen(onBack: () -> Unit) {
                                         contentDescription = null,
                                         modifier = Modifier.size(52.dp),
                                     )
-                                    Text(stringResource(app.label), style = MaterialTheme.typography.labelMedium)
+                                    Text(app.name(context), style = MaterialTheme.typography.labelMedium, maxLines = 1)
                                 }
                             }
+                        }
+                        Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Rounded.Storefront, null)
+                            Text(stringResource(R.string.store_title), modifier = Modifier.padding(start = 8.dp))
                         }
                         OutlinedButton(onClick = {
                             val mt5 = LinuxApps.byId("mt5") ?: return@OutlinedButton

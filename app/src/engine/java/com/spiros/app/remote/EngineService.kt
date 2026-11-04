@@ -12,6 +12,7 @@ import com.spiros.app.ai.AiServer
 import com.spiros.app.linux.BackgroundTask
 import com.spiros.app.linux.LinuxAccounts
 import com.spiros.app.linux.LinuxDistro
+import com.spiros.app.linux.LinuxPackages
 import com.spiros.app.linux.LinuxSession
 import com.spiros.app.perf.AppProcesses
 import com.spiros.app.perf.BackgroundFreezer
@@ -78,6 +79,18 @@ class EngineService : Service() {
         override fun clearTask() = BackgroundTask.clear()
 
         override fun runInDesktop(command: String) = LinuxSession.runInDesktop(this@EngineService, command)
+
+        override fun linuxInstalled(packages: String): String = LinuxPackages.installed(this@EngineService, packages)
+
+        override fun linuxSearch(query: String): String = LinuxPackages.search(this@EngineService, query)
+
+        override fun linuxUpgradable(): String = LinuxPackages.upgradable(this@EngineService)
+
+        override fun linuxApt(action: String, packages: String) {
+            val ctx = this@EngineService
+            LinuxPackages.names(packages) // reject bad names before starting
+            runTask("apt", "$action ${packages.trim()}".trim()) { LinuxPackages.apply(ctx, action, packages) }
+        }
 
         override fun installMt5() {
             val ctx = this@EngineService

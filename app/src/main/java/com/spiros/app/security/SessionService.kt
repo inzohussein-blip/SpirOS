@@ -84,6 +84,7 @@ class SessionService : Service() {
             val what = when (task.kind) {
                 "linux" -> getString(R.string.dock_linux)
                 "mt5" -> getString(R.string.lapp_mt5)
+                "apt" -> getString(R.string.store_title)
                 else -> getString(R.string.dock_ai)
             }
             val pct = (task.fraction * 100).toInt()

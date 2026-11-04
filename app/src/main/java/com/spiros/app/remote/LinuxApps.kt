@@ -18,8 +18,12 @@ import kotlinx.coroutines.flow.asStateFlow
  * on the phone's home screen), e.g. MetaTrader 5 full screen without the desktop.
  */
 object LinuxApps {
-    data class App(val id: String, val label: Int, val command: String, val icon: Int)
+    /** [label] is a string resource; store apps have their own [title] instead. */
+    data class App(val id: String, val label: Int, val command: String, val icon: Int, val title: String? = null) {
+        fun name(context: Context) = title ?: context.getString(label)
+    }
 
+    /** Built into SpirOS Linux. */
     val all = listOf(
         App("mt5", R.string.lapp_mt5, "spiros-mt5", R.drawable.ic_sc_mt5),
         App("terminal", R.string.lapp_terminal, "lxterminal", R.drawable.ic_sc_terminal),
@@ -27,7 +31,16 @@ object LinuxApps {
         App("ai", R.string.lapp_ai, "lxterminal -t 'AI Chat' -e spiros-ai", R.drawable.ic_sc_aichat),
     )
 
+    /** Built-in apps plus apps installed from the SpirOS store. */
+    fun installed(context: Context, store: Map<String, String> = LinuxStore.installed.value) =
+        all + LinuxStore.apps(context, store)
+
     fun byId(id: String) = all.firstOrNull { it.id == id }
+
+    fun byId(context: Context, id: String): App? {
+        LinuxStore.load(context)
+        return installed(context).firstOrNull { it.id == id }
+    }
 
     /** An app to open as soon as the Linux screen and the engine are ready. */
     private val _pending = MutableStateFlow<String?>(null)
@@ -83,7 +96,7 @@ object LinuxApps {
             .putExtra(Navigation.EXTRA, Navigation.LINUX_APP + app.id)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return ShortcutInfo.Builder(context, Navigation.LINUX_APP + app.id)
-            .setShortLabel(context.getString(app.label))
+            .setShortLabel(app.name(context))
             .setIcon(Icon.createWithResource(context, app.icon))
             .setIntent(intent)
             .build()

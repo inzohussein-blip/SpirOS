@@ -226,6 +226,7 @@ jobs:
             adb exec-out run-as com.spiros.app cat no_backup/linux-desktop.png > linux-desktop.png || true
             adb exec-out run-as com.spiros.app cat no_backup/linux-apps.png > linux-apps.png || true
             adb exec-out run-as com.spiros.app cat no_backup/linux-app.png > linux-app.png || true
+            adb exec-out run-as com.spiros.app cat no_backup/linux-store-app.png > linux-store-app.png || true
 
       # Screenshots of SpirOS Linux for design review (branch ci-screens, replaced each run).
       - name: Publish desktop screenshots

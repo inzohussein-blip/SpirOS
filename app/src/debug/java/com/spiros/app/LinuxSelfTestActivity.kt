@@ -102,6 +102,7 @@ class LinuxSelfTestActivity : Activity() {
                     engine { it.runInDesktop("lxterminal") }
                     Thread.sleep(6000)
                     snapshot(client, "linux-app.png")
+                    storeTest(client)
                     return true
                 }
             }
@@ -112,6 +113,28 @@ class LinuxSelfTestActivity : Activity() {
         }
         write("DESKTOP_TIMEOUT")
         return false
+    }
+
+    /** App store: install a small app with apt through the engine, then open it. */
+    private fun storeTest(client: com.spiros.app.engine.VncClient) {
+        val t = SystemClock.elapsedRealtime()
+        engine { it.linuxApt("install", "galculator") }
+        while (SystemClock.elapsedRealtime() - t < 8 * 60_000) {
+            Thread.sleep(3000)
+            Engine.refresh()
+            val task = Engine.status.value.task
+            if (task != null && task.kind == "apt" && !task.active) {
+                write("STORE_TASK ${task.error ?: "ok"} after ${(SystemClock.elapsedRealtime() - t) / 1000}s")
+                break
+            }
+        }
+        val installed = engine { it.linuxInstalled("galculator") }.orEmpty()
+        write(if ("galculator" in installed) "STORE_OK $installed" else "STORE_FAIL $installed")
+        if ("galculator" in installed) {
+            engine { it.runInDesktop("galculator") }
+            Thread.sleep(8000)
+            snapshot(client, "linux-store-app.png")
+        }
     }
 
     private fun snapshot(client: com.spiros.app.engine.VncClient, name: String) {

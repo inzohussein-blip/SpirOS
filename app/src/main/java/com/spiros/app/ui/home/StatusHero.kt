@@ -185,5 +185,18 @@ fun TaskPill() {
 private fun taskTitle(task: Engine.Task) = when (task.kind) {
     "linux" -> stringResource(R.string.task_installing, distroName(task.name))
     "mt5" -> stringResource(R.string.mt5_installing)
+    "apt" -> storeTaskTitle(task)
     else -> stringResource(R.string.ai_downloading_model, task.name.substringBefore(".gguf"))
+}
+
+/** "Installing VLC", "Removing GIMP", "Updating Linux apps" for app store tasks. */
+@Composable
+fun storeTaskTitle(task: Engine.Task): String {
+    val action = task.name.substringBefore(' ')
+    val what = task.name.substringAfter(' ', "").substringBefore(' ')
+    return when (action) {
+        "remove" -> stringResource(R.string.store_removing, what)
+        "upgrade" -> stringResource(R.string.store_updating_all)
+        else -> stringResource(R.string.store_installing, what)
+    }
 }

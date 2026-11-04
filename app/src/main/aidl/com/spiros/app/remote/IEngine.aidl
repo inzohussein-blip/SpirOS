@@ -63,4 +63,14 @@ interface IEngine {
     // ---- MetaTrader 5 full (engine v4) ----
     /** Downloads Wine + MT5 (installed) into the Linux system; progress in status().task (kind "mt5"). */
     void installMt5();
+
+    // ---- SpirOS Linux app store (engine v5) ----
+    /** JSON {package: version} of the given (space-separated) packages that are installed. */
+    String linuxInstalled(String packages);
+    /** JSON [{name, desc}] of Ubuntu packages whose name matches. */
+    String linuxSearch(String query);
+    /** JSON [names] of installed packages with an update. */
+    String linuxUpgradable();
+    /** install | remove | upgrade, as the background task (kind "apt"). */
+    void linuxApt(String action, String packages);
 }
