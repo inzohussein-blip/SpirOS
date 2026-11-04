@@ -1,0 +1,1 @@
+     0xa00001 "MetaTrader 4 - EURUSD,H4": ("terminal.exe" "terminal.exe")  1280x694+0+26  +0+26
