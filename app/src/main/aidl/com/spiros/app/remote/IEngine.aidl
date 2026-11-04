@@ -78,4 +78,10 @@ interface IEngine {
     /** Installs or updates mt5 / mt4 (and the shared Wine base), task kind "addon". */
     void installAddon(String id);
     void removeAddon(String id);
+
+    // ---- Downloads (engine v7) ----
+    /** Removes a waiting store install from the queue. */
+    void dequeue(String kind, String name);
+    /** Downloads wait while on mobile data. */
+    void setWifiOnly(boolean on);
 }

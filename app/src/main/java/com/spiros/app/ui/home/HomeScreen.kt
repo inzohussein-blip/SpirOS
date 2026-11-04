@@ -142,8 +142,13 @@ fun HomeScreen(
     val shieldPhone by ShieldVpnService.running.collectAsState()
     val linuxRunning by Engine.desktopRunning.collectAsState()
     val storeInstalled by com.spiros.app.remote.LinuxStore.installed.collectAsState()
-    LaunchedEffect(Unit) { com.spiros.app.remote.LinuxStore.load(context) }
+    LaunchedEffect(Unit) {
+        com.spiros.app.remote.LinuxStore.load(context)
+        com.spiros.app.remote.LinuxStore.refreshPublished()
+    }
+    val published by com.spiros.app.remote.LinuxStore.published.collectAsState()
     val engineStatus by Engine.status.collectAsState()
+    val addonUpdates = com.spiros.app.remote.LinuxStore.addonUpdates(engineStatus, published)
     val aiState by Engine.aiState.collectAsState()
     val shieldSpace = remember(refresh) { ShieldSettings.spaceShield(context) }
 
@@ -279,18 +284,19 @@ fun HomeScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(16.dp))
                             .clickable {
-                                com.spiros.app.remote.LinuxApps.request(app.id)
-                                onOpenLinux()
+                                // Downloading or waiting: show its progress in the store.
+                                if (com.spiros.app.ui.linux.appTask(engineStatus, app) != null || com.spiros.app.ui.linux.appQueued(engineStatus, app)) {
+                                    onOpenStore()
+                                } else {
+                                    com.spiros.app.remote.LinuxApps.request(app.id)
+                                    onOpenLinux()
+                                }
                             }
                             .padding(vertical = 4.dp),
                     ) {
-                        androidx.compose.foundation.Image(
-                            androidx.compose.ui.res.painterResource(app.icon),
-                            contentDescription = null,
-                            modifier = Modifier.size(56.dp),
-                        )
+                        com.spiros.app.ui.linux.LinuxAppIcon(app, 56.dp, update = app.id in addonUpdates)
                         Text(
-                            app.name(context),
+                            com.spiros.app.ui.linux.linuxAppLabel(app),
                             style = MaterialTheme.typography.labelMedium,
                             maxLines = 1,
                             modifier = Modifier.padding(top = 6.dp),
@@ -302,11 +308,27 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onOpenStore).padding(vertical = 4.dp),
                     ) {
-                        androidx.compose.foundation.Image(
-                            androidx.compose.ui.res.painterResource(R.drawable.ic_sc_store),
-                            contentDescription = null,
-                            modifier = Modifier.size(56.dp),
-                        )
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(66.dp)) {
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(R.drawable.ic_sc_store),
+                                contentDescription = null,
+                                modifier = Modifier.size(56.dp),
+                            )
+                            // Updates waiting, or downloads running.
+                            val badge = addonUpdates.size + engineStatus.queue.size +
+                                (if (engineStatus.task?.let { it.active && (it.kind == "apt" || it.kind == "addon") } == true) 1 else 0)
+                            if (badge > 0) {
+                                Text(
+                                    "$badge",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onError,
+                                    modifier = Modifier.align(Alignment.TopEnd)
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(MaterialTheme.colorScheme.error)
+                                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                                )
+                            }
+                        }
                         Text(
                             stringResource(R.string.store_short),
                             style = MaterialTheme.typography.labelMedium,

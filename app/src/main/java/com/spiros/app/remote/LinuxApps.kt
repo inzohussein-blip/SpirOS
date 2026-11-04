@@ -19,7 +19,15 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object LinuxApps {
     /** [label] is a string resource; store apps have their own [title] instead. */
-    data class App(val id: String, val label: Int, val command: String, val icon: Int, val title: String? = null) {
+    data class App(
+        val id: String,
+        val label: Int,
+        val command: String,
+        val icon: Int,
+        val title: String? = null,
+        /** Store apps: the Ubuntu packages that install it. */
+        val packages: String? = null,
+    ) {
         fun name(context: Context) = title ?: context.getString(label)
     }
 
@@ -77,9 +85,18 @@ object LinuxApps {
     fun launch(context: Context, app: App) {
         val status = Engine.status.value
         if (app.id in ADDONS && status.connected && !status.addonInstalled(app.id) && status.arch == "arm64") {
-            afterInstall = context.applicationContext to app
-            if (!addonInstalling(status, app.id)) Engine.installAddon(context, app.id)
-            android.widget.Toast.makeText(context, context.getString(R.string.addon_installing, app.name(context)), android.widget.Toast.LENGTH_LONG).show()
+            val appContext = context.applicationContext
+            if (addonInstalling(status, app.id) || (("addon" to app.id) in status.queue)) {
+                afterInstall = appContext to app // already on its way: just open it when ready
+                return
+            }
+            // Ask first (size, free space, Wi-Fi), then download in the background.
+            LinuxStore.ask(
+                LinuxStore.Confirm(app.name(context), LinuxStore.addonDownloadSize(status, LinuxStore.published.value, app.id)) {
+                    afterInstall = appContext to app
+                    Engine.installAddon(appContext, app.id)
+                },
+            )
             return
         }
         if (Engine.status.value.desktopRunning) {

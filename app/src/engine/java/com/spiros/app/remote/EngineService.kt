@@ -45,13 +45,10 @@ class EngineService : Service() {
             .put("mt5Installed", LinuxDistro.mt5Installed(this@EngineService))
             .put("addons", LinuxDistro.addons(this@EngineService))
             .apply {
-                BackgroundTask.state?.let { t ->
-                    put("task", JSONObject()
-                        .put("kind", t.kind).put("name", t.name).put("stage", t.stage)
-                        .put("done", t.done).put("total", t.total)
-                        .put("paused", t.paused).put("active", t.active)
-                        .put("error", t.error ?: ""))
-                }
+                BackgroundTask.state?.let { put("task", taskJson(it)) }
+                put("queue", JSONArray().apply { queue.forEach { put(JSONObject().put("kind", it.kind).put("name", it.name)) } })
+                put("finished", JSONArray().apply { BackgroundTask.finished.forEach { put(taskJson(it)) } })
+                put("freeBytes", runCatching { android.os.StatFs(filesDir.path).availableBytes }.getOrDefault(0L))
             }
             .toString()
 
@@ -90,7 +87,15 @@ class EngineService : Service() {
         override fun linuxApt(action: String, packages: String) {
             val ctx = this@EngineService
             LinuxPackages.names(packages) // reject bad names before starting
-            runTask("apt", "$action ${packages.trim()}".trim()) { LinuxPackages.apply(ctx, action, packages) }
+            enqueue("apt", "$action ${packages.trim()}".trim()) { LinuxPackages.apply(ctx, action, packages) }
+        }
+
+        override fun dequeue(kind: String, name: String) {
+            queue.removeAll { it.kind == kind && it.name == name }
+        }
+
+        override fun setWifiOnly(on: Boolean) {
+            wifiOnly = on
         }
 
         override fun installMt5() = installAddon("mt5")
@@ -98,7 +103,7 @@ class EngineService : Service() {
         override fun installAddon(id: String) {
             val ctx = this@EngineService
             if (id !in LinuxDistro.ADDONS) return
-            runTask("addon", id) { LinuxDistro.installAddon(ctx, id) }
+            enqueue("addon", id) { LinuxDistro.installAddon(ctx, id) }
         }
 
         override fun removeAddon(id: String) {
@@ -209,6 +214,36 @@ class EngineService : Service() {
         }
     }
 
+    private class Job(val kind: String, val name: String, val work: () -> Unit)
+
+    /** Store installs waiting for the current job (one runs at a time). */
+    private val queue = java.util.concurrent.CopyOnWriteArrayList<Job>()
+
+    @Volatile private var wifiOnly = false
+
+    private fun taskJson(t: BackgroundTask.State) = JSONObject()
+        .put("kind", t.kind).put("name", t.name).put("stage", t.stage)
+        .put("done", t.done).put("total", t.total)
+        .put("paused", t.paused).put("active", t.active)
+        .put("error", t.error ?: "")
+        .put("step", t.step).put("steps", t.steps).put("part", t.part)
+        .put("waiting", t.waiting).put("id", t.id)
+
+    /** Runs [work] now, or after the jobs before it. Duplicates are ignored. */
+    private fun enqueue(kind: String, name: String, work: () -> Unit) {
+        val current = BackgroundTask.state
+        if (current?.active == true && current.kind == kind && current.name == name) return
+        if (queue.any { it.kind == kind && it.name == name }) return
+        if (!runTask(kind, name, work)) queue.add(Job(kind, name, work))
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        // "Only on Wi-Fi": downloads wait while the network is metered (mobile data).
+        val cm = getSystemService(android.net.ConnectivityManager::class.java)
+        BackgroundTask.holdReason = { if (wifiOnly && cm?.isActiveNetworkMetered != false) "wifi" else null }
+    }
+
     /** Runs [work] as the engine's background task; false if one is already running. */
     private fun runTask(kind: String, name: String, work: () -> Unit): Boolean {
         if (!BackgroundTask.begin(kind, name)) return false
@@ -223,6 +258,8 @@ class EngineService : Service() {
                 e.message ?: e.toString()
             }
             BackgroundTask.end(error)
+            // The next queued store install.
+            queue.firstOrNull()?.let { next -> queue.remove(next); runTask(next.kind, next.name, next.work) }
             EngineKeepAlive.sync(this)
         }
         return true

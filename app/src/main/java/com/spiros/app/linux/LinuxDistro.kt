@@ -144,33 +144,34 @@ object LinuxDistro {
         check(isInstalled(context)) { "Install Linux first" }
         check(arch() == "arm64") { "Built for ARM64 phones" }
         val dir = wineDir(context)
-        part(context, "wine-base-arm64.tar.xz", marker(context, "base"), dir) {
-            deleteTree(File(dir, "hangover")) // new Wine replaces the old one; the prefix keeps the programs
-        }
-        part(context, "$id-arm64.tar.xz", marker(context, id), File(dir, "prefix/drive_c")) {
-            File(dir, "prefix/drive_c/$folder/spiros.env").delete()
-        }
-    }
-
-    private fun part(context: Context, name: String, marker: File, target: File, before: () -> Unit) {
+        data class Part(val label: String, val file: String, val marker: File, val target: File, val before: () -> Unit)
+        val parts = listOf(
+            // New Wine replaces the old one; the prefix keeps the programs.
+            Part("base", "wine-base-arm64.tar.xz", marker(context, "base"), dir) { deleteTree(File(dir, "hangover")) },
+            Part(id, "$id-arm64.tar.xz", marker(context, id), File(dir, "prefix/drive_c")) {
+                File(dir, "prefix/drive_c/$folder/spiros.env").delete()
+            },
+        )
         BackgroundTask.stage(Stage.DOWNLOADING.name)
-        val expected = Downloader.text("$BASE/$name.sha256").trim().substringBefore(' ').lowercase()
-        if (marker.isFile && marker.readText().trim() == expected) return
-        val archive = File(downloads(context), name)
-        try {
-            Downloader.download("$BASE/$name", archive, stamp = "$name#$expected")
+        // Only the parts whose published checksum differs from the installed one.
+        val needed = parts.map { it to Downloader.text("$BASE/${it.file}.sha256").trim().substringBefore(' ').lowercase() }
+            .filter { (p, sha) -> !(p.marker.isFile && p.marker.readText().trim() == sha) }
+        BackgroundTask.steps(needed.size)
+        needed.forEachIndexed { i, (p, expected) ->
+            BackgroundTask.step(i + 1, p.label)
+            BackgroundTask.stage(Stage.DOWNLOADING.name)
+            val archive = File(downloads(context), p.file)
+            Downloader.download("$BASE/${p.file}", archive, stamp = "${p.file}#$expected")
             BackgroundTask.stage(Stage.VERIFYING.name, archive.length())
             check(sha256(archive) == expected) { "Checksum mismatch: the download is damaged or was altered" }
-            marker.delete()
-            before()
-            target.mkdirs()
+            p.marker.delete()
+            p.before()
+            p.target.mkdirs()
             BackgroundTask.stage(Stage.EXTRACTING.name, archive.length())
-            extract(archive, target)
-            marker.parentFile?.mkdirs()
-            marker.writeText("$expected\n")
+            extract(archive, p.target)
+            p.marker.parentFile?.mkdirs()
+            p.marker.writeText("$expected\n")
             archive.delete()
-        } catch (e: BackgroundTask.Cancelled) {
-            throw e // the .part download continues next time
         }
     }
 

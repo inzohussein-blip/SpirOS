@@ -107,13 +107,48 @@ object LinuxStore {
     suspend fun upgradable(context: Context): List<String> =
         Engine.parseStrings(Engine.call(context) { it.linuxUpgradable() })
 
-    /** Published checksums of the Windows program packages (base, mt5, mt4), to offer updates. */
-    suspend fun addonsPublished(): Map<String, String> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    /** A published Windows program package: checksum and download size. */
+    data class Published(val sha: String, val size: Long)
+
+    private val _published = MutableStateFlow<Map<String, Published>>(emptyMap())
+    /** base / mt5 / mt4 as published (checked at most every 30 minutes). */
+    val published: StateFlow<Map<String, Published>> = _published.asStateFlow()
+    @Volatile private var publishedAt = 0L
+
+    suspend fun refreshPublished(force: Boolean = false) = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        if (!force && System.currentTimeMillis() - publishedAt < 30 * 60_000 && _published.value.isNotEmpty()) return@withContext
         val base = "https://github.com/inzohussein-blip/SpirOS/releases/download/linux-rootfs/"
-        mapOf("base" to "wine-base-arm64", "mt5" to "mt5-arm64", "mt4" to "mt4-arm64").mapNotNull { (id, file) ->
-            runCatching { id to ApkInstaller.text("$base$file.tar.xz.sha256").trim().substringBefore(' ').lowercase() }.getOrNull()
+        val found = mapOf("base" to "wine-base-arm64", "mt5" to "mt5-arm64", "mt4" to "mt4-arm64").mapNotNull { (id, file) ->
+            runCatching {
+                val sha = ApkInstaller.text("$base$file.tar.xz.sha256").trim().substringBefore(' ').lowercase()
+                val size = runCatching { com.spiros.app.linux.Downloader.size("$base$file.tar.xz") }.getOrDefault(0L).coerceAtLeast(0L)
+                id to Published(sha, size)
+            }.getOrNull()
         }.toMap()
+        if (found.isNotEmpty()) { _published.value = found; publishedAt = System.currentTimeMillis() }
     }
+
+    /** Installed Windows programs with a newer package (their own or the shared base). */
+    fun addonUpdates(status: Engine.Status, published: Map<String, Published>): Set<String> =
+        LinuxApps.ADDONS.filter { id ->
+            status.addonInstalled(id) && published[id] != null &&
+                (published[id]!!.sha != status.addons[id] || (published["base"] != null && published["base"]!!.sha != status.addons["base"]))
+        }.toSet()
+
+    /** Bytes to download for [id]: the parts not installed or out of date. */
+    fun addonDownloadSize(status: Engine.Status, published: Map<String, Published>, id: String): Long {
+        var size = 0L
+        published["base"]?.let { if (it.sha != status.addons["base"]) size += it.size }
+        published[id]?.let { if (it.sha != status.addons[id]) size += it.size }
+        return size
+    }
+
+    /** "Download X MB?" asked before a big download (shown by DownloadConfirmHost). */
+    data class Confirm(val title: String, val bytes: Long, val start: () -> Unit)
+
+    private val _confirm = MutableStateFlow<Confirm?>(null)
+    val confirm: StateFlow<Confirm?> = _confirm.asStateFlow()
+    fun ask(c: Confirm?) { _confirm.value = c }
 
     fun install(context: Context, packages: String) = Engine.send(context) { it.linuxApt("install", packages) }
     fun remove(context: Context, packages: String) = Engine.send(context) { it.linuxApt("remove", packages) }
@@ -122,6 +157,6 @@ object LinuxStore {
     /** Installed catalog apps that have a window, as Linux apps SpirOS can open. */
     fun apps(context: Context, installed: Map<String, String>): List<LinuxApps.App> =
         catalog(context).filter { it.exec.isNotBlank() && it.main in installed }.map {
-            LinuxApps.App("store:${it.id}", 0, it.exec, categoryIcon(it.category), title = it.name)
+            LinuxApps.App("store:${it.id}", 0, it.exec, categoryIcon(it.category), title = it.name, packages = it.packages)
         }
 }

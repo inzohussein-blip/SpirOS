@@ -194,6 +194,8 @@ private fun ScreensAnimated(screen: Screen, vault: Vault, navigate: (Screen) -> 
         },
         label = "screens",
     ) { current -> ScreenContent(current, vault, navigate) }
+    // "Download MetaTrader 5 (750 MB)?" asked from anywhere (Home, Linux, store).
+    com.spiros.app.ui.linux.DownloadConfirmHost()
 }
 
 private fun depth(screen: Screen) = when (screen) {

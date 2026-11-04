@@ -493,4 +493,24 @@
     <string name="store_mt_desc">Full version for ARM64 phones, tested on ARM64 before every release. Updates itself (LiveUpdate); SpirOS updates the package. Your accounts and experts stay.</string>
     <string name="store_update">Update</string>
     <string name="store_mt_arm_only">Available on ARM64 phones.</string>
+    <string name="notif_downloads">Downloads</string>
+    <string name="notif_task_ready">Ready. Tap to open.</string>
+    <string name="notif_task_removed">Removed.</string>
+    <string name="notif_task_failed">Failed: %1$s</string>
+    <string name="task_part_base">Windows base (Wine)</string>
+    <string name="task_step">Step %1$d of %2$d: %3$s</string>
+    <string name="task_waiting_wifi">Waiting for Wi-Fi (only on Wi-Fi is on)</string>
+    <string name="download_queued">Waiting in queue</string>
+    <string name="download_wifi_short">Waiting for Wi-Fi</string>
+    <string name="download_title">Download %1$s</string>
+    <string name="download_size">Download size: %1$s</string>
+    <string name="download_free">Free space: %1$s</string>
+    <string name="download_free_short">Free space: %1$s. That may not be enough: free some space first.</string>
+    <string name="download_wifi_only">Only on Wi-Fi</string>
+    <string name="download_wifi_only_desc">Downloads wait while on mobile data and continue on Wi-Fi.</string>
+    <string name="download_background">It downloads in the background with pause and resume, and opens by itself when ready.</string>
+    <string name="download_start">Download</string>
+    <string name="download_none">Nothing is downloading.</string>
+    <string name="store_tab_apps">Apps</string>
+    <string name="store_tab_downloads">Downloads</string>
 </resources>

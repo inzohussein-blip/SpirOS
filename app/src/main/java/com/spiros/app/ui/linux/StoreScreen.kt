@@ -72,9 +72,12 @@ fun StoreScreen(onBack: () -> Unit) {
     var checkingUpdates by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<Pair<String, String>?>(null) }
     val task = status.task?.takeIf { it.kind == "apt" || it.kind == "addon" }
-    var published by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    LaunchedEffect(Unit) { published = LinuxStore.addonsPublished() }
-    val busy = status.taskActive
+    val published by LinuxStore.published.collectAsState()
+    LaunchedEffect(Unit) { LinuxStore.refreshPublished(force = true) }
+    // Installs queue up in the engine, so buttons stay usable while one runs.
+    val busy = false
+    var tab by remember { mutableStateOf(0) }
+    val downloads = status.queue.size + if (status.task?.let { it.active && (it.kind == "apt" || it.kind == "addon") } == true) 1 else 0
 
     // What is installed; again whenever an app store task ends.
     LaunchedEffect(status.connected, task?.active) {
@@ -101,7 +104,21 @@ fun StoreScreen(onBack: () -> Unit) {
                 item { Text(stringResource(R.string.store_need_linux), style = MaterialTheme.typography.bodyLarge) }
                 return@LazyColumn
             }
-            task?.takeIf { it.active || it.error != null }?.let { t ->
+            item {
+                androidx.compose.material3.PrimaryTabRow(selectedTabIndex = tab) {
+                    androidx.compose.material3.Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text(stringResource(R.string.store_tab_apps)) })
+                    androidx.compose.material3.Tab(
+                        selected = tab == 1, onClick = { tab = 1 },
+                        text = { Text(stringResource(R.string.store_tab_downloads) + if (downloads > 0) " ($downloads)" else "") },
+                    )
+                }
+            }
+            if (tab == 1) {
+                item { DownloadsList { Text(stringResource(R.string.download_none), style = MaterialTheme.typography.bodyLarge) } }
+                return@LazyColumn
+            }
+            // Jobs with no item of their own here: Linux updates, a failed job.
+            task?.takeIf { (it.active && it.kind == "apt" && !it.name.startsWith("install ")) || (!it.active && it.error != null && it.error != "cancelled") }?.let { t ->
                 item { TaskCard(t, title = if (t.kind == "addon") com.spiros.app.ui.home.addonTaskTitle(t) else storeTaskTitle(t)) }
             }
             item {
@@ -171,21 +188,27 @@ fun StoreScreen(onBack: () -> Unit) {
             if (category == null || category == "trading") {
                 listOf("mt5" to "MetaTrader 5", "mt4" to "MetaTrader 4").forEach { (id, name) ->
                     item(key = "addon-$id") {
-                        val installedSha = status.addons[id].orEmpty()
                         val isInstalled = status.addonInstalled(id)
-                        val newer = isInstalled && published[id] != null &&
-                            (published[id] != installedSha || (published["base"] != null && published["base"] != status.addons["base"]))
+                        val newer = id in LinuxStore.addonUpdates(status, published)
                         val available = published[id] != null
+                        val size = LinuxStore.addonDownloadSize(status, published, id)
+                        val lApp = LinuxApps.byId(id)
                         PackageRow(
                             title = name,
-                            description = stringResource(if (status.arch == "arm64") R.string.store_mt_desc else R.string.store_mt_arm_only),
+                            description = stringResource(if (status.arch == "arm64") R.string.store_mt_desc else R.string.store_mt_arm_only) +
+                                if (size > 0 && (!isInstalled || newer)) " · " + megabytes(size) else "",
                             icon = if (id == "mt4") R.drawable.ic_sc_mt4 else R.drawable.ic_sc_mt5,
-                            installed = isInstalled, busy = busy || status.arch != "arm64" || !available,
+                            installed = isInstalled, busy = status.arch != "arm64" || !available,
+                            task = lApp?.let { appTask(status, it) },
+                            queued = lApp?.let { appQueued(status, it) } == true,
+                            onCancelQueue = { Engine.dequeue(context, "addon", id) },
                             onInstall = { LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) } },
                             onRemove = { confirmRemove = name to "addon:$id" },
                             onOpen = { LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) } },
                             onPin = { LinuxApps.byId(id)?.let { LinuxApps.pinToHomeScreen(context, it) } },
-                            onUpdate = if (newer) { { Engine.installAddon(context, id) } } else null,
+                            onUpdate = if (newer) {
+                                { LinuxStore.ask(LinuxStore.Confirm(name, size) { Engine.installAddon(context, id) }) }
+                            } else null,
                         )
                     }
                 }
@@ -197,7 +220,14 @@ fun StoreScreen(onBack: () -> Unit) {
                     description = app.description + if (app.sizeMb > 0) " · ~${app.sizeMb} MB" else "",
                     icon = LinuxStore.categoryIcon(app.category),
                     installed = isInstalled, busy = busy,
-                    onInstall = { LinuxStore.install(context, app.packages) },
+                    task = status.task?.takeIf { it.active && it.kind == "apt" && it.name == "install ${app.packages}" },
+                    queued = ("apt" to "install ${app.packages}") in status.queue,
+                    onCancelQueue = { Engine.dequeue(context, "apt", "install ${app.packages}") },
+                    onInstall = {
+                        // Big apps: show size and free space first.
+                        if (app.sizeMb >= 50) LinuxStore.ask(LinuxStore.Confirm(app.name, app.sizeMb * 1048576L) { LinuxStore.install(context, app.packages) })
+                        else LinuxStore.install(context, app.packages)
+                    },
                     onRemove = { confirmRemove = app.name to app.packages },
                     onOpen = if (app.exec.isNotBlank()) {
                         {
@@ -250,6 +280,9 @@ private fun PackageRow(
     onOpen: (() -> Unit)?,
     onPin: (() -> Unit)? = null,
     onUpdate: (() -> Unit)? = null,
+    task: Engine.Task? = null,
+    queued: Boolean = false,
+    onCancelQueue: () -> Unit = {},
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -259,6 +292,18 @@ private fun PackageRow(
                     Text(title, style = MaterialTheme.typography.titleSmall)
                     Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                 }
+            }
+            // Downloading: the progress replaces the buttons (pause / cancel included).
+            if (task != null) {
+                com.spiros.app.ui.common.TaskProgress(task, hint = false)
+                return@Column
+            }
+            if (queued) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.download_queued), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onCancelQueue) { Text(stringResource(R.string.cancel)) }
+                }
+                return@Column
             }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!installed) {

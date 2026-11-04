@@ -493,4 +493,24 @@
     <string name="store_mt_desc">نسخة كاملة لهواتف ARM64، تُختبر على ARM64 قبل كل إصدار. تحدّث نفسها (LiveUpdate)، وSpirOS يحدّث الحزمة. حساباتك وخبراؤك يبقون.</string>
     <string name="store_update">تحديث</string>
     <string name="store_mt_arm_only">متوفر لهواتف ARM64.</string>
+    <string name="notif_downloads">التنزيلات</string>
+    <string name="notif_task_ready">جاهز. اضغط للفتح.</string>
+    <string name="notif_task_removed">تم الحذف.</string>
+    <string name="notif_task_failed">فشل: %1$s</string>
+    <string name="task_part_base">قاعدة ويندوز (Wine)</string>
+    <string name="task_step">الخطوة %1$d من %2$d: %3$s</string>
+    <string name="task_waiting_wifi">بانتظار الواي فاي (خيار «عبر الواي فاي فقط» مفعّل)</string>
+    <string name="download_queued">في الطابور</string>
+    <string name="download_wifi_short">بانتظار الواي فاي</string>
+    <string name="download_title">تنزيل %1$s</string>
+    <string name="download_size">حجم التنزيل: %1$s</string>
+    <string name="download_free">المساحة الفارغة: %1$s</string>
+    <string name="download_free_short">المساحة الفارغة: %1$s، وقد لا تكفي. وفّر مساحة أولاً.</string>
+    <string name="download_wifi_only">عبر الواي فاي فقط</string>
+    <string name="download_wifi_only_desc">يتوقف التنزيل على بيانات الجوال ويكمل على الواي فاي.</string>
+    <string name="download_background">يُنزَّل في الخلفية مع إيقاف واستئناف، ويفتح تلقائياً عند الجاهزية.</string>
+    <string name="download_start">تنزيل</string>
+    <string name="download_none">لا يوجد تنزيل الآن.</string>
+    <string name="store_tab_apps">التطبيقات</string>
+    <string name="store_tab_downloads">التنزيلات</string>
 </resources>

@@ -53,6 +53,33 @@ private fun mb(bytes: Long) = if (bytes >= 1L shl 30) "%.2f GB".format(bytes / 1
  */
 @Composable
 fun TaskCard(task: Engine.Task, title: String, onRetry: (() -> Unit)? = null) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            TaskProgress(task, onRetry)
+        }
+    }
+}
+
+/** What part of a multi-part install is running ("Step 1 of 2: Windows base"). */
+@Composable
+fun stepLabel(task: Engine.Task): String? {
+    if (task.steps <= 1 || task.step <= 0) return null
+    val part = when (task.part) {
+        "base" -> stringResource(R.string.task_part_base)
+        "mt5" -> "MetaTrader 5"
+        "mt4" -> "MetaTrader 4"
+        else -> task.part
+    }
+    return stringResource(R.string.task_step, task.step, task.steps, part)
+}
+
+/**
+ * Progress of a job without a card: stage, step, percentage, size, speed, time left,
+ * Pause / Resume / Cancel, and the result when it ends. Used inside store items too.
+ */
+@Composable
+fun TaskProgress(task: Engine.Task, onRetry: (() -> Unit)? = null, hint: Boolean = true) {
     val context = LocalContext.current
     // Download speed and time left, smoothed.
     var lastDone by remember { mutableLongStateOf(task.done) }
@@ -70,11 +97,14 @@ fun TaskCard(task: Engine.Task, title: String, onRetry: (() -> Unit)? = null) {
         lastTime = now
     }
 
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        run {
             when {
                 task.active -> {
+                    stepLabel(task)?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+                    if (task.waiting == "wifi") {
+                        Text(stringResource(R.string.task_waiting_wifi), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                    }
                     Text(
                         stageLabel(task.stage) + if (task.total > 0) "  ${(task.fraction * 100).toInt()}%" else "",
                         style = MaterialTheme.typography.bodyMedium,
@@ -115,7 +145,7 @@ fun TaskCard(task: Engine.Task, title: String, onRetry: (() -> Unit)? = null) {
                             Text(stringResource(R.string.cancel))
                         }
                     }
-                    Text(
+                    if (hint) Text(
                         stringResource(R.string.task_background_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

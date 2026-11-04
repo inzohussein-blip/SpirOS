@@ -56,7 +56,7 @@ object Downloader {
     }
 
     /** Total size if the server supports ranges, else -1. */
-    private fun size(url: String): Long {
+    fun size(url: String): Long {
         val c = open(url, 0).apply { setRequestProperty("Range", "bytes=0-0") }
         try {
             if (c.responseCode != 206) return -1

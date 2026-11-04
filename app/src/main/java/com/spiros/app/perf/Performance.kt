@@ -29,6 +29,10 @@ object Performance {
 
     /** Desktop shown sideways and full screen (system bars hidden). */
     fun linuxLandscape(c: Context) = prefs(c).getBoolean("linux_landscape", false)
+
+    /** Big downloads (Linux, MT5/MT4, apps) wait while on mobile data. */
+    fun wifiOnly(c: Context) = prefs(c).getBoolean("wifi_only", false)
+    fun setWifiOnly(c: Context, v: Boolean) = prefs(c).edit().putBoolean("wifi_only", v).apply()
     fun setLinuxLandscape(c: Context, v: Boolean) = prefs(c).edit().putBoolean("linux_landscape", v).apply()
     val FPS_OPTIONS = listOf(15, 30, 60)
     val CONTEXT_OPTIONS = listOf(1024, 2048, 4096)

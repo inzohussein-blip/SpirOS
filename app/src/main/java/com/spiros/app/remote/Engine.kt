@@ -58,6 +58,12 @@ object Engine {
         val mt5Installed: Boolean = false,
         /** Installed Windows programs and base: id -> package checksum ("" if not installed). */
         val addons: Map<String, String> = emptyMap(),
+        /** Store installs waiting behind [task] (kind, name). */
+        val queue: List<Pair<String, String>> = emptyList(),
+        /** Jobs that ended recently (to announce them once). */
+        val finished: List<Task> = emptyList(),
+        /** Free space in the engine's storage. */
+        val freeBytes: Long = 0,
     ) {
         val taskActive get() = task?.active == true
         val aiActive get() = aiState == AiServer.State.READY || aiState == AiServer.State.LOADING
@@ -74,6 +80,11 @@ object Engine {
         val paused: Boolean,
         val active: Boolean,
         val error: String?,
+        val step: Int = 0,
+        val steps: Int = 0,
+        val part: String = "",
+        val waiting: String = "",
+        val id: Long = 0,
     ) {
         val fraction get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
     }
@@ -110,6 +121,7 @@ object Engine {
             val s = IEngine.Stub.asInterface(binder)
             service = s
             ready.complete(s)
+            app?.let { a -> runCatching { s.setWifiOnly(Performance.wifiOnly(a)) } }
             refresh()
         }
 
@@ -178,23 +190,32 @@ object Engine {
             distro = json.optString("distro"),
             mt5Installed = json.optBoolean("mt5Installed"),
             addons = json.optJSONObject("addons")?.let { o -> o.keys().asSequence().associateWith { o.optString(it) } }.orEmpty(),
-            task = json.optJSONObject("task")?.let {
-                Task(
-                    kind = it.optString("kind"),
-                    name = it.optString("name"),
-                    stage = it.optString("stage"),
-                    done = it.optLong("done"),
-                    total = it.optLong("total"),
-                    paused = it.optBoolean("paused"),
-                    active = it.optBoolean("active"),
-                    error = it.optString("error").ifEmpty { null },
-                )
-            },
+            task = json.optJSONObject("task")?.let(::task),
+            queue = json.optJSONArray("queue")?.let { a -> (0 until a.length()).map { a.getJSONObject(it) }.map { it.optString("kind") to it.optString("name") } }.orEmpty(),
+            finished = json.optJSONArray("finished")?.let { a -> (0 until a.length()).map { task(a.getJSONObject(it)) } }.orEmpty(),
+            freeBytes = json.optLong("freeBytes"),
         )
         _status.value = next
         if (!next.desktopRunning) closeScreen()
         LinuxApps.onStatus(next)
+        app?.let { TaskNotifier.onStatus(it, next) }
     }
+
+    private fun task(it: JSONObject) = Task(
+        kind = it.optString("kind"),
+        name = it.optString("name"),
+        stage = it.optString("stage"),
+        done = it.optLong("done"),
+        total = it.optLong("total"),
+        paused = it.optBoolean("paused"),
+        active = it.optBoolean("active"),
+        error = it.optString("error").ifEmpty { null },
+        step = it.optInt("step"),
+        steps = it.optInt("steps"),
+        part = it.optString("part"),
+        waiting = it.optString("waiting"),
+        id = it.optLong("id"),
+    )
 
     /** Runs [block] against the engine (waits briefly for the connection), off the main thread. */
     suspend fun <T> call(context: Context, block: (IEngine) -> T): T? = withContext(Dispatchers.IO) {
@@ -245,6 +266,8 @@ object Engine {
 
     fun installAddon(context: Context, id: String) = send(context) { it.installAddon(id) }
     fun removeAddon(context: Context, id: String) = send(context) { it.removeAddon(id) }
+    fun dequeue(context: Context, kind: String, name: String) = send(context) { it.dequeue(kind, name) }
+    fun setWifiOnly(context: Context, on: Boolean) = send(context) { it.setWifiOnly(on) }
 
     fun pauseTask(context: Context) = send(context) { it.pauseTask() }
     fun resumeTask(context: Context) = send(context) { it.resumeTask() }

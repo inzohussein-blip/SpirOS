@@ -385,20 +385,21 @@ fun LinuxScreen(onBack: () -> Unit, onOpenStore: () -> Unit = {}) {
                         Text(stringResource(R.string.lapp_title), style = MaterialTheme.typography.titleSmall)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                             val storeInstalled by LinuxStore.installed.collectAsState()
+                            val published by LinuxStore.published.collectAsState()
+                            LaunchedEffect(Unit) { LinuxStore.refreshPublished() }
                             LinuxApps.installed(context, storeInstalled).forEach { app ->
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
                                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                                        .clickable { LinuxApps.launch(context, app) }
+                                        .clickable {
+                                            if (appTask(status, app) != null || appQueued(status, app)) onOpenStore()
+                                            else LinuxApps.launch(context, app)
+                                        }
                                         .padding(8.dp),
                                 ) {
-                                    androidx.compose.foundation.Image(
-                                        androidx.compose.ui.res.painterResource(app.icon),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(52.dp),
-                                    )
-                                    Text(app.name(context), style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                    LinuxAppIcon(app, 52.dp, update = app.id in LinuxStore.addonUpdates(status, published))
+                                    Text(linuxAppLabel(app), style = MaterialTheme.typography.labelMedium, maxLines = 1)
                                 }
                             }
                         }

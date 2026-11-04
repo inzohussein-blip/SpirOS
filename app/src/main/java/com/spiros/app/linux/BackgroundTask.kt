@@ -22,6 +22,14 @@ object BackgroundTask {
         val paused: Boolean = false,
         val active: Boolean = true,
         val error: String? = null,
+        /** Multi-part installs: part [step] of [steps], named [part] (e.g. "base", "mt5"). */
+        val step: Int = 0,
+        val steps: Int = 0,
+        val part: String = "",
+        /** Why it is held without being paused by the user, e.g. "wifi". */
+        val waiting: String = "",
+        /** Increases for every job, so SpirOS can tell finished jobs apart. */
+        val id: Long = 0,
     ) {
         val fraction get() = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
     }
@@ -41,8 +49,27 @@ object BackgroundTask {
         if (state?.active == true) return false
         paused.set(false)
         cancelled.set(false)
-        state = State(kind, name)
+        state = State(kind, name, id = ++counter)
         return true
+    }
+
+    private var counter = 0L
+
+    /** Jobs that finished (newest last), so SpirOS can announce them. */
+    @Volatile
+    var finished: List<State> = emptyList()
+        private set
+
+    /** When true, downloads wait (e.g. "only on Wi-Fi" while on mobile data). */
+    @Volatile
+    var holdReason: () -> String? = { null }
+
+    fun steps(total: Int) {
+        state = state?.copy(steps = total, step = 0)
+    }
+
+    fun step(index: Int, part: String) {
+        state = state?.copy(step = index, part = part)
     }
 
     fun stage(stage: String, total: Long = 0) {
@@ -54,7 +81,8 @@ object BackgroundTask {
     }
 
     fun end(error: String?) {
-        state = state?.copy(active = false, paused = false, error = error)
+        state = state?.copy(active = false, paused = false, waiting = "", error = error)
+        state?.let { finished = (finished + it).takeLast(10) }
     }
 
     fun pause() {
@@ -87,5 +115,13 @@ object BackgroundTask {
             Thread.sleep(250)
             if (cancelled.get()) throw Cancelled()
         }
+        var reason = holdReason()
+        while (reason != null) {
+            if (state?.waiting != reason) state = state?.copy(waiting = reason)
+            Thread.sleep(1000)
+            if (cancelled.get()) throw Cancelled()
+            reason = holdReason()
+        }
+        if (state?.waiting?.isNotEmpty() == true) state = state?.copy(waiting = "")
     }
 }
