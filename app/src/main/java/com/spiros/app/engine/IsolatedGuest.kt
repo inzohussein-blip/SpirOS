@@ -110,7 +110,7 @@ object IsolatedGuest {
             "-serial", "stdio",
             "-monitor", "none",
             "-object", "secret,id=sec0,file=${keyFile(context).path}",
-            "-blockdev", "driver=qcow2,node-name=d0,file.driver=file,file.filename=${disk(context).path},encrypt.key-secret=sec0",
+            "-blockdev", "driver=qcow2,node-name=d0,file.driver=file,file.filename=${disk(context).path},encrypt.format=luks,encrypt.key-secret=sec0",
             "-device", "virtio-blk-device,drive=d0",
             "-kernel", File(dir, FILES[1]).path,
             "-initrd", File(dir, FILES[2]).path,

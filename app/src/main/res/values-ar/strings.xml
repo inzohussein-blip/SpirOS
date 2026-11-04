@@ -544,7 +544,7 @@
     <string name="assist_need_ai">شغّل الذكاء الاصطناعي الخاص (شاشة الذكاء الاصطناعي) مع نموذج، ثم اسأل هنا بكلماتك. لا شيء يخرج من الهاتف.</string>
     <string name="lab_sys_alpine">Alpine (تجربة)</string>
     <string name="lab_sys_isolated">Debian معزول (مشفّر)</string>
-    <string name="lab_isolated_desc">Debian 13 في آلة افتراضية مستقلة: منفصل تماماً عن أندرويد وعن SpirOS Linux. قرصه مشفّر (LUKS) بمفتاح محفوظ في خزنتك، فلا يُفتح إلا وSpirOS مفتوح القفل. أول تشغيل ينزّل حوالي 400 ميغابايت. أبطأ من SpirOS Linux: للعزل لا للسرعة.</string>
+    <string name="lab_isolated_desc">Debian 13 في آلة افتراضية مستقلة: منفصل تماماً عن أندرويد وعن SpirOS Linux. قرصه مشفّر (LUKS) بمفتاح محفوظ في خزنتك، فلا يُفتح إلا وSpirOS مفتوح القفل. أول تشغيل ينزّل حوالي 300 ميغابايت. أبطأ من SpirOS Linux: للعزل لا للسرعة.</string>
     <string name="lab_boot_isolated">تشغيل Debian المعزول</string>
     <string name="lab_isolated_wipe">مسح القرص المشفّر</string>
     <string name="lab_isolated_wipe_body">يُحذف كل ما داخل Debian المعزول نهائياً ويُتلف مفتاحه. يبدأ من جديد في المرة القادمة.</string>

@@ -12,7 +12,7 @@ qemu-img info disk.qcow2 | grep -i -E "encrypt|backing" || true
 timeout 1500 qemu-system-aarch64 -M virt -cpu max -smp 4 -m 2048 -nographic -no-reboot \
     -accel tcg,thread=multi \
     -object secret,id=sec0,file=key.txt \
-    -blockdev "driver=qcow2,node-name=d0,file.driver=file,file.filename=disk.qcow2,encrypt.key-secret=sec0" \
+    -blockdev "driver=qcow2,node-name=d0,file.driver=file,file.filename=disk.qcow2,encrypt.format=luks,encrypt.key-secret=sec0" \
     -device virtio-blk-device,drive=d0 \
     -netdev user,id=n0 -device virtio-net-device,netdev=n0 -device virtio-rng-device \
     -kernel vmlinuz-arm64 -initrd initrd-arm64.img -append "root=/dev/vda rw console=ttyAMA0 quiet" \

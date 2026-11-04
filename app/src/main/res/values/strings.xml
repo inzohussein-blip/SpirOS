@@ -544,7 +544,7 @@
     <string name="assist_need_ai">Start the private AI (AI screen) with a model, then ask here in your own words. Nothing leaves the phone.</string>
     <string name="lab_sys_alpine">Alpine (test)</string>
     <string name="lab_sys_isolated">Isolated Debian (encrypted)</string>
-    <string name="lab_isolated_desc">Debian 13 in its own virtual machine: fully separate from Android and from SpirOS Linux. Its disk is encrypted (LUKS) with a key kept in your vault: it opens only while SpirOS is unlocked. First start downloads about 400 MB. Slower than SpirOS Linux: for isolation, not speed.</string>
+    <string name="lab_isolated_desc">Debian 13 in its own virtual machine: fully separate from Android and from SpirOS Linux. Its disk is encrypted (LUKS) with a key kept in your vault: it opens only while SpirOS is unlocked. First start downloads about 300 MB. Slower than SpirOS Linux: for isolation, not speed.</string>
     <string name="lab_boot_isolated">Start isolated Debian</string>
     <string name="lab_isolated_wipe">Erase the encrypted disk</string>
     <string name="lab_isolated_wipe_body">Everything inside isolated Debian is deleted for good, and its key is destroyed. It starts fresh next time.</string>
