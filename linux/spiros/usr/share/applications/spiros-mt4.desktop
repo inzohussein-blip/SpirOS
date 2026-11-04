@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=MetaTrader 4
+Name[ar]=ميتاتريدر 4
+Comment=Trading platform (Windows) through Wine
+Exec=spiros-mt4
+Icon=/usr/share/spiros/mt5.png
+Categories=Office;Finance;

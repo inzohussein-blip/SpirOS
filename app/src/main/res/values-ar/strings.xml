@@ -487,4 +487,10 @@
     <string name="store_updating_all">تحديث تطبيقات لينكس</string>
     <string name="store_footer">التطبيقات من أرشيف Ubuntu الرسمي الموقّع. التطبيقات التي تحتاج systemd أو snap (مثل Firefox وThunderbird وChromium) لا تعمل هنا.</string>
     <string name="task_stage_install">تثبيت</string>
+    <string name="lapp_mt4">MetaTrader 4</string>
+    <string name="addon_installing">تنزيل %1$s الكامل (يفتح تلقائياً عند الجاهزية)</string>
+    <string name="store_cat_trading">تداول</string>
+    <string name="store_mt_desc">نسخة كاملة لهواتف ARM64، تُختبر على ARM64 قبل كل إصدار. تحدّث نفسها (LiveUpdate)، وSpirOS يحدّث الحزمة. حساباتك وخبراؤك يبقون.</string>
+    <string name="store_update">تحديث</string>
+    <string name="store_mt_arm_only">متوفر لهواتف ARM64.</string>
 </resources>

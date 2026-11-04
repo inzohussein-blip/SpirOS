@@ -26,6 +26,7 @@ object LinuxApps {
     /** Built into SpirOS Linux. */
     val all = listOf(
         App("mt5", R.string.lapp_mt5, "spiros-mt5", R.drawable.ic_sc_mt5),
+        App("mt4", R.string.lapp_mt4, "spiros-mt4", R.drawable.ic_sc_mt4),
         App("terminal", R.string.lapp_terminal, "lxterminal", R.drawable.ic_sc_terminal),
         App("files", R.string.lapp_files, "pcmanfm", R.drawable.ic_sc_files),
         App("ai", R.string.lapp_ai, "lxterminal -t 'AI Chat' -e spiros-ai", R.drawable.ic_sc_aichat),
@@ -48,33 +49,37 @@ object LinuxApps {
     fun request(id: String) { _pending.value = id }
     fun consume() { _pending.value = null }
 
-    /** MT5 asked for while its package was still downloading: opened when it is ready. */
+    /** Windows programs (MetaTrader 5 / 4 full): installed by the engine on first use. */
+    val ADDONS = setOf("mt5", "mt4")
+
+    /** A program asked for while its package was still downloading: opened when it is ready. */
     @Volatile private var afterInstall: Pair<Context, App>? = null
 
-    /** True while MetaTrader 5 full is being downloaded / installed. */
-    fun mt5Installing(status: Engine.Status) = status.task?.let { it.kind == "mt5" && it.active } == true
+    /** True while [id]'s package is being downloaded / installed. */
+    fun addonInstalling(status: Engine.Status, id: String) =
+        status.task?.let { it.kind == "addon" && it.name == id && it.active } == true
 
     internal fun onStatus(status: Engine.Status) {
         val (context, app) = afterInstall ?: return
-        if (status.mt5Installed) {
+        if (status.addonInstalled(app.id) && !addonInstalling(status, app.id)) {
             afterInstall = null
             launch(context, app)
-        } else if (!mt5Installing(status) && status.task?.kind == "mt5" && status.task.error != null) {
+        } else if (status.task?.let { it.kind == "addon" && !it.active && it.error != null } == true) {
             afterInstall = null
         }
     }
 
     /**
      * Opens [app] inside the running desktop, or alone and full screen if none runs.
-     * MetaTrader 5 first downloads its full package (Wine + MT5 installed) in the
-     * background, then opens by itself.
+     * MetaTrader 5 / 4 first download their full package (Wine for ARM64 + the
+     * terminal) in the background, then open by themselves.
      */
     fun launch(context: Context, app: App) {
         val status = Engine.status.value
-        if (app.id == "mt5" && status.connected && !status.mt5Installed && status.arch == "arm64") {
+        if (app.id in ADDONS && status.connected && !status.addonInstalled(app.id) && status.arch == "arm64") {
             afterInstall = context.applicationContext to app
-            if (!mt5Installing(status)) Engine.installMt5(context)
-            android.widget.Toast.makeText(context, R.string.mt5_installing, android.widget.Toast.LENGTH_LONG).show()
+            if (!addonInstalling(status, app.id)) Engine.installAddon(context, app.id)
+            android.widget.Toast.makeText(context, context.getString(R.string.addon_installing, app.name(context)), android.widget.Toast.LENGTH_LONG).show()
             return
         }
         if (Engine.status.value.desktopRunning) {

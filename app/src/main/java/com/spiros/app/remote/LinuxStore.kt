@@ -28,9 +28,10 @@ object LinuxStore {
         val main get() = packages.substringBefore(' ')
     }
 
-    val CATEGORIES = listOf("dev", "office", "media", "graphics", "internet", "tools")
+    val CATEGORIES = listOf("trading", "dev", "office", "media", "graphics", "internet", "tools")
 
     fun categoryLabel(category: String) = when (category) {
+        "trading" -> R.string.store_cat_trading
         "dev" -> R.string.store_cat_dev
         "office" -> R.string.store_cat_office
         "media" -> R.string.store_cat_media
@@ -105,6 +106,14 @@ object LinuxStore {
 
     suspend fun upgradable(context: Context): List<String> =
         Engine.parseStrings(Engine.call(context) { it.linuxUpgradable() })
+
+    /** Published checksums of the Windows program packages (base, mt5, mt4), to offer updates. */
+    suspend fun addonsPublished(): Map<String, String> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val base = "https://github.com/inzohussein-blip/SpirOS/releases/download/linux-rootfs/"
+        mapOf("base" to "wine-base-arm64", "mt5" to "mt5-arm64", "mt4" to "mt4-arm64").mapNotNull { (id, file) ->
+            runCatching { id to ApkInstaller.text("$base$file.tar.xz.sha256").trim().substringBefore(' ').lowercase() }.getOrNull()
+        }.toMap()
+    }
 
     fun install(context: Context, packages: String) = Engine.send(context) { it.linuxApt("install", packages) }
     fun remove(context: Context, packages: String) = Engine.send(context) { it.linuxApt("remove", packages) }

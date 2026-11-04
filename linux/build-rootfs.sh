@@ -275,6 +275,7 @@ cp -a "$HERE/overlay/." "$ROOT/"
 # The desktop launcher lives with the app (which refreshes it before every start).
 install -D -m 755 "$HERE/../app/src/main/assets/linux/spiros-desktop" "$ROOT/usr/local/bin/spiros-desktop"
 install -D -m 755 "$HERE/../app/src/main/assets/linux/spiros-mt5" "$ROOT/usr/local/bin/spiros-mt5"
+install -D -m 755 "$HERE/../app/src/main/assets/linux/spiros-mt4" "$ROOT/usr/local/bin/spiros-mt4"
 # DNS for proot: Android has no /etc/resolv.conf to bind, so ship one.
 rm -f "$ROOT/etc/resolv.conf"
 printf 'nameserver 9.9.9.9\nnameserver 1.1.1.1\n' > "$ROOT/etc/resolv.conf"

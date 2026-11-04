@@ -71,7 +71,9 @@ fun StoreScreen(onBack: () -> Unit) {
     var updates by remember { mutableStateOf<List<String>?>(null) }
     var checkingUpdates by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<Pair<String, String>?>(null) }
-    val task = status.task?.takeIf { it.kind == "apt" }
+    val task = status.task?.takeIf { it.kind == "apt" || it.kind == "addon" }
+    var published by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    LaunchedEffect(Unit) { published = LinuxStore.addonsPublished() }
     val busy = status.taskActive
 
     // What is installed; again whenever an app store task ends.
@@ -100,7 +102,7 @@ fun StoreScreen(onBack: () -> Unit) {
                 return@LazyColumn
             }
             task?.takeIf { it.active || it.error != null }?.let { t ->
-                item { TaskCard(t, title = storeTaskTitle(t)) }
+                item { TaskCard(t, title = if (t.kind == "addon") com.spiros.app.ui.home.addonTaskTitle(t) else storeTaskTitle(t)) }
             }
             item {
                 OutlinedTextField(
@@ -165,6 +167,29 @@ fun StoreScreen(onBack: () -> Unit) {
                     }
                 }
             }
+            // MetaTrader 5 / 4 full: Windows programs through Hangover, with updates.
+            if (category == null || category == "trading") {
+                listOf("mt5" to "MetaTrader 5", "mt4" to "MetaTrader 4").forEach { (id, name) ->
+                    item(key = "addon-$id") {
+                        val installedSha = status.addons[id].orEmpty()
+                        val isInstalled = status.addonInstalled(id)
+                        val newer = isInstalled && published[id] != null &&
+                            (published[id] != installedSha || (published["base"] != null && published["base"] != status.addons["base"]))
+                        val available = published[id] != null
+                        PackageRow(
+                            title = name,
+                            description = stringResource(if (status.arch == "arm64") R.string.store_mt_desc else R.string.store_mt_arm_only),
+                            icon = if (id == "mt4") R.drawable.ic_sc_mt4 else R.drawable.ic_sc_mt5,
+                            installed = isInstalled, busy = busy || status.arch != "arm64" || !available,
+                            onInstall = { LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) } },
+                            onRemove = { confirmRemove = name to "addon:$id" },
+                            onOpen = { LinuxApps.byId(id)?.let { LinuxApps.launch(context, it) } },
+                            onPin = { LinuxApps.byId(id)?.let { LinuxApps.pinToHomeScreen(context, it) } },
+                            onUpdate = if (newer) { { Engine.installAddon(context, id) } } else null,
+                        )
+                    }
+                }
+            }
             items(catalog.filter { category == null || it.category == category }, key = { it.id }) { app ->
                 val isInstalled = app.main in installed
                 PackageRow(
@@ -200,7 +225,11 @@ fun StoreScreen(onBack: () -> Unit) {
             title = { Text(stringResource(R.string.store_remove_title, name)) },
             text = { Text(stringResource(R.string.store_remove_body)) },
             confirmButton = {
-                TextButton(onClick = { LinuxStore.remove(context, packages); confirmRemove = null }) {
+                TextButton(onClick = {
+                    if (packages.startsWith("addon:")) Engine.removeAddon(context, packages.removePrefix("addon:"))
+                    else LinuxStore.remove(context, packages)
+                    confirmRemove = null
+                }) {
                     Text(stringResource(R.string.store_remove), color = MaterialTheme.colorScheme.error)
                 }
             },
@@ -220,6 +249,7 @@ private fun PackageRow(
     onRemove: () -> Unit,
     onOpen: (() -> Unit)?,
     onPin: (() -> Unit)? = null,
+    onUpdate: (() -> Unit)? = null,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -230,10 +260,11 @@ private fun PackageRow(
                     Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!installed) {
                     Button(enabled = !busy, onClick = onInstall) { Text(stringResource(R.string.store_install)) }
                 } else {
+                    onUpdate?.let { FilledTonalButton(enabled = !busy, onClick = it) { Text(stringResource(R.string.store_update)) } }
                     onOpen?.let { Button(onClick = it) { Text(stringResource(R.string.store_open)) } }
                     onPin?.let { OutlinedButton(onClick = it) { Text(stringResource(R.string.store_pin)) } }
                     TextButton(enabled = !busy, onClick = onRemove) {

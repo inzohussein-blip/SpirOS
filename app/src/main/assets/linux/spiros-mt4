@@ -1,0 +1,18 @@
+#!/bin/sh
+# MetaTrader 4 on SpirOS Linux (ARM64 phones): "MetaTrader 4 full" downloaded by
+# SpirOS into /opt/spiros-wine (Hangover, i.e. Wine for ARM64, plus MT4 portable).
+LOG="$HOME/.local/share/spiros/mt4.log"
+mkdir -p "$(dirname "$LOG")"
+W=/opt/spiros-wine
+if [ ! -f "$W/.mt4" ] || [ ! -f "$W/.base" ]; then
+    MSG="Open MetaTrader 4 from SpirOS (or its app store): it downloads MetaTrader 4 full, then opens it."
+    if [ -t 1 ]; then echo "$MSG"; else lxterminal -t "MetaTrader 4" -e sh -c "echo '$MSG'; read x"; fi
+    exit 1
+fi
+HWINE=$(find "$W/hangover" -path '*bin/wine' -type f 2>/dev/null | head -n 1)
+export WINEPREFIX="$W/prefix" WINEDEBUG=-all
+cd "$WINEPREFIX/drive_c/MT4" || exit 1
+# The x86 emulator (FEX or Box64 inside Hangover) MT4 was tested with.
+[ -f spiros.env ] && export $(cat spiros.env)
+echo "$(date) start MT4 (Hangover)" >> "$LOG"
+exec "$HWINE" terminal.exe /portable >> "$LOG" 2>&1

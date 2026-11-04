@@ -56,9 +56,12 @@ object Engine {
         val task: Task? = null,
         /** MetaTrader 5 full (Wine + MT5) is installed in the Linux system. */
         val mt5Installed: Boolean = false,
+        /** Installed Windows programs and base: id -> package checksum ("" if not installed). */
+        val addons: Map<String, String> = emptyMap(),
     ) {
         val taskActive get() = task?.active == true
         val aiActive get() = aiState == AiServer.State.READY || aiState == AiServer.State.LOADING
+        fun addonInstalled(id: String) = !addons[id].isNullOrEmpty() && !addons["base"].isNullOrEmpty()
     }
 
     /** The engine's background job (installing Linux or downloading a model). */
@@ -174,6 +177,7 @@ object Engine {
             memoryKb = json.optLong("memoryKb"),
             distro = json.optString("distro"),
             mt5Installed = json.optBoolean("mt5Installed"),
+            addons = json.optJSONObject("addons")?.let { o -> o.keys().asSequence().associateWith { o.optString(it) } }.orEmpty(),
             task = json.optJSONObject("task")?.let {
                 Task(
                     kind = it.optString("kind"),
@@ -239,7 +243,8 @@ object Engine {
         }
     }
 
-    fun installMt5(context: Context) = send(context) { it.installMt5() }
+    fun installAddon(context: Context, id: String) = send(context) { it.installAddon(id) }
+    fun removeAddon(context: Context, id: String) = send(context) { it.removeAddon(id) }
 
     fun pauseTask(context: Context) = send(context) { it.pauseTask() }
     fun resumeTask(context: Context) = send(context) { it.resumeTask() }

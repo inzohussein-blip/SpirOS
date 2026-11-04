@@ -83,7 +83,7 @@ class SessionService : Service() {
             // An install / download in the engine: progress with Pause / Resume / Cancel.
             val what = when (task.kind) {
                 "linux" -> getString(R.string.dock_linux)
-                "mt5" -> getString(R.string.lapp_mt5)
+                "mt5", "addon" -> if (task.name == "mt4") getString(R.string.lapp_mt4) else getString(R.string.lapp_mt5)
                 "apt" -> getString(R.string.store_title)
                 else -> getString(R.string.dock_ai)
             }

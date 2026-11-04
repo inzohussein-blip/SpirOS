@@ -12,13 +12,22 @@ export WINEDEBUG=-all WINEARCH=win64
 mkdir -p "$BASE"
 LOG="$BASE/mt5.log"
 
+# "MetaTrader 5 full" for ARM64: Hangover (Wine for ARM64) in /opt/spiros-wine.
+W=/opt/spiros-wine
+if [ -f "$W/.mt5" ] && [ -f "$W/.base" ]; then
+    HWINE=$(find "$W/hangover" -path '*bin/wine' -type f 2>/dev/null | head -n 1)
+    export WINEPREFIX="$W/prefix"
+    cd "$WINEPREFIX/drive_c/MT5" || exit 1
+    [ -f spiros.env ] && export $(cat spiros.env)
+    echo "$(date) start MT5 (Hangover)" >> "$LOG"
+    exec "$HWINE" terminal64.exe /portable >> "$LOG" 2>&1
+fi
+# The first MT5 package (before the shared base).
 FULL=/opt/spiros-mt5
-# "MetaTrader 5 full" for ARM64: Hangover (Wine for ARM64, x86-64 code through FEX).
 HWINE=$(find "$FULL/hangover" -path '*bin/wine' -type f 2>/dev/null | head -n 1)
 if [ -f "$FULL/.ready" ] && [ -n "$HWINE" ]; then
     export WINEPREFIX="$FULL/prefix"
     cd "$WINEPREFIX/drive_c/MT5" || exit 1
-    echo "$(date) start MT5 (Hangover)" >> "$LOG"
     exec "$HWINE" terminal64.exe /portable >> "$LOG" 2>&1
 fi
 

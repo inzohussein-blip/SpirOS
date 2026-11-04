@@ -73,4 +73,9 @@ interface IEngine {
     String linuxUpgradable();
     /** install | remove | upgrade, as the background task (kind "apt"). */
     void linuxApt(String action, String packages);
+
+    // ---- Windows programs: MetaTrader 5 / 4 full (engine v6) ----
+    /** Installs or updates mt5 / mt4 (and the shared Wine base), task kind "addon". */
+    void installAddon(String id);
+    void removeAddon(String id);
 }

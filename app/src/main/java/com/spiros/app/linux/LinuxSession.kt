@@ -102,7 +102,7 @@ object LinuxSession {
 
     /** Always run the scripts shipped with this app version (assets/linux). */
     private fun installLauncher(context: Context, root: File) {
-        for (name in listOf("spiros-desktop", "spiros-mt5")) {
+        for (name in listOf("spiros-desktop", "spiros-mt5", "spiros-mt4")) {
             val target = File(root, "usr/local/bin/$name")
             target.parentFile?.mkdirs()
             runCatching {

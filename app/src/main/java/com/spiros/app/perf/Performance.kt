@@ -10,7 +10,7 @@ object Performance {
     enum class Session { DESKTOP, SINGLE_APP }
 
     /** Programs offered for single-app mode (command inside Linux). */
-    val SINGLE_APPS = listOf("x-terminal-emulator", "pcmanfm", "thunar", "caja", "nemo", "mousepad", "pluma", "spiros-mt5")
+    val SINGLE_APPS = listOf("x-terminal-emulator", "pcmanfm", "thunar", "caja", "nemo", "mousepad", "pluma", "spiros-mt5", "spiros-mt4")
 
     /** "auto" = the phone's own screen shape (fills it in landscape, no black bars). */
     const val AUTO = "auto"

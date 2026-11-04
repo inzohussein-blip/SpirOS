@@ -9,6 +9,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
 import java.io.BufferedInputStream
 import java.io.File
+import org.json.JSONObject
 import java.io.FilterInputStream
 import java.io.InputStream
 import java.security.MessageDigest
@@ -112,40 +113,75 @@ object LinuxDistro {
         }
     }
 
-    /** Where the MetaTrader 5 package (Wine + MT5 installed) lives inside the system. */
-    private const val MT5_DIR = "opt/spiros-mt5"
+    /**
+     * Windows programs for ARM64 phones ("add-ons"): a shared base (Hangover, i.e. Wine
+     * for ARM64, plus a Windows prefix) in /opt/spiros-wine, and each program as a
+     * portable folder in its drive C. All built and run on ARM64 by SpirOS's CI first.
+     */
+    private const val WINE_DIR = "opt/spiros-wine"
+    val ADDONS = mapOf("mt5" to "MT5", "mt4" to "MT4")
 
-    fun mt5Installed(context: Context) = File(root(context), "$MT5_DIR/.ready").isFile
+    private fun wineDir(context: Context) = File(root(context), WINE_DIR)
+    private fun marker(context: Context, part: String) = File(wineDir(context), ".$part")
+
+    fun addonInstalled(context: Context, id: String) = marker(context, id).isFile && marker(context, "base").isFile
+
+    fun mt5Installed(context: Context) = addonInstalled(context, "mt5")
+
+    /** {"base": sha, "mt5": sha, "mt4": sha} of what is installed ("" if not). */
+    fun addons(context: Context): JSONObject = JSONObject().apply {
+        (listOf("base") + ADDONS.keys).forEach { put(it, runCatching { marker(context, it).readText().trim() }.getOrDefault("")) }
+    }
 
     /**
-     * Installs "MetaTrader 5 full" into the system: Hangover (Wine built for ARM64) and
-     * a Windows prefix with MT5 ready, built and run by SpirOS on an ARM64 machine. Blocking; call
-     * within a [BackgroundTask].
+     * Installs or updates [id] (mt5 / mt4) and the shared base: only the parts whose
+     * published checksum differs from the installed one are downloaded. The
+     * program's own data (accounts, experts, settings) stays. Blocking; call within a
+     * [BackgroundTask].
      */
-    fun installMt5(context: Context) {
+    fun installAddon(context: Context, id: String) {
+        val folder = ADDONS[id] ?: error("Unknown add-on $id")
         check(isInstalled(context)) { "Install Linux first" }
-        // ARM64: Hangover (Wine for ARM64) + MT5. MT5's protection rejects Box64.
-        check(arch() == "arm64") { "MetaTrader 5 full is built for ARM64 phones" }
-        val name = "mt5-full-arm64.tar.xz"
+        check(arch() == "arm64") { "Built for ARM64 phones" }
+        val dir = wineDir(context)
+        part(context, "wine-base-arm64.tar.xz", marker(context, "base"), dir) {
+            deleteTree(File(dir, "hangover")) // new Wine replaces the old one; the prefix keeps the programs
+        }
+        part(context, "$id-arm64.tar.xz", marker(context, id), File(dir, "prefix/drive_c")) {
+            File(dir, "prefix/drive_c/$folder/spiros.env").delete()
+        }
+    }
+
+    private fun part(context: Context, name: String, marker: File, target: File, before: () -> Unit) {
         BackgroundTask.stage(Stage.DOWNLOADING.name)
         val expected = Downloader.text("$BASE/$name.sha256").trim().substringBefore(' ').lowercase()
+        if (marker.isFile && marker.readText().trim() == expected) return
         val archive = File(downloads(context), name)
-        val target = File(root(context), MT5_DIR)
         try {
             Downloader.download("$BASE/$name", archive, stamp = "$name#$expected")
             BackgroundTask.stage(Stage.VERIFYING.name, archive.length())
             check(sha256(archive) == expected) { "Checksum mismatch: the download is damaged or was altered" }
-            deleteTree(target)
+            marker.delete()
+            before()
             target.mkdirs()
             BackgroundTask.stage(Stage.EXTRACTING.name, archive.length())
             extract(archive, target)
-            File(target, ".ready").writeText("$expected\n")
-        } catch (e: Exception) {
-            if (e is BackgroundTask.Cancelled) deleteTree(target)
-            throw e
-        } finally {
-            if (File(target, ".ready").isFile) archive.delete()
+            marker.parentFile?.mkdirs()
+            marker.writeText("$expected\n")
+            archive.delete()
+        } catch (e: BackgroundTask.Cancelled) {
+            throw e // the .part download continues next time
         }
+    }
+
+    /** Removes [id]; the shared base goes too when no program needs it any more. */
+    fun removeAddon(context: Context, id: String) {
+        val folder = ADDONS[id] ?: return
+        marker(context, id).delete()
+        deleteTree(File(wineDir(context), "prefix/drive_c/$folder"))
+        if (ADDONS.keys.none { marker(context, it).isFile }) deleteTree(wineDir(context))
+        // The first MT5 package (before the shared base).
+        if (id == "mt5") deleteTree(File(root(context), "opt/spiros-mt5"))
     }
 
     private fun copy(file: ParcelFileDescriptor, target: File) {

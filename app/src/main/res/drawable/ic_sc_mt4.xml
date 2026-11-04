@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shortcut icon: MetaTrader 4 (candles on teal). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FF0F766E" android:pathData="M12,0a12,12 0,1 0,0.01,0z" />
+    <path android:fillColor="#FFFF5D6C" android:pathData="M7,9h2v6h-2zM7.6,7h0.8v2h-0.8zM7.6,15h0.8v2h-0.8z" />
+    <path android:fillColor="#FF3DDC97" android:pathData="M11,7.5h2v7h-2zM11.6,5.5h0.8v2h-0.8zM11.6,14.5h0.8v2h-0.8zM15,9.5h2v4h-2zM15.6,7.5h0.8v2h-0.8zM15.6,13.5h0.8v2.5h-0.8z" />
+</vector>

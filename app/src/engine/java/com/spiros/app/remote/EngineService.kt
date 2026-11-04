@@ -43,6 +43,7 @@ class EngineService : Service() {
             .put("memoryKb", AppProcesses.list().sumOf { it.rssKb })
             .put("distro", LinuxDistro.installed(this@EngineService) ?: "")
             .put("mt5Installed", LinuxDistro.mt5Installed(this@EngineService))
+            .put("addons", LinuxDistro.addons(this@EngineService))
             .apply {
                 BackgroundTask.state?.let { t ->
                     put("task", JSONObject()
@@ -92,9 +93,17 @@ class EngineService : Service() {
             runTask("apt", "$action ${packages.trim()}".trim()) { LinuxPackages.apply(ctx, action, packages) }
         }
 
-        override fun installMt5() {
+        override fun installMt5() = installAddon("mt5")
+
+        override fun installAddon(id: String) {
             val ctx = this@EngineService
-            runTask("mt5", "MetaTrader 5") { LinuxDistro.installMt5(ctx) }
+            if (id !in LinuxDistro.ADDONS) return
+            runTask("addon", id) { LinuxDistro.installAddon(ctx, id) }
+        }
+
+        override fun removeAddon(id: String) {
+            if (BackgroundTask.state?.let { it.active && it.kind == "addon" } == true) return
+            LinuxDistro.removeAddon(this@EngineService, id)
         }
 
         override fun removeLinux() {

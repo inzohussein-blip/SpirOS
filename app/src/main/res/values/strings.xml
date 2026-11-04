@@ -487,4 +487,10 @@
     <string name="store_updating_all">Updating Linux apps</string>
     <string name="store_footer">Apps come from Ubuntu\'s official, signed archive. Apps that need systemd or snap (Firefox, Thunderbird, Chromium) cannot run here.</string>
     <string name="task_stage_install">Installing</string>
+    <string name="lapp_mt4">MetaTrader 4</string>
+    <string name="addon_installing">Downloading %1$s full (opens by itself when ready)</string>
+    <string name="store_cat_trading">Trading</string>
+    <string name="store_mt_desc">Full version for ARM64 phones, tested on ARM64 before every release. Updates itself (LiveUpdate); SpirOS updates the package. Your accounts and experts stay.</string>
+    <string name="store_update">Update</string>
+    <string name="store_mt_arm_only">Available on ARM64 phones.</string>
 </resources>

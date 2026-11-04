@@ -1,4 +1,4 @@
-name: MT5 package
+name: MT5 and MT4 packages
 
 # "MetaTrader 5 full" for SpirOS Linux. probe: tries Wine versions on x86-64 and
 # shows (screenshots + window titles) which ones run MT5. mt5: builds the package
@@ -23,37 +23,43 @@ jobs:
   # the Windows prefix is the same for every CPU.
   package:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Tools
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils xz-utils libfreetype6 libfontconfig1 libgnutls30t64
-      - name: Install MT5 into a Wine prefix
+      - name: Install MT5 and MT4 (official installers, x86-64)
         run: |
           mkdir -p out
-          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/build-mt5.sh "$PWD/out" 2>&1 | tail -n 40
-          cat out/windows-amd64.txt
-          grep -q '"MetaTrader 5' out/windows-amd64.txt
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/install-mt.sh "$PWD/out" 2>&1 | tail -n 60
+          ls -la out
+          test -f out/mt5-app.tar
       - uses: actions/upload-artifact@v4
         with:
-          name: mt5-full
-          path: out/mt5-full.tar
+          name: mt-apps
+          path: out/*-app.tar
           retention-days: 3
+      - name: Save proof
+        if: always()
+        run: |
+          mkdir -p out && date > out/run.txt && cd out && rm -f *.tar && git init -q && git checkout -q -b ci-mt-amd64
+          git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
+          git add . && git commit -qm "MT x86-64 proof ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt-amd64
 
-  # ARM64 phones: Hangover + MT5, tested, then published for SpirOS.
-  # Inside Ubuntu 26.04, like SpirOS Linux: Hangover's 26.04 build, its libraries.
+  # ARM64 phones: inside Ubuntu 26.04 like SpirOS Linux, Hangover's 26.04 build.
   arm64:
     needs: package
     runs-on: ubuntu-24.04-arm
     container: ubuntu:26.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Base tools
         run: |
           apt-get update -q
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sudo git curl ca-certificates gh xvfb xauth imagemagick x11-utils xz-utils
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sudo git curl ca-certificates gh xvfb xauth imagemagick x11-utils xz-utils gawk
           git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
       - name: Hangover
@@ -70,23 +76,26 @@ jobs:
           DEBIAN_FRONTEND=noninteractive sudo -E apt-get install -y $(for d in /tmp/debs/*.deb; do dpkg-deb -f "$d" Depends; done | tr ',' '\n' | sed 's/(.*)//;s/|.*//;s/ //g' | grep -v '^$' | grep -v hangover | sort -u) || true
       - uses: actions/download-artifact@v4
         with:
-          name: mt5-full
-      - name: Build, run and pack MT5 full (ARM64)
+          name: mt-apps
+          path: apps
+      - name: Build and test the ARM64 packages
         run: |
           set -o pipefail
           mkdir -p out
-          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/pack-arm64.sh /tmp/debs mt5-full.tar "$PWD/out" 2>&1 | tail -n 40
-          cd out && sha256sum mt5-full-arm64.tar.xz | tee mt5-full-arm64.tar.xz.sha256
+          xvfb-run -a -s "-screen 0 1280x720x24" bash linux/mt5/pack-wine-arm64.sh /tmp/debs "$PWD/apps" "$PWD/out" 2>&1 | tail -n 60
+          cd out && for f in *.tar.xz; do sha256sum "$f" > "$f.sha256"; done && ls -la
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload linux-rootfs --clobber out/mt5-full-arm64.tar.xz out/mt5-full-arm64.tar.xz.sha256 -R ${{ github.repository }}
+        run: |
+          cd out
+          gh release upload linux-rootfs --clobber *.tar.xz *.tar.xz.sha256 -R ${{ github.repository }}
       - name: Save proof
         if: always()
         run: |
           mkdir -p out && date > out/run.txt && cd out && rm -f *.tar.xz* && git init -q && git checkout -q -b ci-mt5-arm64
           git config user.name "SpirOS CI" && git config user.email "ci@spiros.invalid"
-          git add . && git commit -qm "MT5 ARM64 proof ${{ github.run_number }}"
+          git add . && git commit -qm "MT ARM64 proof ${{ github.run_number }}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-mt5-arm64
 
   # Manual: which Wine builds open MT5 (x86-64).
