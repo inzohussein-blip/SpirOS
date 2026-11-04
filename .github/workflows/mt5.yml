@@ -43,26 +43,31 @@ jobs:
           retention-days: 3
 
   # ARM64 phones: Hangover + MT5, tested, then published for SpirOS.
+  # Inside Ubuntu 26.04, like SpirOS Linux: Hangover's 26.04 build, its libraries.
   arm64:
     needs: package
     runs-on: ubuntu-24.04-arm
+    container: ubuntu:26.04
     timeout-minutes: 60
     steps:
+      - name: Base tools
+        run: |
+          apt-get update -q
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sudo git curl ca-certificates gh xvfb xauth imagemagick x11-utils xz-utils
+          git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
-      - name: Tools and Hangover
+      - name: Hangover
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sudo apt-get update -q
-          sudo apt-get install -y --no-install-recommends xvfb xauth imagemagick x11-utils xz-utils
           gh api repos/AndreRH/hangover/releases/latest --jq '.tag_name, (.assets[].browser_download_url)' | tee rel.txt
-          URL=$(grep -iE 'noble|24\.04|2404' rel.txt | grep -i arm64 | head -n 1)
+          URL=$(grep -iE 'resolute|26\.04|2604' rel.txt | grep -i arm64 | head -n 1)
           [ -n "$URL" ] || URL=$(grep -iE 'debian|ubuntu' rel.txt | grep -i arm64 | head -n 1)
           echo "using $URL"
           mkdir -p hv && curl -fsSL "$URL" -o hv/pkg && cd hv && (tar -xf pkg 2>/dev/null || unzip -q pkg 2>/dev/null || true)
           mkdir -p /tmp/debs && find . -name '*.deb' -exec cp {} /tmp/debs/ \; && ls -la /tmp/debs
           # Runtime libraries Hangover needs (SpirOS Linux has them too).
-          sudo apt-get install -y $(for d in /tmp/debs/*.deb; do dpkg-deb -f "$d" Depends; done | tr ',' '\n' | sed 's/(.*)//;s/|.*//;s/ //g' | grep -v '^$' | grep -v hangover | sort -u) || true
+          DEBIAN_FRONTEND=noninteractive sudo -E apt-get install -y $(for d in /tmp/debs/*.deb; do dpkg-deb -f "$d" Depends; done | tr ',' '\n' | sed 's/(.*)//;s/|.*//;s/ //g' | grep -v '^$' | grep -v hangover | sort -u) || true
       - uses: actions/download-artifact@v4
         with:
           name: mt5-full

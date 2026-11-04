@@ -36,6 +36,6 @@ grep -q '"MetaTrader 5' "$OUT/windows-arm64.txt"
 
 echo "== Pack"
 cd /
-rm -rf "$WINEPREFIX/drive_c/users/$USER/Temp/"* "$WINEPREFIX/drive_c/MT5/logs/"* 2>/dev/null || true
+rm -rf "$WINEPREFIX/drive_c/users/${USER:-root}/Temp/"* "$WINEPREFIX/drive_c/MT5/logs/"* 2>/dev/null || true
 tar --numeric-owner -C "$ROOT" -cf - hangover prefix | xz -T0 -6 > "$OUT/mt5-full-arm64.tar.xz"
 du -h "$OUT/mt5-full-arm64.tar.xz"

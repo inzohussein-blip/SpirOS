@@ -1,6 +1,6 @@
 name: Linux rootfs
 
-# Builds the SpirOS Linux systems (Ubuntu 24.04 in Linux Mint style, one image per
+# Builds the SpirOS Linux systems (Ubuntu 26.04 in Linux Mint style, one image per
 # desktop: Xfce, MATE, Cinnamon) and publishes them to the "linux-rootfs" release,
 # where the SpirOS Engine downloads the one the user picks.
 on:
@@ -25,8 +25,8 @@ jobs:
         run: |
           gh release view linux-rootfs >/dev/null 2>&1 || gh release create linux-rootfs \
             --prerelease --target "${{ github.sha }}" \
-            --title "SpirOS Linux – Ubuntu 24.04 (Mint style)" \
-            --notes "أنظمة لينكس (Ubuntu 24.04 بمظهر Linux Mint: Xfce وMATE وCinnamon) يُنزّلها محرك SpirOS من داخل التطبيق."
+            --title "SpirOS Linux – Ubuntu 26.04 (Mint style)" \
+            --notes "أنظمة لينكس (Ubuntu 26.04 بمظهر Linux Mint: Xfce وMATE وCinnamon) يُنزّلها محرك SpirOS من داخل التطبيق."
 
   build:
     needs: release

@@ -1,4 +1,4 @@
-# Packages in every SpirOS Linux system (Ubuntu 24.04), one per line.
+# Packages in every SpirOS Linux system (Ubuntu 26.04), one per line.
 # The desktop itself (Xfce / MATE / Cinnamon) is chosen per image in build-rootfs.sh.
 dbus-x11
 tigervnc-standalone-server

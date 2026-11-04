@@ -9,12 +9,8 @@ BASE="$HOME/.local/share/spiros"
 WINEDIR="$BASE/wine"
 export WINEPREFIX="$BASE/mt5"
 export WINEDEBUG=-all WINEARCH=win64
-export BOX64_LOG=0 BOX64_NOBANNER=1 BOX64_DYNAREC_BIGBLOCK=1
 mkdir -p "$BASE"
 LOG="$BASE/mt5.log"
-
-RUN=""
-[ "$(uname -m)" = aarch64 ] && RUN=box64
 
 FULL=/opt/spiros-mt5
 # "MetaTrader 5 full" for ARM64: Hangover (Wine for ARM64, x86-64 code through FEX).
@@ -26,19 +22,18 @@ if [ -f "$FULL/.ready" ] && [ -n "$HWINE" ]; then
     exec "$HWINE" terminal64.exe /portable >> "$LOG" 2>&1
 fi
 
+# ARM64 runs MT5 only through the full package (MT5's protection rejects Box64).
+if [ "$(uname -m)" = aarch64 ]; then
+    MSG="Open MetaTrader 5 from SpirOS: it downloads MetaTrader 5 full, then opens it."
+    if [ -t 1 ]; then echo "$MSG"; else lxterminal -t "MetaTrader 5" -e sh -c "echo '$MSG'; read x"; fi
+    exit 1
+fi
+
 # Opened directly (from SpirOS or a shortcut) before MT5 is set up: show the progress
 # in a terminal window. Once installed, MT5 opens straight away.
 if [ ! -t 1 ] && [ -z "${SPIROS_IN_TERM:-}" ] &&
    { [ ! -x "$WINEDIR/bin/wine" ] || [ -z "$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)" ]; }; then
     exec lxterminal -t "MetaTrader 5" -e env SPIROS_IN_TERM=1 spiros-mt5
-fi
-
-RUN=""
-if [ "$(uname -m)" = aarch64 ]; then
-    if ! command -v box64 >/dev/null; then
-        echo "Box64 is missing in this system: MT5 needs SpirOS Linux for ARM."; read -r _; exit 1
-    fi
-    RUN=box64
 fi
 
 if [ ! -x "$WINEDIR/bin/wine" ]; then
@@ -54,15 +49,15 @@ WINE="$WINEDIR/bin/wine"
 TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
 if [ -z "$TERMINAL" ]; then
     echo "== Preparing the Windows environment (one time, a few minutes) =="
-    $RUN "$WINE" wineboot -u
+    "$WINE" wineboot -u
     # MT5's protection takes Wine's crash handler (AeDebug) for a debugger.
-    $RUN "$WINE" reg delete 'HKLM\Software\Microsoft\Windows NT\CurrentVersion\AeDebug' /v Debugger /f
+    "$WINE" reg delete 'HKLM\Software\Microsoft\Windows NT\CurrentVersion\AeDebug' /v Debugger /f
     echo "== Downloading the MetaTrader 5 installer =="
     curl -fL --progress-bar -o "$BASE/mt5setup.exe" "$MT5_URL" || { echo "Download failed."; read -r _; exit 1; }
     echo "== Installing MetaTrader 5: follow the installer window =="
-    $RUN "$WINE" "$BASE/mt5setup.exe"
+    "$WINE" "$BASE/mt5setup.exe"
     TERMINAL=$(find "$WINEPREFIX/drive_c" -iname terminal64.exe 2>/dev/null | head -n 1)
     [ -n "$TERMINAL" ] || { echo "MT5 was not installed."; read -r _; exit 1; }
 fi
 echo "== Starting MetaTrader 5 =="
-exec $RUN "$WINE" "$TERMINAL"
+exec "$WINE" "$TERMINAL"

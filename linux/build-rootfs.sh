@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds a SpirOS Linux root filesystem: Ubuntu 24.04 LTS (the base of Linux Mint 22)
+# Builds a SpirOS Linux root filesystem: Ubuntu 26.04 LTS
 # with one desktop in Linux Mint style, natively for the runner's architecture, packed
 # as a .tar.xz that the SpirOS Engine extracts and runs with proot.
 # Usage (as root): linux/build-rootfs.sh <arm64|amd64> <xfce|mate|cinnamon> <output.tar.xz>
@@ -7,9 +7,8 @@ set -eu
 ARCH="$1"
 DESKTOP="$2"
 OUT="$3"
-SUITE=noble
-LLAMA_TAG=b6000
-BOX64_TAG=v0.3.4
+SUITE=resolute
+LLAMA_TAG=b12100
 MINT_SUITE=wilma
 if [ "$ARCH" = amd64 ]; then MIRROR=http://archive.ubuntu.com/ubuntu; SECURITY=http://security.ubuntu.com/ubuntu
 else MIRROR=http://ports.ubuntu.com/ubuntu-ports; SECURITY=$MIRROR; fi
@@ -17,6 +16,7 @@ ROOT=$(mktemp -d)/rootfs
 HERE=$(cd "$(dirname "$0")" && pwd)
 [ -f "$HERE/desktops/$DESKTOP.txt" ] || { echo "unknown desktop: $DESKTOP"; exit 1; }
 
+[ -e "/usr/share/debootstrap/scripts/$SUITE" ] || ln -s gutsy "/usr/share/debootstrap/scripts/$SUITE"
 debootstrap --arch="$ARCH" --variant=minbase --components=main,universe "$SUITE" "$ROOT" "$MIRROR"
 
 cat > "$ROOT/etc/apt/sources.list" <<SRC
@@ -240,19 +240,6 @@ OV
     ;;
 esac
 
-# MetaTrader 5 on ARM phones: Box64 runs Windows x86-64 programs (Wine) on ARM64.
-if [ "$DESKTOP" = spiros ] && [ "$ARCH" = arm64 ]; then
-    chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
-        set -e
-        apt-get install -y --no-install-recommends build-essential cmake python3
-        git clone --depth 1 --branch $BOX64_TAG https://github.com/ptitSeb/box64 /tmp/box64
-        cmake -S /tmp/box64 -B /tmp/box64/build -DARM_DYNAREC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        cmake --build /tmp/box64/build -j\$(nproc)
-        cmake --install /tmp/box64/build
-        rm -rf /tmp/box64
-        box64 --version"
-fi
-
 # Local AI: llama.cpp's server and CLI, built from a pinned release for a generic CPU
 # of this architecture (works on older phone cores without dotprod).
 chroot "$ROOT" sh -c "export DEBIAN_FRONTEND=noninteractive
@@ -298,7 +285,7 @@ date -u +%Y-%m-%dT%H:%MZ > "$ROOT/etc/spiros-build"
 
 # Summary at the end of the CI log: what this image really contains.
 echo "== SpirOS image: $DESKTOP $ARCH"
-for b in Xvnc xfce4-session mate-session cinnamon-session openbox tint2 rofi box64 llama-server; do
+for b in Xvnc xfce4-session mate-session cinnamon-session openbox tint2 rofi llama-server; do
     if chroot "$ROOT" sh -c "command -v $b" >/dev/null 2>&1; then echo "   has $b"; else echo "   (no $b)"; fi
 done
 echo "   gtk theme: ${GTK:-none}  icons: ${ICONS:-none}  (Mint look $MINT_NOTE)"

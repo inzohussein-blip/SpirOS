@@ -14,7 +14,7 @@ import java.io.InputStream
 import java.security.MessageDigest
 
 /**
- * The SpirOS Linux system: Ubuntu 24.04 in Linux Mint style with the desktop the user
+ * The SpirOS Linux system: Ubuntu 26.04 in Linux Mint style with the desktop the user
  * picks (Xfce, MATE or Cinnamon), built by .github/workflows/linux-rootfs.yml, or the
  * user's own root filesystem (a .tar.xz / .tar.gz / .tar from a link or a file).
  * Downloads resume, are checked against their SHA-256 and unpacked into the engine's
