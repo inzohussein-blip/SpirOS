@@ -1,0 +1,1 @@
+     0xa00003 "MetaTrader 4 - USDJPY,H4": ("terminal.exe" "terminal.exe")  1280x694+4+30  +4+30

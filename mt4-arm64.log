@@ -1,0 +1,28 @@
+00a4:err:ntoskrnl:ZwLoadDriver failed to create driver L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\winebth": c00000e5
+starting FEX (Hangover 11.16) based libwow64fex.dll
+00e0:err:wgl:egl_init Failed to load libEGL.so.1: libEGL.so.1: cannot open shared object file: No such file or directory
+0024:err:toolbar:ToolbarWindowProc unknown msg 0465, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0466, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0465, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0466, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0465, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0466, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0465, wp 0, lp 12e238
+0024:err:toolbar:ToolbarWindowProc unknown msg 0466, wp 0, lp 12e238
+Home directory not accessible: Permission denied
+ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
+ALSA lib confmisc.c:855:(parse_card) [error.core] cannot find card '0'
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) [error.core] error evaluating strings
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) [error.core] error evaluating name
+ALSA lib conf.c:5211:(_snd_config_evaluate) [error.core] function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5734:(snd_config_expand) [error.core] Evaluate error: No such file or directory
+ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) [error.pcm] Unknown PCM default
