@@ -82,6 +82,9 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var input by remember { mutableStateOf("") }
     var graphics by remember { mutableStateOf(true) }
+    // Isolated mode: Debian 13 with a LUKS-encrypted disk (key in the vault).
+    var isolated by remember { mutableStateOf(false) }
+    var confirmWipe by remember { mutableStateOf(false) }
     var showScreen by remember { mutableStateOf(true) }
     val screen by LabSession.screen.collectAsState()
 
@@ -103,16 +106,30 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
         scope.launch {
             try {
                 download = 0f
-                val files = AlpineGuest.ensure(context) { p -> download = p }
-                download = null
-                val args = withContext(Dispatchers.IO) {
-                    LabVm.args(context, files, cores.roundToInt(), ramMb.roundToInt(), graphics)
+                val args = if (isolated) {
+                    com.spiros.app.engine.IsolatedGuest.ensure(context) { p -> download = p }
+                    download = null
+                    withContext(Dispatchers.IO) {
+                        com.spiros.app.engine.IsolatedGuest.prepare(context, vault.files)
+                        com.spiros.app.engine.IsolatedGuest.args(context, cores.roundToInt(), ramMb.roundToInt().coerceAtLeast(1024), graphics)
+                    }
+                } else {
+                    val files = AlpineGuest.ensure(context) { p -> download = p }
+                    download = null
+                    withContext(Dispatchers.IO) {
+                        LabVm.args(context, files, cores.roundToInt(), ramMb.roundToInt(), graphics)
+                    }
                 }
                 LabSession.start(
                     runner,
                     args,
                     vncSocket = if (graphics) LabVm.vncSocket(context).path else null,
                 )
+                if (isolated) {
+                    // QEMU has read the disk key by now: don't leave it on storage.
+                    kotlinx.coroutines.delay(15_000)
+                    com.spiros.app.engine.IsolatedGuest.forgetKey(context)
+                }
             } catch (e: Exception) {
                 download = null
                 error = e.message ?: e.toString()
@@ -154,6 +171,16 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
             }
 
             if (!running) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = !isolated, onClick = { isolated = false }, label = { Text(stringResource(R.string.lab_sys_alpine)) })
+                    FilterChip(selected = isolated, onClick = { isolated = true; if (ramMb < 1024f) ramMb = 1024f }, label = { Text(stringResource(R.string.lab_sys_isolated)) })
+                }
+                if (isolated) {
+                    Text(stringResource(R.string.lab_isolated_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (com.spiros.app.engine.IsolatedGuest.hasDisk(context)) {
+                        TextButton(onClick = { confirmWipe = true }) { Text(stringResource(R.string.lab_isolated_wipe), color = MaterialTheme.colorScheme.error) }
+                    }
+                }
                 Text(stringResource(R.string.lab_cores, cores.roundToInt()))
                 Slider(value = cores, onValueChange = { cores = it }, valueRange = 1f..maxCores.toFloat(), steps = (maxCores - 2).coerceAtLeast(0))
                 Text(stringResource(R.string.lab_ram, ramMb.roundToInt()))
@@ -166,7 +193,21 @@ fun LabScreen(vault: Vault, onBack: () -> Unit) {
                     onClick = { boot() },
                     enabled = runner.isBundled && download == null,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(stringResource(R.string.lab_boot_alpine)) }
+                ) { Text(stringResource(if (isolated) R.string.lab_boot_isolated else R.string.lab_boot_alpine)) }
+                if (confirmWipe) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { confirmWipe = false },
+                        title = { Text(stringResource(R.string.lab_isolated_wipe)) },
+                        text = { Text(stringResource(R.string.lab_isolated_wipe_body)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                com.spiros.app.engine.IsolatedGuest.wipeDisk(context, vault.files)
+                                confirmWipe = false
+                            }) { Text(stringResource(R.string.lab_isolated_wipe), color = MaterialTheme.colorScheme.error) }
+                        },
+                        dismissButton = { TextButton(onClick = { confirmWipe = false }) { Text(stringResource(R.string.cancel)) } },
+                    )
+                }
             } else {
                 OutlinedButton(onClick = LabSession::stop, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.lab_stop))

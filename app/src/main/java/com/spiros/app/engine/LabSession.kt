@@ -11,7 +11,7 @@ import kotlin.concurrent.thread
 object LabSession {
     private const val MAX_LINES = 2000
     private val ANSI = Regex("\u001B\\[[0-9;?]*[A-Za-z]")
-    private val BOOT_MARKERS = listOf("login:", "Welcome to Alpine", "recovery shell", "~ #", "localhost:~#")
+    private val BOOT_MARKERS = listOf("login:", "Welcome to Alpine", "recovery shell", "~ #", "localhost:~#", "SPIROS_ISOLATED_READY", "spiros-isolated login")
 
     private var process: Process? = null
     private var startedAt = 0L

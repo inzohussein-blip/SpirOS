@@ -86,8 +86,8 @@ interface IEngine {
     void setWifiOnly(boolean on);
 
     // ---- Backup and problem reports (engine v8) ----
-    /** Writes the MT terminals' user data as a tar to [out] (in the background), then closes it. */
-    void exportAddonData(in ParcelFileDescriptor out);
+    /** Writes the MT terminals' user data as a tar to [target] (in the background), then closes it. */
+    void exportAddonData(in ParcelFileDescriptor target);
     /** Reads such a tar from [input] into the installed terminals; returns the number of files. */
     int importAddonData(in ParcelFileDescriptor input);
     /** Plain-text diagnostics: status, Linux and program logs (no personal files). */

@@ -1,0 +1,43 @@
+name: Isolated Debian
+
+# SpirOS isolated mode: builds Debian 13 arm64 as a virtual machine disk, boots it
+# exactly like the phone does (LUKS-encrypted overlay, QEMU), and publishes it.
+on:
+  push:
+    paths:
+      - "linux/isolated/**"
+      - ".github/workflows/isolated.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: isolated-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debian:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends debootstrap debian-archive-keyring qemu-utils qemu-system-arm e2fsprogs
+      - name: Build Debian 13 arm64 image
+        run: sudo bash linux/isolated/build-debian.sh "$PWD/out" && sudo chown -R "$(id -u):$(id -g)" out
+      - name: Boot it like SpirOS (encrypted overlay)
+        run: bash linux/isolated/boot-test.sh "$PWD/out"
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view isolated-debian -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create isolated-debian -R "$GITHUB_REPOSITORY" --prerelease \
+              --title "SpirOS isolated mode – Debian 13" \
+              --notes "نظام Debian 13 لوضع العزل في SpirOS: آلة افتراضية مستقلة بقرص مشفّر على الهاتف."
+          cd out && rm -f boot.log
+          for f in debian-arm64.qcow2 vmlinuz-arm64 initrd-arm64.img; do sha256sum "$f" > "$f.sha256"; done
+          gh release upload isolated-debian --clobber debian-arm64.qcow2* vmlinuz-arm64* initrd-arm64.img* -R "$GITHUB_REPOSITORY"

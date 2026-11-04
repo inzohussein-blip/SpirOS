@@ -98,10 +98,10 @@ class EngineService : Service() {
             wifiOnly = on
         }
 
-        override fun exportAddonData(out: ParcelFileDescriptor) {
+        override fun exportAddonData(target: ParcelFileDescriptor) {
             val ctx = this@EngineService
             thread(name = "engine-backup") {
-                runCatching { ParcelFileDescriptor.AutoCloseOutputStream(out).use { LinuxDistro.exportAddonData(ctx, it) } }
+                runCatching { ParcelFileDescriptor.AutoCloseOutputStream(target).use { LinuxDistro.exportAddonData(ctx, it) } }
             }
         }
 

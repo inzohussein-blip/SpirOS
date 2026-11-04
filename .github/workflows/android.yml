@@ -35,6 +35,12 @@ jobs:
         run: |
           python3 tools/fetch_qemu.py --arch aarch64 --out app/src/secure/jniLibs/arm64-v8a --data-out app/src/secure/assets/qemu
           python3 tools/fetch_qemu.py --arch x86_64 --out app/src/secure/jniLibs/x86_64
+          # qemu-img: creates the isolated mode's LUKS-encrypted disk on the phone.
+          for a in "aarch64 arm64-v8a" "x86_64 x86_64"; do
+            set -- $a
+            python3 tools/fetch_qemu.py --arch $1 --out app/src/secure/jniLibs/$2 \
+              --package qemu-utils --executable bin/qemu-img --name libqemu-img.so || echo "qemu-img not bundled for $1"
+          done
 
       # SpirOS Engine (Linux + AI helper): proot from Termux, with its loader.
       - name: Bundle proot
