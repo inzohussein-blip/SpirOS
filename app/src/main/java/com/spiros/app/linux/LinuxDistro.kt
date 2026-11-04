@@ -175,6 +175,51 @@ object LinuxDistro {
         }
     }
 
+    /** The user's own data in each terminal folder (not the program itself). */
+    private val ADDON_DATA = listOf("MQL5", "MQL4", "config", "profiles", "templates", "Presets")
+
+    /** Writes the MT terminals' user data (accounts, experts, settings) as a tar. */
+    fun exportAddonData(context: Context, out: java.io.OutputStream) {
+        val drive = File(wineDir(context), "prefix/drive_c")
+        org.apache.commons.compress.archivers.tar.TarArchiveOutputStream(out.buffered(1 shl 16)).use { tar ->
+            tar.setLongFileMode(org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX)
+            tar.setBigNumberMode(org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX)
+            for (folder in ADDONS.values) for (part in ADDON_DATA) {
+                val base = File(drive, "$folder/$part")
+                if (!base.isDirectory) continue
+                base.walkTopDown().onEnter { !java.nio.file.Files.isSymbolicLink(it.toPath()) }.filter { it.isFile }.forEach { f ->
+                    val name = f.relativeTo(drive).path
+                    val entry = org.apache.commons.compress.archivers.tar.TarArchiveEntry(f, name)
+                    tar.putArchiveEntry(entry)
+                    f.inputStream().use { it.copyTo(tar, 1 shl 16) }
+                    tar.closeArchiveEntry()
+                }
+            }
+        }
+    }
+
+    /** Restores what [exportAddonData] wrote into the installed terminals (only into their data folders). */
+    fun importAddonData(context: Context, input: InputStream): Int {
+        val drive = File(wineDir(context), "prefix/drive_c")
+        val drivePath = drive.canonicalPath + File.separator
+        var count = 0
+        TarArchiveInputStream(BufferedInputStream(input, 1 shl 16)).use { tar ->
+            while (true) {
+                val entry = tar.nextEntry ?: break
+                val name = entry.name.removePrefix("./")
+                val parts = name.split('/')
+                if (!entry.isFile || parts.size < 3 || parts[0] !in ADDONS.values || parts[1] !in ADDON_DATA || ".." in parts) continue
+                if (!File(drive, parts[0]).isDirectory) continue // that terminal is not installed
+                val out = File(drive, name)
+                if (!out.canonicalPath.startsWith(drivePath)) continue
+                out.parentFile?.mkdirs()
+                out.outputStream().use { tar.copyTo(it, 1 shl 16) }
+                count++
+            }
+        }
+        return count
+    }
+
     /** Removes [id]; the shared base goes too when no program needs it any more. */
     fun removeAddon(context: Context, id: String) {
         val folder = ADDONS[id] ?: return

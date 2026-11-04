@@ -142,6 +142,12 @@ class VaultFiles internal constructor(
 
     private val privateDir get() = File(dir, "private").apply { mkdirs() }
 
+    /** Labels of the stored private records (for backups). */
+    fun privateLabels(): List<String> = privateDir.list()?.filter { !it.endsWith(".new") && !it.endsWith(".bak") }.orEmpty()
+
+    /** A vault file's decrypted content (for backups). */
+    fun openItem(id: String): InputStream = openDecrypted(id)
+
     /** Reads a private record, or null if absent (or the vault is locked). */
     fun readPrivate(label: String): ByteArray? = runCatching {
         val file = File(privateDir, label)

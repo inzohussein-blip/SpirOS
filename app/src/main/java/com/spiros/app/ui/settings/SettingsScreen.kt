@@ -166,6 +166,10 @@ fun SettingsScreen(
                 GroupTitle(stringResource(R.string.update_title))
                 UpdateSection()
             }
+            if (match(R.string.backup_group, R.string.backup_create, R.string.backup_restore, R.string.report_title)) {
+                GroupTitle(stringResource(R.string.backup_group))
+                BackupSection(itemColors)
+            }
             if (match(R.string.appearance_title, R.string.appearance_theme, R.string.appearance_colors, R.string.appearance_style)) {
                 GroupTitle(stringResource(R.string.appearance_title))
                 AppearanceSection()
